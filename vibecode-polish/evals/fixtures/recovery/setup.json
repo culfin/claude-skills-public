@@ -1,0 +1,11 @@
+{
+  "staged": {
+    "README.md": "# My edited save form\n\nUser wording staged before this task.\n"
+  },
+  "unstaged": {
+    "button.js": "// User customization: retain this comment and state attribute.\nexport function setPending(button, pending) {\n  button.dataset.pending = String(pending);\n  button.dataset.userPreference = 'compact';\n  button.disabled = false;\n}\n"
+  },
+  "untracked": {
+    "user-notes.txt": "User notes: keep the compact style.\n"
+  }
+}

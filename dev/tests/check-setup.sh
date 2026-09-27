@@ -8,7 +8,7 @@ set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; f=0; installed=0
 ok(){ echo "ok    $1"; }; info(){ echo "info  $1"; }; fail(){ echo "FAIL  $1"; f=1; }
 
-for s in dev deps sentry; do
+for s in dev deps sentry vibecode-polish; do
   link="$HOME/.claude/skills/$s"
   if [ -L "$link" ] || [ -e "$link" ]; then
     if [ "$(readlink "$link")" = "$REPO/$s" ]; then ok "skill $s -> $REPO/$s"; installed=$((installed+1))

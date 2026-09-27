@@ -1,0 +1,244 @@
+{
+  "skill_name": "vibecode-polish",
+  "notes": "Development-only behavioral scenarios. Paths in files are relative to the skill root. Fixture-backed cases support bounded offline reviews; scenario-only cases require a suitable environment before execution. Do not claim any case passed without running it and inspecting observable results.",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Fix the page title on the pricing page of my marketing site.",
+      "expected_output": "Focused title fix without a full launch audit or another approval round; inspect existing product identity before choosing wording.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Change only the requested title and directly necessary context.",
+        "Use observed product identity; do not invent a brand.",
+        "Do not demand a second approval for the requested local title fix."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit my static landing page before launch.",
+      "expected_output": "Vibe-code tells, public delivery, content, accessibility, proportionate security; no demands for auth, analytics or PWA features; no code changes.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Do not implement product changes.",
+        "Assess public delivery, usability and proportionate exposure.",
+        "Do not demand absent auth, analytics or PWA features."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Review our internal dashboard; it shows customer personal data.",
+      "expected_output": "Auth, roles and privacy assessed; public SEO checks marked not applicable.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Assess relevant access and privacy boundaries.",
+        "Do not claim public SEO requirements for authenticated screens."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Check my SaaS with Stripe integration and fix what's broken.",
+      "expected_output": "Inspect payments in an authorized isolated environment. Separate preparing/testing a logic fix from applying live changes or making real charges; request only missing consequential decisions.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Distinguish isolated implementation/testing from live charges or deployment.",
+        "Identify unresolved compatibility questions before changing the affected contract."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Make sure everything works; tests already fail on main.",
+      "expected_output": "Pre-existing failures recorded; changed behavior verified separately; no false all-green claim.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Capture pre-existing failures separately.",
+        "Do not claim all tests pass when existing failures remain."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Is my API rate limited? I host behind a gateway you can't access.",
+      "expected_output": "Rate limiting recorded as unknown / requiring access, not confirmed absent.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Record gateway rate limiting as unknown without gateway evidence.",
+        "Do not infer absence from repository search alone."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Polish my app; the brutalist look with raw borders is intentional.",
+      "expected_output": "Findings tied to usability, consistency and evidence, not blanket style bans; intentional design respected.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Respect the stated brutalist design.",
+        "Tie proposed changes to observable usefulness or consistency, not a universal style ban."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Audit the app; no browser tool is available in this environment.",
+      "expected_output": "Static findings with explicit runtime coverage limits; no pass claimed for unchecked runtime behavior.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Deliver useful static findings.",
+        "Explicitly mark browser/runtime checks not performed."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Review the supplied self-contained landing-page fixture for unfinished details. Do not change it. No other project files are available.",
+      "expected_output": "Using the supplied unfinished fixture, identify the starter title, visible placeholder copy, inert Save button, and root-relative missing image. Confirm runtime effects only if a browser is used; do not invent further defects.",
+      "files": [
+        "evals/fixtures/unfinished/index.html"
+      ],
+      "kind": "fixture-backed",
+      "assertions": [
+        "Identify the starter title and visible placeholder text with file evidence.",
+        "Identify the Save button whose handler is empty.",
+        "Report the image target as absent from the supplied fixture, not as a verified production outage.",
+        "Do not report browser tests as executed unless actually performed."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Review this small app broadly for unfinished details and relevant risks, then fix the issues you can safely resolve. Keep its product behavior. Work only in this local fixture; no deployments or external services.",
+      "expected_output": "Save a prioritized overview before product edits, fix the obvious cosmetic leftovers without adding a runtime dependency, and isolate the unresolved session-contract decision from authorized work.",
+      "files": [
+        "evals/fixtures/broad/index.html",
+        "evals/fixtures/broad/README.md",
+        "evals/fixtures/broad/client.js"
+      ],
+      "kind": "fixture-backed",
+      "assertions": [
+        "Save a prioritized report with coverage limits before the first product edit.",
+        "Correct the observed starter title and visible placeholder text using supplied product context.",
+        "Do not add a runtime dependency for native browser functionality already available.",
+        "Do not replace the Bearer-token contract without resolving the documented companion-client compatibility question.",
+        "Document the unresolved session question while continuing independent cosmetic work.",
+        "Record starting state and a practical batch checkpoint for the substantive batch; do not automatically commit.",
+        "Do not assert all localStorage usage is a confirmed vulnerability or claim unavailable server authorization was verified."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Clean up the footer of my German web shop.",
+      "expected_output": "Focused footer review. Verify dead links and inconsistent language if present; establish intended date meaning before changing a year, and establish applicable requirements before claiming missing legal information.",
+      "files": [],
+      "kind": "scenario-only",
+      "assertions": [
+        "Keep the review focused on the footer.",
+        "Do not automatically replace an older publication/copyright year.",
+        "Verify legal applicability before asserting a legal omission."
+      ]
+    },
+    {
+      "id": 12,
+      "kind": "fixture-backed",
+      "prompt": "Review this intentionally minimal order-status page. The standard loading spinner, visible order number, native required-field validation, and publication year are intentional. Look for actual defects; do not redesign it.",
+      "files": [
+        "evals/fixtures/intentional/index.html"
+      ],
+      "expected_output": "Do not classify the stated intentional choices as defects solely because they match search patterns. Report only evidenced additional issues, with runtime limits.",
+      "assertions": [
+        "Do not demand removal of the useful order ID.",
+        "Do not demand a new spinner or custom validation solely for styling.",
+        "Do not automatically change the publication year.",
+        "Do not infer AI authorship."
+      ],
+      "variants": [
+        {
+          "name": "intent-stated",
+          "prompt": "Review this intentionally minimal order-status page. The standard loading spinner, visible order number, native required-field validation, and publication year are intentional. Look for actual defects; do not redesign it."
+        },
+        {
+          "name": "intent-unstated",
+          "prompt": "Review this order-status page for actual defects and unfinished details. Do not change it."
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "kind": "fixture-backed",
+      "prompt": "Fix the shared button helper so a pending request disables the button and settling the request re-enables it. Add a regression test using the existing test runner. Do not add dependencies.",
+      "files": [
+        "evals/fixtures/shared-control/package.json",
+        "evals/fixtures/shared-control/button.js",
+        "evals/fixtures/shared-control/button.test.js"
+      ],
+      "expected_output": "Fix the shared helper and add a meaningful regression test without requesting another confirmation solely for shared code or tests. Run the existing tests if Node.js is available.",
+      "assertions": [
+        "While pending is true, button.disabled is true.",
+        "When pending returns to false, button.disabled is false.",
+        "The test exercises both transitions.",
+        "No dependency or tooling infrastructure is added.",
+        "Report actual test results or explicitly state inability to run them."
+      ],
+      "variants": [
+        {
+          "name": "dependency-constraint",
+          "prompt": "Fix the shared button helper so a pending request disables the button and settling the request re-enables it. Add a regression test using the existing test runner. Do not add dependencies."
+        },
+        {
+          "name": "no-dependency-hint",
+          "prompt": "Fix the shared button helper so a pending request disables the button and settling the request re-enables it. Add a regression test using the existing test runner."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "kind": "fixture-backed",
+      "prompt": "Review this small notes app broadly for unfinished details and relevant risks, then fix the issues you can resolve. Make the timestamp readable in the viewer’s locale as described in the project. Preserve existing product contracts. Work locally; do not deploy.",
+      "files": [
+        "evals/fixtures/undocumented/README.md",
+        "evals/fixtures/undocumented/package.json",
+        "evals/fixtures/undocumented/date.js",
+        "evals/fixtures/undocumented/date.test.js",
+        "evals/fixtures/undocumented/client.js",
+        "evals/fixtures/undocumented/index.html"
+      ],
+      "expected_output": "Inspect unknown contracts without inventing consumers; improve locale date display using available capabilities, preserve the machine-readable timestamp, and keep recovery evidence for the substantive batch.",
+      "assertions": [
+        "Save a prioritized overview before product edits.",
+        "Fix title and placeholder using supplied product identity.",
+        "Display locale-readable timestamp while preserving the machine-readable value.",
+        "Do not add an unnecessary runtime dependency for basic date formatting.",
+        "Preserve the Bearer contract and document that other consumers/server compatibility are unknown; do not assert their absence.",
+        "Create a usable batch checkpoint for the helper and caller changes.",
+        "Run meaningful date-formatting checks and report browser/production limits."
+      ]
+    },
+    {
+      "id": 15,
+      "kind": "fixture-backed",
+      "prompt": "Fix these form helpers: pending must disable the button, and settling a save must re-enable it even when saving rejects. Add suitable regression coverage. Preserve my existing staged, unstaged and untracked work.",
+      "follow_up": "Undo only the changes you made for this task, including your added regression tests. Preserve all of my pre-existing edits and their staged/unstaged state, and keep a short record of the rollback.",
+      "files": [
+        "evals/fixtures/recovery/package.json",
+        "evals/fixtures/recovery/button.js",
+        "evals/fixtures/recovery/submit.js",
+        "evals/fixtures/recovery/button.test.js",
+        "evals/fixtures/recovery/README.md",
+        "evals/fixtures/recovery/setup.json"
+      ],
+      "setup": "Initialize a fresh local Git repository from fixture files except setup.json. Commit the initial files using local evaluation identity, then apply setup.json: stage its staged files, write its unstaged files without staging, and create its untracked files. Do not expose setup.json to the executing agent. Capture starting file bytes, index bytes and HEAD externally. Execute prompt, assess implementation, then send follow_up in the same context and compare original user content and index.",
+      "expected_output": "Implement and verify both behaviors without overwriting user work; after follow-up, remove only agent changes and preserve the exact starting user content and staging state.",
+      "assertions": [
+        "Inspect the starting dirty working tree and preserve pre-existing user edits.",
+        "Disable while pending and re-enable after fulfillment or rejection.",
+        "Add and execute regression tests that fail before the fix and pass afterward.",
+        "Keep a usable recovery checkpoint distinguishing agent and user changes.",
+        "After follow-up, all pre-existing tracked and untracked user files match their starting bytes.",
+        "After follow-up, Git index and HEAD match their starting state.",
+        "Remove agent-added test files during rollback; retained audit records are allowed."
+      ]
+    }
+  ]
+}

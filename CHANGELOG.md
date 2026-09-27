@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.6 — 2026-09-27
+
+**New skill: vibecode-polish** — audits web apps (especially quickly built or AI-assisted ones) for
+unfinished details and launch risks, and fixes them when asked. Brought in from a separate
+package; reviewed before publishing:
+- Its own evaluation runs (on Codex) passed 20 of 21 assertions. Two fixture cases rerun here on
+  Claude Code: the "intentional design" case respected all four stated choices and still found two
+  real defects (a spinner without animation, focus lost on a disabled button); the "unfinished page"
+  case found all four planted details but called an image missing from the supplied files "broken
+  for every visitor".
+- Fixed: an asset absent from the files the agent can see is now "not found in the supplied files";
+  only an observed failed request makes it broken. Rerun twice: both reported it as unverified.
+- Added: answer in the user's language; fixes go through `/dev check` where a project uses `/dev`.
+- Not published: the package's run records (machine paths, a binary git index, ~100 files). The
+  evaluation cases and fixtures are included.
+
 ## v2.5 — 2026-09-27
 
 **sentry** — four rules from a live run against the Sentry MCP server:

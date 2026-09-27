@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Order status | Northstar</title>
+<style>body{font:1rem system-ui;max-width:42rem;margin:2rem auto;padding:1rem;color:#181818;background:#fff}button,input{font:inherit;padding:.75rem}button:focus-visible,input:focus-visible{outline:3px solid #1456b8;outline-offset:3px}.spinner{display:inline-block;width:1em;height:1em;border:2px solid #555;border-right-color:transparent;border-radius:50%}</style></head>
+<body><main><h1>Order status</h1><p>Your order number: <strong>ORD-1042</strong></p>
+<form id="lookup"><label for="order">Order number</label><input id="order" name="order" required value="ORD-1042"><button type="submit">Refresh status</button></form>
+<p id="status" role="status">Ready to check your order.</p></main><footer>Guide first published in 2021.</footer>
+<script>const form=document.querySelector('#lookup');const status=document.querySelector('#status');form.addEventListener('submit',e=>{e.preventDefault();const button=form.querySelector('button');button.disabled=true;status.innerHTML='<span class="spinner" aria-hidden="true"></span> Checking order status…';setTimeout(()=>{status.textContent='Your order is being prepared.';button.disabled=false},300)});</script></body></html>
