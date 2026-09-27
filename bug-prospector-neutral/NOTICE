@@ -1,0 +1,13 @@
+Copyright 2026 Terry Nyberg / Coffee & Code LLC
+(übernommen aus der NOTICE des Originals, Apache License 2.0 §4(d))
+
+bug-prospector-neutral ist eine angepasste Fassung von „Bug Prospector"
+aus https://github.com/Terryc21/xcode-workflow-skills (Autor: Terry Nyberg).
+Das Repository steht unter der Apache License 2.0 (siehe LICENSE); der
+Kopf der Original-SKILL.md nennt „license: MIT" und „author: Terry Nyberg". Diese
+Angaben sind hier festgehalten; der Kopf der angepassten SKILL.md trägt sie nicht mehr.
+
+Änderungen (25.09.2026): Swift/iOS-spezifische Beispiele, Suchmuster und
+Plattformfragen durch sprachneutrale bzw. TypeScript-, Svelte- und Rust-
+Entsprechungen ersetzt; Name, Beschreibung und Aufrufart geändert.
+Die sieben Linsen und das Berichtsformat sind unverändert.
