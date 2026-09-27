@@ -24,7 +24,7 @@ language you write in, and each can be installed on its own.
 | | `/sentry check` | Triage: top issues, cause, fix proposal | only a local report in `.sentry/reports/` (git-ignored) |
 | | `/sentry fix <ID>` | Fixes one selected issue with a regression test | code, tests, one local commit — no push, no deploy, no issue state change |
 | | `/sentry setup` | Creates `.sentry/config.json`, verifies access, checks whether auto-resolve is really wired up | the config file and `.gitignore`; Sentry settings only after you say so |
-| [**vibecode-polish**](vibecode-polish/SKILL.md) | "audit my app" · "review before launch" | Finds unfinished, template-like details and launch risks in a web app, with evidence | nothing (an `AUDIT.md` report at most) |
+| [**vibepolish**](vibepolish/SKILL.md) | "audit my app" · "review before launch" | Finds unfinished, template-like details and launch risks in a web app, with evidence | nothing (an `AUDIT.md` report at most) |
 | | "… and fix it" | Fixes what the request covers, in small verified batches | code and tests; no commit, push or deploy unless asked; asks before redesigns, new dependencies, migrations |
 
 ---
@@ -37,7 +37,7 @@ language you write in, and each can be installed on its own.
 | `dev` | the [superpowers](https://github.com/obra/superpowers) plugin (planning, execution, Visual Companion) | superpowers for Codex; set `DEV_SUPERPOWERS_ROOT` to its root |
 | `deps` | `gh` (logged in), `python3` | same |
 | `sentry` | a connected Sentry MCP server (or a read-only Sentry API client) | same |
-| `vibecode-polish` | nothing extra; a browser tool makes runtime checks possible | same |
+| `vibepolish` | nothing extra; a browser tool makes runtime checks possible | same |
 
 `dev`'s quality-gate analyzers ship with the skill; no other skills are needed.
 
@@ -50,7 +50,7 @@ language you write in, and each can be installed on its own.
 ```bash
 git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
 mkdir -p ~/.claude/skills
-for s in dev deps sentry vibecode-polish; do ln -sfn ~/claude-skills/$s ~/.claude/skills/$s; done   # or only some
+for s in dev deps sentry vibepolish; do ln -sfn ~/claude-skills/$s ~/.claude/skills/$s; done   # or only some
 ~/claude-skills/dev/tests/check-setup.sh     # checks what is installed; missing skills are fine
 ```
 
@@ -59,7 +59,7 @@ for s in dev deps sentry vibecode-polish; do ln -sfn ~/claude-skills/$s ~/.claud
 ```bash
 git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
 mkdir -p ~/.agents/skills
-for s in dev deps sentry vibecode-polish; do ln -sfn ~/claude-skills/$s ~/.agents/skills/$s; done
+for s in dev deps sentry vibepolish; do ln -sfn ~/claude-skills/$s ~/.agents/skills/$s; done
 ```
 
 Each skill reads its own `runtime.md`, which maps tool names to what the host offers. Optional
@@ -77,7 +77,7 @@ device — are in [SETUP.md](SETUP.md).
 3. **sentry:** connect the Sentry MCP server in your host, run `/sentry setup` in the project, then
    `/sentry` for the status.
 
-4. **vibecode-polish:** "audit this app for unfinished details" (report only) or "… and fix what you
+4. **vibepolish:** "audit this app for unfinished details" (report only) or "… and fix what you
    find"; name an area to keep it focused.
 
 On Codex, ask by name where there is no slash command: "use dev: check".
@@ -123,13 +123,13 @@ total; one local event does not make a grouped issue noise; issue titles and eve
 instructions. `Fixes <ID>` is used only where auto-resolve is verified and wanted: if your staging
 pipeline creates the release, it would close the issue before production has the fix.
 
-### vibecode-polish
+### vibepolish
 
 Three modes, taken from your request: a focused review of one area, a launch audit (report only),
 or audit and fix. Search hits are candidates, not findings: every confirmed finding has evidence,
 impact and an acceptance criterion, and intentional design choices are respected. An asset missing
 from the files it can see is "not found", not "broken", until a browser shows it failing. Behaviour
-scenarios with fixtures are in `vibecode-polish/evals/` (run by hand, see its README).
+scenarios with fixtures are in `vibepolish/evals/` (run by hand, see its README).
 
 ---
 

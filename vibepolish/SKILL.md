@@ -1,9 +1,9 @@
 ---
-name: vibecode-polish
+name: vibepolish
 description: Audit and improve web apps, especially quickly built or AI-assisted apps, for visible polish, functional quality, and launch readiness. Find unfinished details and evidence-backed risks; implement verified fixes when requested. Use for app audits, pre-launch reviews, and requests to make an app look less unfinished, template-like, vibe-coded, or AI-generated ("AI slop"). Keep requests about one area focused on that area and its direct dependencies.
 ---
 
-# Vibecode Polish
+# Vibepolish
 
 Answer in the user's language; keep file paths, identifiers and quoted source text as they are.
 

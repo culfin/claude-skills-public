@@ -1,5 +1,5 @@
 {
-  "skill_name": "vibecode-polish",
+  "skill_name": "vibepolish",
   "notes": "Development-only behavioral scenarios. Paths in files are relative to the skill root. Fixture-backed cases support bounded offline reviews; scenario-only cases require a suitable environment before execution. Do not claim any case passed without running it and inspecting observable results.",
   "evals": [
     {

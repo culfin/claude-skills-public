@@ -2,6 +2,12 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.6.1 — 2026-09-27
+
+**vibecode-polish is now called vibepolish** (directory, skill name, display name). Nothing else
+changed. If you linked it under the old name: `rm ~/.claude/skills/vibecode-polish` (or
+`~/.agents/skills/…`) and link `vibepolish` instead.
+
 ## v2.6 — 2026-09-27
 
 **New skill: vibecode-polish** — audits web apps (especially quickly built or AI-assisted ones) for
