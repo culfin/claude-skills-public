@@ -1,46 +1,46 @@
-# Befragung in Runden — Schritt 4a, architektonische Phasen
+# Interview in rounds — step 4a, architectural phases
 
-Herkunft der Technik: `grilling` aus github.com/mattpocock/skills (MIT). Das Format ist eigen:
-Auswahlknöpfe statt Fließtext. Spec: `claude-skills/docs/specs/2026-09-25-dev-verbesserungen-design.md`.
+Origin of the technique: `grilling` from github.com/mattpocock/skills (MIT). The format is our own:
+selection buttons instead of free text.
 
-Die Befragung ersetzt den Schritt „Klärungsfragen" des Brainstormings — nicht das Brainstorming.
-Einstufung, Lösungsansätze, Entwurf, Spec und Sperre bleiben bei `superpowers:brainstorming`.
+The interview replaces the "clarifying questions" step of brainstorming — not brainstorming itself.
+Classification, approaches, design, spec and lock remain with `superpowers:brainstorming`.
 
-## Ablauf
+## Procedure
 
-1. **Vorhandenes lesen:** ADRs unter `docs/adr/`, bestehende Specs der Roadmap, das Milestone-Ziel.
-   Was dort entschieden ist, wird nicht erneut gefragt.
-2. **Fakten selbst beschaffen.** Was Code, Konfiguration oder Doku beantworten können, wird
-   nachgesehen (bei Bedarf per Subagent) — nie den Nutzer fragen. Läuft eine Suche noch, warten nur
-   die Fragen, die von ihr abhängen; die übrigen kommen jetzt.
-3. **Entscheidungen in Runden** per `AskUserQuestion`: bis zu vier voneinander **unabhängige**
-   Fragen je Runde, jede mit 2–4 Optionen, die empfohlene zuerst mit „(Recommended)" und einer
-   Begründung in der Beschreibung. Fragen, die von einer offenen Antwort abhängen, kommen in die
-   nächste Runde. **Nie als Fließtext** mit (a)/(b)/(c) — auch nicht in der ersten Runde.
-   Enthält die Runde eine Frage mit UI/UX-Seite (Definition in `SKILL.md`), wird **vor dem
-   `AskUserQuestion`-Aufruf** der passende Screen geschrieben (Bausteine in `companion-screens.md`)
-   und die Companion-URL genannt; die Optionen heißen im Browser und im Terminal gleich.
-4. **Ende:** wenn keine Entscheidung mehr offen ist. Die Entscheidungen als kurze Liste
-   zusammenfassen und per `AskUserQuestion` bestätigen lassen („Stimmt das so?"). Hat der Nutzer
-   eine Runde nur mit den Empfehlungen durchgeklickt und hängt eine spätere Frage an einer dieser
-   Antworten, nennt die Zusammenfassung die weitreichendste davon ausdrücklich.
-5. **Übergabe an `superpowers:brainstorming`** mit diesem Hinweis, gefolgt von der Liste:
+1. **Read what exists:** ADRs under `docs/adr/`, existing specs from the Roadmap, the milestone goal.
+   Whatever is decided there is not asked again.
+2. **Gather facts yourself.** Anything that code, configuration or documentation can answer is
+   looked up (via subagent if needed) — never ask the user. If a search is still running, only the
+   questions that depend on it wait; the rest are asked now.
+3. **Decisions in rounds** via `AskUserQuestion`: up to four mutually **independent**
+   questions per round, each with 2–4 options, the recommended one first with "(Recommended)" and a
+   rationale in its description. Questions that depend on an open answer go into the
+   next round. **Never as free text** with (a)/(b)/(c) — not even in the first round.
+   If the round contains a question with a UI/UX side (definition in `SKILL.md`), the matching
+   screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
+   and the companion URL is given; the options have the same names in the browser and in the terminal.
+4. **End:** when no decision is left open. Summarize the decisions as a short list
+   and have the user confirm it via `AskUserQuestion` ("Is this correct?"). If the user clicked
+   through a round accepting only the recommendations and a later question depends on one of those
+   answers, the summary explicitly names the most far-reaching of them.
+5. **Hand-off to `superpowers:brainstorming`** with this note, followed by the list:
 
-   > Klärung abgeschlossen, Ergebnis unten. Einstufung: architektonisch. Beginne bei den
-   > Lösungsansätzen; stelle keine Klärungsfragen, die unten beantwortet sind. Das Verständnis ist
-   > bestätigt — nicht erneut zurückspiegeln. Der Visual Companion läuft bereits (URL unten).
-   > Biete ihn nicht an, nutze ihn direkt für jede Frage mit UI/UX-Seite und für
-   > Architektur-Diagramme; Bausteine in `companion-screens.md` des `/dev`-Skills. Übernimm die Liste
-   > als Abschnitt „Entscheidungen aus der Befragung" in die Spec.
+   > Clarification complete, result below. Classification: architectural. Start with the
+   > approaches; do not ask clarifying questions that are answered below. The understanding is
+   > confirmed — do not reflect it back again. The Visual Companion is already running (URL below).
+   > Do not offer it; use it directly for every question with a UI/UX side and for
+   > architecture diagrams; building blocks are in `companion-screens.md` of the `/dev` skill. Copy the list
+   > into the spec as the section "Decisions from the interview".
 
 ## ADRs
 
-- **Kriterium** — alle drei müssen gelten: schwer umkehrbar, ohne Kontext überraschend, Ergebnis
-  einer echten Abwägung. „Nicht erneut vorschlagen"-Entscheidungen zählen ausdrücklich dazu.
-- **Wann:** sobald eine Entscheidung der Befragung das Kriterium erfüllt, per `AskUserQuestion`
-  anbieten („Als ADR festhalten?").
-- **Format:** `docs/adr/NNNN-titel.md`, fortlaufend nummeriert (höchste vorhandene Nummer + 1);
-  das Verzeichnis erst beim ersten ADR anlegen. Inhalt: Überschrift und ein bis drei Sätze
-  (Kontext, Entscheidung, Grund). „Verworfene Alternativen" nur, wenn die Ablehnung nicht
-  offensichtlich ist.
-- Die Spec verweist auf die ADRs, die in ihrer Befragung entstanden sind.
+- **Criterion** — all three must hold: hard to reverse, surprising without context, result
+  of a genuine trade-off. "Do not suggest again" decisions explicitly count.
+- **When:** as soon as a decision from the interview meets the criterion, offer it via `AskUserQuestion`
+  ("Record as ADR?").
+- **Format:** `docs/adr/NNNN-title.md`, numbered consecutively (highest existing number + 1);
+  create the directory only with the first ADR. Content: heading and one to three sentences
+  (context, decision, reason). "Rejected alternatives" only if the rejection is not
+  obvious.
+- The spec references the ADRs that came out of its interview.

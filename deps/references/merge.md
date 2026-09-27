@@ -153,7 +153,7 @@ If user specifies `--limit N` (e.g., `/deps merge --limit 5`), only process the 
 2. **Group related packages** — same `@scope/` prefix or known pairs (e.g., `@typescript-eslint/parser` + `@typescript-eslint/eslint-plugin`, `next` + `eslint-config-next` + `@next/eslint-plugin-next`, `tailwindcss` + `@tailwindcss/postcss`). **However:** grouped PRs often conflict after the first one merges (each PR's lockfile was based on a different main). Handle this gracefully:
    - Merge the **leader** (primary package, e.g., `next`) first
    - Try merging followers (`eslint-config-next`, etc.) immediately after
-   - If a follower has `CONFLICTING` mergeability → skip it, mark as "wartet auf Dependabot Rebase" in the report. Dependabot auto-rebases within minutes.
+   - If a follower has `CONFLICTING` mergeability → skip it, mark as "waiting for Dependabot rebase" in the report. Dependabot auto-rebases within minutes.
    - These skipped PRs will be picked up in the next `/deps merge` session — OR, faster: if the beyond-Dependabot pass reaches the same dep at an equal-or-newer in-range version, close the PR as superseded instead of waiting (SKILL.md pattern 21). Cargo PRs usually DON'T need any of this — their lockfile hunks rarely overlap, merge them back-to-back (pattern 22).
 3. **Patches first** (compare semver from PR title: "from X.Y.Z to X.Y.W" where X.Y unchanged)
 4. **Then minor updates** (X unchanged)
@@ -484,7 +484,7 @@ after a dispatch: record a timestamp before dispatching and only trust runs with
 `createdAt > mark`.
 
 **Wait for CI to complete.** Report CI status to user:
-- **CI green** → "Alle Merges bestanden. CI auf $DEV_BRANCH ist grün. Bereit für /deps promote."
+- **CI green** → "All merges passed. CI on $DEV_BRANCH is green. Ready for /deps promote."
 - **CI red** → **diagnose before reverting anything** (see below). Only once a genuine test
   failure is confirmed: identify the failing test, find the causing merge via git log, revert
   it, push, and update the report.
@@ -643,7 +643,7 @@ branch — skip this whole section; the merge report is the final artifact. Chec
 EXISTING_PR=$(gh pr list --base $PROD_BRANCH --head $DEV_BRANCH --state open --json url --jq '.[0].url' 2>/dev/null)
 
 if [ -n "$EXISTING_PR" ]; then
-  echo "PR existiert bereits: $EXISTING_PR"
+  echo "PR already exists: $EXISTING_PR"
 else
   DATE=$(date +%Y-%m-%d)
   gh pr create \
@@ -654,6 +654,6 @@ else
 fi
 ```
 
-Display: "PR erstellt: {url} — Review und Merge auf GitHub wenn bereit."
+Display: "PR created: {url} — review and merge on GitHub when ready."
 
 **The only manual step is merging the PR on GitHub.** Everything else is automated.

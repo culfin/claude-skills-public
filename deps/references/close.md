@@ -28,11 +28,11 @@ PR #25: @anthropic-ai/sdk 0.80.0 → 0.82.0  (current)
 ### 2. Show Findings
 
 ```
-Superseded PRs (ältere Version, neuerer PR existiert):
-  #6  @anthropic-ai/sdk 0.81.0 — ersetzt durch #25 (0.82.0)
+Superseded PRs (older version, newer PR exists):
+  #6  @anthropic-ai/sdk 0.81.0 — superseded by #25 (0.82.0)
 
-Stale PRs (CI dauerhaft rot):
-  #5  nodemailer 8.0.4 — CI rot seit {date}
+Stale PRs (CI persistently red):
+  #5  nodemailer 8.0.4 — CI red since {date}
 ```
 
 ### 3. Close with Comment
@@ -50,7 +50,7 @@ gh pr close $PR_NUMBER --comment "Closed: CI persistently failing. Will retry wh
 ### 4. Report
 
 ```
-Geschlossen:
-  #6 @anthropic-ai/sdk 0.81.0 — ersetzt durch #25
-  Branches gelöscht: 1
+Closed:
+  #6 @anthropic-ai/sdk 0.81.0 — superseded by #25
+  Branches deleted: 1
 ```

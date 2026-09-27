@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 # dev/hooks/gate-check.py
-"""Stop-Hook fuer /dev-Projekte: erinnert EINMAL JE SITZUNG an /dev check, wenn Code geaendert
-wurde und danach kein Gate-Commit ([gate-pass]) kam.
+"""Stop hook for /dev projects: reminds about /dev check ONCE PER SESSION when code was changed
+and no gate commit ([gate-pass]) followed.
 
-Seit 27.09.2026 ein Hinweis an den Nutzer (systemMessage), kein Block mehr: Der Block erschien in
-Claude Code als "Stop hook error" und kam nach jedem neuen PR wieder, obwohl der Nutzer den Check
-fuer die Sitzung schon abgelehnt hatte. Der Nutzer entscheidet selbst, ob er /dev check aufruft.
+Since 2026-09-27 this is a notice to the user (systemMessage), no longer a block: Claude Code showed
+the block as "Stop hook error", and it came back after every new PR even though the user had
+already declined the check for the session. The user decides whether to run /dev check.
 
-- Aktiv nur, wenn vom Arbeitsverzeichnis aufwaerts eine ROADMAP.md liegt (die Suche endet an
-  einer Git-Wurzel ohne ROADMAP.md). Dieses Verzeichnis ist die Projektwurzel.
-- Kein Block in Sitzungen, in denen /dev geladen wurde (getippter Befehl /dev ... oder
-  Skill-Aufruf "dev"): dort fuehrt /dev die Phase und sichert das Gate selbst. Der Roadmap-Status
-  taugt dafuer nicht: liegengebliebene [~]-Phasen stehen in vielen Projekten seit Wochen.
-- Es zaehlen nur Code-Dateien innerhalb der Projektwurzel; docs/, .scratch/, .claude/,
-  .superpowers/ nur direkt an der Wurzel ignoriert, ebenso .worktrees/ (eigene Checkouts), node_modules/ ueberall.
-- Signal "Gate gelaufen": der juengste Commit (HEAD und alle lokalen Zweige, auch Worktree-Zweige)
-  der Projektwurzel mit [gate-pass] im Betreff (Autor-Zeit) ist nicht
-  aelter als die letzte Code-Aenderung (Sekundengenauigkeit). So zaehlen commit -F, git -C und
-  Heredocs; fehlgeschlagene Commits und Commits in anderen Repos zaehlen nicht.
-- Je Sitzung hoechstens ein Hinweis. Fail-open: fehlender Zeitstempel, scheiterndes git
-  oder jeder andere Fehler -> durchlassen.
-Bekannte Luecken: Aenderungen per Bash (sed -i, Heredoc, Skripte) und durch Subagenten stehen
-nicht als Edit/Write im Haupttranscript und werden nicht gezaehlt.
-Herkunft: Pilot-Hook vom 25.09.2026, nach dem Vorbild eines projekteigenen Gate-Hooks.
+- Active only if a ROADMAP.md exists in the working directory or one of its parents (the search
+  stops at a Git root without ROADMAP.md). That directory is the project root.
+- No notice in sessions where /dev was loaded (typed command /dev ... or Skill call "dev"): there
+  /dev drives the phase and secures the gate itself. The roadmap status is unsuitable for this:
+  stale [~] phases have been sitting in many projects for weeks.
+- Only code files inside the project root count; docs/, .scratch/, .claude/, .superpowers/ are
+  ignored only directly at the root, as is .worktrees/ (separate checkouts); node_modules/ everywhere.
+- Signal "gate has run": the newest commit (HEAD and all local branches, including worktree
+  branches) of the project root with [gate-pass] in the subject (author time) is not older than
+  the last code change (second precision). This way commit -F, git -C and heredocs count; failed
+  commits and commits in other repos do not.
+- At most one notice per session. Fail-open: missing timestamp, failing git or any other
+  error -> let through.
+Known gaps: changes made via Bash (sed -i, heredoc, scripts) and by subagents do not appear as
+Edit/Write in the main transcript and are not counted.
+Origin: pilot hook from 2026-09-25, modeled on a project-specific gate hook.
 """
 import datetime
 import json
@@ -33,15 +33,15 @@ import sys
 CODE_EXT = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".svelte", ".vue", ".rs", ".py",
             ".go", ".swift", ".kt", ".kts", ".cs", ".sql", ".css", ".scss", ".php", ".module",
             ".inc", ".theme", ".twig", ".sh", ".java", ".rb", ".html")
-# .superpowers/: Arbeitsdateien der Superpowers-Skills (Brainstorming-Entwuerfe, Ledger) -
-# git-ignoriert, kein Projektcode. Seit 25.09.2026, nach Fehlalarmen auf HTML-Entwuerfen.
+# .superpowers/: working files of the Superpowers skills (brainstorming mockups, ledger) -
+# git-ignored, not project code. Since 2026-09-25, after false alarms on HTML mockups.
 ROOT_IGNORED = ("/docs/", "/.scratch/", "/.claude/", "/.worktrees/", "/.superpowers/")
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 DEV_COMMAND = "<command-name>/dev</command-name>"
 HINT = (
-    "DEV-GATE: Code ausserhalb von /dev geaendert, seitdem kein /dev check "
-    "(kein Commit mit [gate-pass]). Bei Bedarf /dev check aufrufen - "
-    "dieser Hinweis kommt je Sitzung nur einmal."
+    "DEV-GATE: Code changed outside /dev, no /dev check since "
+    "(no commit with [gate-pass]). Run /dev check if needed - "
+    "this notice appears only once per session."
 )
 
 
@@ -131,9 +131,9 @@ def scan(lines, root):
 
 
 def gate_time(root):
-    # Autor-Zeit (%at) statt Commit-Zeit: Rebase, Amend und Cherry-pick setzen die Commit-Zeit
-    # neu und wuerden ein altes Gate juenger machen. Marke nur im Betreff (%s) zaehlt; --grep
-    # sucht in der ganzen Nachricht, daher wird nachgefiltert.
+    # Author time (%at) instead of commit time: rebase, amend and cherry-pick reset the commit
+    # time and would make an old gate look newer. Only the marker in the subject (%s) counts;
+    # --grep searches the whole message, hence the post-filtering.
     r = subprocess.run(
         ["git", "-C", root, "log", "-n", "50", "HEAD", "--branches", "--fixed-strings",
          "--grep=[gate-pass]", "--format=%at%x09%s"],

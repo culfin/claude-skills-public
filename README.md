@@ -1,131 +1,106 @@
 # claude-skills
 
-**Arbeitsabläufe für [Claude Code](https://claude.com/claude-code), die im täglichen Einsatz an
-Produktivprojekten entstanden sind:** ein Orchestrator, der Projekte Phase für Phase durch ein
-verpflichtendes Quality Gate führt, eine Verwaltung für Abhängigkeits-Updates und
-Sicherheitswarnungen und ein Analysewerkzeug für Fehler, die Linter und Tests nicht finden.
-
-> **Sprache:** Die Skills sind auf Deutsch geschrieben und lassen Claude auf Deutsch antworten.
-> Befehle, Dateinamen und Commit-Präfixe bleiben englisch.
-> *The skills are written in German and make Claude reply in German.*
+**Workflows for [Claude Code](https://claude.com/claude-code), built and refined in daily use on
+production projects:** an orchestrator that takes a project phase by phase through a mandatory
+quality gate, and a manager for dependency updates and security alerts.
 
 ---
 
-## Inhalt
+## Contents
 
-| Skill | Aufruf | Zweck |
+| Skill | Invoke | Purpose |
 |---|---|---|
-| [**dev**](dev/SKILL.md) | `/dev` | Führt ein Projekt anhand einer `ROADMAP.md` durch Klärung, Planung, Umsetzung und Qualitätsprüfung. |
-| [**deps**](deps/SKILL.md) | `/deps` | Verwaltet Dependabot-Updates und Sicherheitswarnungen von der Analyse bis zur Auslieferung. |
-| [**bug-prospector-neutral**](bug-prospector-neutral/SKILL.md) | über `/dev` oder auf Wunsch | Sucht versteckte Fehler durch sieben Analyseperspektiven, unabhängig von der Programmiersprache. |
+| [**dev**](dev/SKILL.md) | `/dev` | Drives a project from a `ROADMAP.md` through clarification, planning, implementation and quality review. |
+| [**deps**](deps/SKILL.md) | `/deps` | Manages Dependabot updates and security alerts, from impact analysis to release. |
+
+Both skills answer in the language you write in.
 
 ---
 
-## `/dev` — Projekte in Phasen, jede mit Quality Gate
+## `/dev` — phased delivery with a quality gate
 
-`/dev` ist ein Dirigent: Er schreibt selbst keinen Code, sondern ruft zur richtigen Zeit die
-passenden Skills auf und sorgt dafür, dass keine Phase ohne Prüfung als erledigt gilt.
+`/dev` is a conductor: it writes no code itself, but calls the right skills at the right time and
+makes sure no phase counts as done without being verified.
 
-**Ablauf einer Phase**
+**A phase, step by step**
 
-1. **Klärung** — Fragen in Runden mit Auswahlmöglichkeiten, die empfohlene Antwort zuerst.
-   Architekturentscheidungen werden als Diagramm, Oberflächenfragen als Entwurf im Browser
-   gezeigt (Visual Companion).
-2. **Plan und Umsetzung** — über die Skills des Plugins
-   [superpowers](https://github.com/obra/superpowers): Spezifikation, Implementierungsplan,
-   Umsetzung durch Subagenten mit Review je Aufgabe.
-3. **Quality Gate** — nicht abschaltbar. Code-Bereinigung, Review, parallele Analysen (Fehler,
-   Performance, Sicherheit, Stack-spezifische Regeln), Abgleich gegen die Spezifikation,
-   Typprüfung, Lint, Tests, Produktions-Build, E2E-Tests und CI-Status.
-4. **Abschluss** — ein Gate-Commit mit `[gate-pass]` im Betreff, eine Zusammenfassung in
-   `STATE.md` und der Haken in der Roadmap.
+1. **Clarify** — questions in rounds with selectable answers, the recommended one first.
+   Architecture decisions are shown as diagrams and UI questions as mockups in the browser
+   (Visual Companion).
+2. **Plan and build** — via the [superpowers](https://github.com/obra/superpowers) plugin:
+   specification, implementation plan, execution by subagents with a review per task.
+3. **Quality gate** — cannot be switched off. Code cleanup, review, parallel analyses (bugs,
+   performance, security, stack-specific rules), a check against the specification, type check,
+   lint, tests, production build, end-to-end tests and CI status.
+4. **Close** — a gate commit with `[gate-pass]` in the subject, a summary in `STATE.md` and the
+   phase checked off in the roadmap.
 
-**Grundsätze, die der Skill durchsetzt**
+**Principles the skill enforces**
 
-- **Jeder Haken braucht einen Beleg.** Ein Prüfschritt gilt erst als erledigt, wenn seine
-  Ausgabe gelesen und notiert ist.
-- **Tests müssen einmal rot gewesen sein.** Fehlt für ein Akzeptanzkriterium ein Test, wird er
-  geschrieben und gegen eine absichtlich gebrochene Stelle geprüft.
-- **Halt bei Irreversiblem.** Migrationen, Deploys, Releases, Force-Pushes und Nachrichten an
-  echte Empfänger brauchen eine ausdrückliche Freigabe, auch wenn der Plan sie vorsieht.
-- **Zustand überlebt die Sitzung.** `ROADMAP.md` und `STATE.md` halten fest, wo die Arbeit
-  steht; eine unterbrochene Phase wird beim nächsten `/dev` fortgesetzt.
+- **Every checkmark needs evidence.** A gate step only counts once its output has been read and
+  recorded.
+- **Every test must have failed once.** If an acceptance criterion has no test, one is written
+  and proven against a deliberately broken implementation.
+- **Stop before the irreversible.** Migrations, deploys, releases, force pushes and messages to
+  real recipients require explicit approval, even when the plan includes them.
+- **State outlives the session.** `ROADMAP.md` and `STATE.md` record where the work stands; an
+  interrupted phase resumes on the next `/dev`.
 
-**Befehle**
+**Commands**
 
-| Befehl | Wirkung |
+| Command | Effect |
 |---|---|
-| `/dev init` | Legt `ROADMAP.md` und `STATE.md` im Dialog an. |
-| `/dev` · `/dev next` | Zeigt den Stand und startet oder setzt die nächste Phase fort. |
-| `/dev status` | Vollständige Roadmap-Übersicht. |
-| `/dev add` · `skip` · `reorder` | Roadmap pflegen. |
-| `/dev check` | Das Quality Gate für Änderungen außerhalb einer Phase. |
-| `/dev debug` | Systematische Fehlersuche mit Wissensbasis aus früheren Fällen. |
-| `/dev review` | Vollprüfung vor einem Release. |
-| `/dev pause` | Sitzung sauber übergeben. |
+| `/dev init` | Creates `ROADMAP.md` and `STATE.md` interactively. |
+| `/dev` · `/dev next` | Shows progress and starts or resumes the next phase. |
+| `/dev status` | Full roadmap overview. |
+| `/dev add` · `skip` · `reorder` | Maintain the roadmap. |
+| `/dev check` | Runs the quality gate on changes made outside a phase. |
+| `/dev debug` | Systematic debugging with a knowledge base of past cases. |
+| `/dev review` | Full pre-release review. |
+| `/dev pause` | Hands the session over cleanly. |
 
-Ein optionaler **Stop-Hook** (`dev/hooks/gate-check.py`) erinnert einmal je Sitzung an
-`/dev check`, wenn in einem Roadmap-Projekt Code ohne anschließenden Gate-Commit geändert wurde.
+An optional **stop hook** (`dev/hooks/gate-check.py`) reminds you once per session to run
+`/dev check` when code in a roadmap project changed without a subsequent gate commit.
 
 ---
 
-## `/deps` — Abhängigkeiten aktuell und sicher halten
+## `/deps` — keep dependencies current and secure
 
-Führt Dependabot-Pull-Requests und Sicherheitswarnungen durch einen nachvollziehbaren Ablauf,
-statt sie ungeprüft zu mergen oder liegen zu lassen.
+Takes Dependabot pull requests and security alerts through a traceable process instead of
+merging them blindly or letting them pile up.
 
-| Befehl | Wirkung |
+| Command | Effect |
 |---|---|
-| `/deps` | Stand: offene Updates, offene Sicherheitswarnungen, Abstand zwischen Entwicklungs- und Produktionszweig. |
-| `/deps check` | Wirkung aller offenen Updates und Warnungen analysieren, ohne etwas zu ändern. |
-| `/deps merge` | Geeignete Updates mergen, testen und einen Bericht erstellen. |
-| `/deps audit` | Sicherheitswarnungen abarbeiten, transitive Lücken per Override schließen. |
-| `/deps close` | Überholte und verwaiste Update-PRs schließen. |
-| `/deps promote` | Den geprüften Stand per Pull Request in den Produktionszweig bringen. |
-| `/deps setup` | Einmalige Einrichtung im Projekt. |
+| `/deps` | Status: open updates, open security alerts, gap between development and production branch. |
+| `/deps check` | Analyzes the impact of all open updates and alerts without changing anything. |
+| `/deps merge` | Merges eligible updates, runs the tests and writes a report. |
+| `/deps audit` | Works through security alerts and closes transitive vulnerabilities via overrides. |
+| `/deps close` | Closes superseded and stale update PRs. |
+| `/deps promote` | Brings the verified state to the production branch via pull request. |
+| `/deps setup` | One-time project setup. |
 
-Unterstützt npm, pnpm, Yarn, Bun, Cargo, Swift Package Manager und Gradle. Standardmäßig wird auf `main`
-entwickelt und nach `prod` ausgeliefert; abweichende Zweignamen stehen in `.deps/config.json`.
-Der Skill enthält 35 im Betrieb gelernte Muster, etwa wie sich ein echter
-Update-Fehler von einer überlasteten CI unterscheiden lässt.
-
----
-
-## `bug-prospector-neutral` — Fehler finden, die niemand gesucht hat
-
-Linter finden Muster, Tests prüfen, woran man gedacht hat. Dieser Skill sucht das Dritte: Stellen,
-an denen der Code stillschweigend etwas annimmt, das nicht immer gilt. Er betrachtet den Code
-durch sieben Linsen:
-
-1. Annahmen
-2. Zustandsautomaten
-3. Grenzwerte
-4. Datenlebenszyklus
-5. Fehlerpfade
-6. Zeitabhängiges Verhalten
-7. Plattformunterschiede
-
-Das Ergebnis ist ein Bericht mit Fundstellen, Schweregrad und Begründung. `/dev` setzt ihn im
-Quality Gate automatisch ein; direkt aufgerufen wird er nur auf ausdrücklichen Wunsch.
+Supports npm, pnpm, Yarn, Bun, Cargo, Swift Package Manager and Gradle. By default, development
+happens on `main` and releases go to `prod`; other branch names can be set in `.deps/config.json`.
+The skill carries 35 patterns learned in production — for example, how to tell a genuinely broken
+update from an overloaded CI runner.
 
 ---
 
 ## Installation
 
-**Voraussetzung:** [Claude Code](https://claude.com/claude-code).
+**Requirement:** [Claude Code](https://claude.com/claude-code).
 
 ```bash
 git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
 mkdir -p ~/.claude/skills
-for s in dev deps bug-prospector-neutral; do
+for s in dev deps; do
   ln -sfn ~/claude-skills/$s ~/.claude/skills/$s
 done
 ```
 
-Die Skills stehen danach in jeder Claude-Code-Sitzung zur Verfügung. Wer nur einzelne braucht,
-verlinkt nur diese.
+The skills are then available in every Claude Code session. Link only the ones you need.
 
-**Stop-Hook für `/dev` (optional)**
+**Stop hook for `/dev` (optional)**
 
 ```bash
 python3 - <<'PY'
@@ -140,54 +115,52 @@ open(p, 'w').write(json.dumps(s, indent=2, ensure_ascii=False) + '\n')
 PY
 ```
 
-**Einrichtung prüfen**
+**Verify the setup**
 
 ```bash
 ~/claude-skills/dev/tests/check-setup.sh
 ```
 
-### Weitere Voraussetzungen für `/dev`
+### Additional requirements for `/dev`
 
-| Was | Wofür |
+| What | Why |
 |---|---|
-| Plugin [superpowers](https://github.com/obra/superpowers) | Brainstorming, Pläne, Umsetzung durch Subagenten, Visual Companion |
-| Skills aus [Terryc21/xcode-workflow-skills](https://github.com/Terryc21/xcode-workflow-skills) | Analysen im Quality Gate für Swift-Projekte (`bug-prospector`, `performance-check`, `scan-similar-bugs`, …). Web- und Rust-Projekte nutzen `bug-prospector-neutral`. |
-| Google Chrome | nur für `dev/tests/check-screens.sh` |
+| [superpowers](https://github.com/obra/superpowers) plugin | Brainstorming, plans, subagent execution, Visual Companion |
+| Analysis skills such as those in [Terryc21/xcode-workflow-skills](https://github.com/Terryc21/xcode-workflow-skills) (`bug-prospector`, `performance-check`, `scan-similar-bugs`, …) | The analysis steps of the quality gate. Missing skills are reported and skipped, not fatal. |
+| Google Chrome | Only for `dev/tests/check-screens.sh` |
 
-**Visual Companion von einem anderen Gerät öffnen:** Standardmäßig lauscht der Server nur auf
-`localhost`. Wer ihn etwa über Tailscale vom Tablet aus nutzen will, setzt vorher
+**Opening the Visual Companion from another device:** by default the server listens on
+`localhost` only. To use it from, say, a tablet over Tailscale, set
 
 ```bash
-export DEV_COMPANION_URL_HOST=mein-rechner.tailnet.ts.net
+export DEV_COMPANION_URL_HOST=my-machine.tailnet.ts.net
 ```
 
-Der Server lauscht dann auf allen Schnittstellen und nennt diesen Host in seiner Adresse.
+The server then listens on all interfaces and advertises that host in its URL. To make this
+permanent for Claude Code, add it under `"env"` in `~/.claude/settings.json`.
 
 ---
 
 ## Tests
 
 ```bash
-cd dev/hooks && python3 -m unittest test_gate_check   # Stop-Hook
-dev/tests/check-setup.sh                              # Installation
-dev/tests/check-screens.sh                            # Darstellung der Companion-Bausteine
+cd dev/hooks && python3 -m unittest test_gate_check   # stop hook
+dev/tests/check-setup.sh                              # installation
+dev/tests/check-screens.sh                            # rendering of the companion building blocks
 ```
 
 ---
 
-## Mitwirken
+## Contributing
 
-Fehler und Vorschläge gern als [Issue](https://github.com/culfin/claude-skills-public/issues).
-Die Skills sind aus der Praxis gewachsen; jede Regel darin hat einen Anlass. Wer eine ändern
-möchte, beschreibt am besten, welche Situation sie nicht abdeckt.
+Bug reports and suggestions are welcome as [issues](https://github.com/culfin/claude-skills-public/issues).
+These skills grew out of practice, and every rule in them exists for a reason. If you want to
+change one, the most helpful thing is to describe the situation it does not cover.
 
-## Autor
+## Author
 
 **Andreas Polzer**
 
-## Lizenz
+## License
 
-[MIT](LICENSE). Ausgenommen ist `bug-prospector-neutral`: Er ist eine Bearbeitung von
-„Bug Prospector" aus [Terryc21/xcode-workflow-skills](https://github.com/Terryc21/xcode-workflow-skills)
-(Terry Nyberg) und steht unter der Apache License 2.0 — siehe
-[LICENSE](bug-prospector-neutral/LICENSE) und [NOTICE](bug-prospector-neutral/NOTICE).
+[MIT](LICENSE)

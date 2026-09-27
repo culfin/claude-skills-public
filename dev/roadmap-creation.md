@@ -36,7 +36,7 @@ First, discover what skills are available and what might be missing:
 **5d. Security review before installing** — for any external skill found:
 - Read the SKILL.md content via WebFetch (raw GitHub URL)
 - Check for suspicious patterns: shell commands that exfiltrate data, encoded strings, network calls to unknown hosts, file operations outside project scope
-- AskUserQuestion: "Skill X von <Quelle> gefunden. Installieren? (Empfohlen)" with description of what it does
+- AskUserQuestion: "Found skill X from <source>. Install? (Recommended)" with description of what it does
 - Only install after user confirms. Install command: try `npx skills add <url> -y -g`, fallback to manual download into `~/.claude/skills/`
 
 **5e. Configure triggers** — multiSelect per trigger point:
@@ -67,43 +67,43 @@ Write ROADMAP.md to project root.
 **7. Create STATE.md** — always create alongside ROADMAP.md:
 
 ```markdown
-# <Projektname> — Projektstatus
+# <Project name> — Project State
 
-## Aktuelle Position
+## Current Position
 
-Milestone: 1 von N (<Milestone-Name>)
-Nächste Phase: Phase 1 — <Phasenname>
-Status: Startet
-Letzte Aktivität: <heutiges Datum> — Projekt initialisiert
+Milestone: 1 of N (<milestone name>)
+Next phase: Phase 1 — <phase name>
+Status: Starting
+Last activity: <today's date> — project initialized
 
-## Fortschritt
+## Progress
 
-| Milestone | Fortschritt | Status |
+| Milestone | Progress | Status |
 |-----------|------------|--------|
-| 1. <Name> | 0/N | Nicht gestartet |
+| 1. <Name> | 0/N | Not started |
 | ... | | |
 
-## Kernziel
+## Core Value
 
-<ein Satz aus dem Projektziel>
+<one sentence from the project goal>
 
-## Einschränkungen
+## Constraints
 
-<aus Benutzereingabe bei Init, oder leer>
+<from user input at init, or empty>
 
-## Anforderungen
+## Requirements
 
-<aus Benutzereingabe, oder "Offen — wird im ersten Milestone definiert">
+<from user input, or "Open — defined in the first milestone">
 
-## Blocker & Risiken
+## Blockers & Risks
 
-Keine.
+None.
 
-## Session-Kontinuität
+## Session Continuity
 
-Letzte Session: <heutiges Datum>
-Gestoppt bei: Projekt initialisiert
-Fortsetzen: `/dev next` um erste Phase zu starten
+Last session: <today's date>
+Stopped at: project initialized
+Resume: `/dev next` to start the first phase
 ```
 
 Commit both ROADMAP.md and STATE.md together.

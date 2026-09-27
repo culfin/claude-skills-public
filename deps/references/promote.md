@@ -28,7 +28,7 @@ Creates a PR to promote dependency updates from main to prod, and syncs branches
    ```bash
    gh run list --branch $DEV_BRANCH --limit 1 --json status,conclusion,name
    ```
-   - CI must show `conclusion: "success"`. If CI is red or pending → STOP: "CI auf $DEV_BRANCH ist nicht grün. Bitte warten oder Fehler beheben bevor promoted wird."
+   - CI must show `conclusion: "success"`. If CI is red or pending → STOP: "CI on $DEV_BRANCH is not green. Please wait or fix the failures before promoting."
 5. **Check report exists:** `.deps/last-report.md`
    - If not → warn: "No merge report found. Showing diff instead."
 
@@ -55,7 +55,7 @@ If no diff → "main and prod are already in sync. Nothing to promote."
 EXISTING_PR=$(gh pr list --base $PROD_BRANCH --head $DEV_BRANCH --state open --json url --jq '.[0].url' 2>/dev/null)
 
 if [ -n "$EXISTING_PR" ]; then
-  echo "PR existiert bereits: $EXISTING_PR"
+  echo "PR already exists: $EXISTING_PR"
 else
   DATE=$(date +%Y-%m-%d)
   gh pr create \
@@ -90,8 +90,8 @@ This ensures all conflict resolution happens on main, and prod only ever receive
 
 "PR created: {url}
 
-Review und Merge auf GitHub — **unbedingt 'Create a merge commit' verwenden, NICHT 'Rebase and merge'!**
-Rebase erzeugt neue Commit-SHAs auf prod, was die Branches divergieren lässt."
+Review and merge on GitHub — **be sure to use 'Create a merge commit', NOT 'Rebase and merge'!**
+Rebase creates new commit SHAs on prod, which makes the branches diverge."
 
 **Do NOT merge the PR automatically.** The user must approve and merge on GitHub.
 
@@ -99,7 +99,7 @@ Rebase erzeugt neue Commit-SHAs auf prod, was die Branches divergieren lässt."
 
 **After the user has merged the promote PR on GitHub**, prod has a merge commit that main doesn't know about. This MUST be synced back.
 
-> **Scope:** this runs only when `/deps promote` itself created and merged the PR — here the sync-back deliberately pulls back `/deps`'s *own* fresh promote merge commit (so it uses the raw `PROD_AHEAD`, unlike the Step 3 pre-flight which measures real drift with `--no-merges`). If this repo promotes via a different workflow that intentionally skips sync-back (e.g. a project's own `/vision-prod`, leaving prod ahead by merge nodes by design), `/deps promote` is not the promote path and this step does not run — do not retrofit a sync-back onto that workflow.
+> **Scope:** this runs only when `/deps promote` itself created and merged the PR — here the sync-back deliberately pulls back `/deps`'s *own* fresh promote merge commit (so it uses the raw `PROD_AHEAD`, unlike the Step 3 pre-flight which measures real drift with `--no-merges`). If this repo promotes via a different workflow that intentionally skips sync-back (e.g. a project's own prod-release command, leaving prod ahead by merge nodes by design), `/deps promote` is not the promote path and this step does not run — do not retrofit a sync-back onto that workflow.
 
 **Option A: Automatic (if still in the same session)**
 
@@ -113,9 +113,9 @@ if [ "$PROD_AHEAD" -gt 0 ]; then
   git pull origin $DEV_BRANCH
   git merge origin/$PROD_BRANCH --no-edit
   git push origin $DEV_BRANCH
-  echo "✅ Branches synchronisiert. prod ist nicht mehr ahead."
+  echo "✅ Branches synchronized. prod is no longer ahead."
 else
-  echo "✅ Branches sind bereits synchron."
+  echo "✅ Branches are already in sync."
 fi
 ```
 
@@ -124,4 +124,4 @@ fi
 The `/deps` status command checks for prod-ahead divergence and offers to sync. The `/deps promote` pre-flight (Step 3) also auto-fixes this before creating a new promote PR. So even if the sync doesn't happen immediately, it will be caught and fixed automatically.
 
 **Inform user:**
-"Nach dem Merge der PR auf GitHub: entweder hier bestätigen (ich synchronisiere die Branches), oder beim nächsten `/deps` wird es automatisch erkannt und behoben."
+"After merging the PR on GitHub: either confirm here (I will synchronize the branches), or the next `/deps` run will detect and fix it automatically."

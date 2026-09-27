@@ -9,7 +9,7 @@ Automates the Dependabot PR lifecycle: analyze, merge, test, promote.
 
 ## Language
 
-**All user-facing communication in German (Deutsch).** Technical terms, commit prefixes, and file paths stay in English.
+**All user-facing communication in the user's language** (the language the user writes in or their instructions specify). Technical terms, commit prefixes, and file paths stay in English.
 
 ## Commands
 
@@ -88,7 +88,7 @@ Available commands:
 ```
 
 **If prod is ahead of main with REAL commits (`PROD_AHEAD_REAL > 0`):** Display warning and offer to sync immediately:
-"⚠️ prod ist {PROD_AHEAD_REAL} echte(r) Commit(s) ahead von main (kein Promote-Merge-Knoten). Soll ich prod in main mergen um die Branches zu synchronisieren?"
+"⚠️ prod is {PROD_AHEAD_REAL} real commit(s) ahead of main (not promote merge nodes). Should I merge prod into main to synchronize the branches?"
 If yes → run the sync-back (see promote.md Step 5).
 
 **If prod is ahead only by merge commits (`PROD_AHEAD > 0` but `PROD_AHEAD_REAL == 0`):** do NOT warn and do NOT offer a sync. This is the expected steady state for a merge-commit promote workflow without sync-back (main is the linear trunk; prod accumulates promote merge nodes). main already holds all the content, so there is no drift to fix.
@@ -108,7 +108,7 @@ These rules apply to ALL commands. Never skip or work around them.
 9. **Merge via GitHub API** — `gh pr merge --squash --delete-branch`, not local git merge
 10. **Detect test scripts from package.json** — never guess script names, read them
 11. **Fix ALL warnings after merges** — lint, build, and test output must be warning-free before report
-12. **Prod must never be ahead of main with REAL commits** — measure divergence with `--no-merges` (`git rev-list --count --no-merges $DEV_BRANCH..$PROD_BRANCH`). A non-zero count means a hotfix or change landed on prod that main lacks → sync prod back into main (see promote.md Step 5). **Merge-commit-only "ahead" is NOT drift** and must not trigger a sync: a promote workflow that merges `main→prod` with `--merge` and no sync-back (e.g. a project's own `/vision-prod`) leaves prod ahead by promote merge nodes forever, while main holds all content as the linear trunk. Check for *real* divergence in `/deps` status and `/deps promote` pre-flight; ignore merge-only ahead.
+12. **Prod must never be ahead of main with REAL commits** — measure divergence with `--no-merges` (`git rev-list --count --no-merges $DEV_BRANCH..$PROD_BRANCH`). A non-zero count means a hotfix or change landed on prod that main lacks → sync prod back into main (see promote.md Step 5). **Merge-commit-only "ahead" is NOT drift** and must not trigger a sync: a promote workflow that merges `main→prod` with `--merge` and no sync-back (e.g. a project's own prod-release command) leaves prod ahead by promote merge nodes forever, while main holds all content as the linear trunk. Check for *real* divergence in `/deps` status and `/deps promote` pre-flight; ignore merge-only ahead.
 
 ## Branch Strategy
 

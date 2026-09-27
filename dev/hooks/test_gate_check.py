@@ -51,7 +51,7 @@ def init_repo(root):
 
 
 def hinted(result):
-    """Der Hook meldet sich als Hinweis an den Nutzer (systemMessage), nicht als Block."""
+    """The hook reports as a notice to the user (systemMessage), not as a block."""
     return bool(result) and str(result.get("systemMessage", "")).startswith("DEV-GATE")
 
 class DevGateCheckTest(unittest.TestCase):
@@ -62,7 +62,7 @@ class DevGateCheckTest(unittest.TestCase):
         init_repo(self.root)
         self.state = os.path.join(self.tmp.name, "state")
         os.makedirs(self.state)
-        self.roadmap("- [x] Phase 1: Fertig\n- [ ] Phase 2: Offen\n")
+        self.roadmap("- [x] Phase 1: Done\n- [ ] Phase 2: Open\n")
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -89,7 +89,7 @@ class DevGateCheckTest(unittest.TestCase):
             payload["cwd"] = cwd or self.root
         return gate_check.decide(payload, self.state, env={} if env is None else env)
 
-    # Gate-Signal
+    # Gate signal
     def test_edit_without_gate_hints(self):
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))])))
 
@@ -111,7 +111,7 @@ class DevGateCheckTest(unittest.TestCase):
     def test_gate_commit_from_message_file_counts(self):
         msg = os.path.join(self.tmp.name, "msg.txt")
         with open(msg, "w") as fh:
-            fh.write("chore: dev check [gate-pass]\n\nlang\n")
+            fh.write("chore: dev check [gate-pass]\n\nlong\n")
         git(self.root, "commit", "-q", "--allow-empty", "-F", msg, date="2026-09-25T10:05:00Z")
         self.assertIsNone(self.run_with([edit(self.src("src/a.ts"))]))
 
@@ -131,7 +131,7 @@ class DevGateCheckTest(unittest.TestCase):
         self.assertIsNone(self.run_with([edit(self.src(".worktrees/feature/src/a.ts"))]))
 
     def test_brainstorm_mockups_in_superpowers_dir_are_ignored(self):
-        # Entwuerfe des Brainstorming-Begleiters (HTML) sind kein Projektcode.
+        # Mockups of the brainstorming companion (HTML) are not project code.
         self.assertIsNone(self.run_with([edit(self.src(".superpowers/brainstorm/1-2/content/layout.html"))]))
 
     def test_rebased_old_gate_does_not_count(self):
@@ -141,16 +141,16 @@ class DevGateCheckTest(unittest.TestCase):
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))])))
 
     def test_marker_only_in_body_does_not_count(self):
-        self.gate_commit("2026-09-25T10:05:00Z", message="feat: Hook\n\nerkennt jetzt [gate-pass] im Betreff")
+        self.gate_commit("2026-09-25T10:05:00Z", message="feat: hook\n\nnow detects [gate-pass] in the subject")
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))])))
 
     def test_older_body_mention_does_not_hide_real_gate(self):
         self.gate_commit("2026-09-25T10:04:00Z", message="chore: dev check [gate-pass]")
-        self.gate_commit("2026-09-25T10:06:00Z", message="docs: Notiz\n\nsiehe [gate-pass] oben")
+        self.gate_commit("2026-09-25T10:06:00Z", message="docs: note\n\nsee [gate-pass] above")
         self.assertIsNone(self.run_with([edit(self.src("src/a.ts"))]))
 
     def test_commit_without_marker_does_not_count(self):
-        self.gate_commit("2026-09-25T10:05:00Z", message="feat: irgendwas")
+        self.gate_commit("2026-09-25T10:05:00Z", message="feat: something")
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))])))
 
     def test_not_a_git_repo_allows(self):
@@ -160,13 +160,13 @@ class DevGateCheckTest(unittest.TestCase):
     def test_edit_without_timestamp_allows(self):
         self.assertIsNone(self.run_with([edit(self.src("src/a.ts"), ts=None)]))
 
-    # Aktivierung
+    # Activation
     def test_no_roadmap_allows(self):
         os.remove(os.path.join(self.root, "ROADMAP.md"))
         self.assertIsNone(self.run_with([edit(self.src("src/a.ts"))]))
 
     def test_stale_active_phase_without_dev_session_hints(self):
-        self.roadmap("- [x] Phase 1: Fertig\n- [~] Phase 2: seit Wochen liegengeblieben\n")
+        self.roadmap("- [x] Phase 1: Done\n- [~] Phase 2: stale for weeks\n")
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))])))
 
     def test_typed_dev_command_allows(self):
@@ -192,7 +192,7 @@ class DevGateCheckTest(unittest.TestCase):
         os.makedirs(os.path.join(other, ".git"))
         self.assertIsNone(self.run_with([edit(os.path.join(other, "x.ts"))], cwd=other))
 
-    # Was als Code zaehlt
+    # What counts as code
     def test_edit_outside_project_allows(self):
         self.assertIsNone(self.run_with([edit(os.path.join(self.tmp.name, "other-repo", "x.py"))]))
 
@@ -213,13 +213,13 @@ class DevGateCheckTest(unittest.TestCase):
             with self.subTest(rel=rel):
                 self.assertTrue(hinted(self.run_with([edit(self.src(rel))], session=rel)))
 
-    # Einmal je Sitzung
+    # Once per session
     def test_second_stop_without_new_edit_allows(self):
         events = [edit(self.src("src/a.ts"))]
         self.assertTrue(hinted(self.run_with(events)))
         self.assertIsNone(self.run_with(events))
 
-    # Seit 27.09.2026: hoechstens ein Hinweis je Sitzung, auch nach neuen Aenderungen.
+    # Since 2026-09-27: at most one notice per session, even after new changes.
     def test_new_edit_after_hint_stays_quiet(self):
         self.run_with([edit(self.src("src/a.ts"))])
         events = [edit(self.src("src/a.ts")), edit(self.src("src/b.ts"), ts="2026-09-25T10:01:00.000Z")]
@@ -232,7 +232,7 @@ class DevGateCheckTest(unittest.TestCase):
         self.run_with([edit(self.src("src/a.ts"))], session="one")
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))], session="two")))
 
-    # Robustheit
+    # Robustness
     def test_cwd_falls_back_to_env(self):
         result = self.run_with([edit(self.src("src/a.ts"))], cwd=False, env={"CLAUDE_PROJECT_DIR": self.root})
         self.assertTrue(hinted(result))
@@ -242,7 +242,7 @@ class DevGateCheckTest(unittest.TestCase):
 
     def test_malformed_lines_are_ignored(self):
         raw = ["not json", "[]", json.dumps({"type": "user"}), json.dumps({"message": "text"}),
-               json.dumps({"message": {"content": [{"type": "tool_use", "name": "Edit", "input": "kaputt"}]}})]
+               json.dumps({"message": {"content": [{"type": "tool_use", "name": "Edit", "input": "broken"}]}})]
         self.assertTrue(hinted(self.run_with([edit(self.src("src/a.ts"))], raw_lines=raw)))
 
 
