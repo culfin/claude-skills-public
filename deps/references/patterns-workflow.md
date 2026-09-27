@@ -2,7 +2,7 @@
 
 Apply to every ecosystem. Numbers are stable across files — other references cite them as "pattern N".
 
-5. **Dev-deps have 100% pass rate** — Across 8+ merges, zero dev-dependency updates broke anything. Batch them (Wave 1) and validate once at the end.
+5. **Dev-deps rarely break — batch them, but still validate** — In the observed runs (8+ merges) no dev-dependency update broke anything, which is why they share one batch (Wave 1) validated once at the end. An observation, not a guarantee: a linter, type checker or test runner major can break the build like any runtime dependency — those go to Wave 3.
 
 6. **Runtime deps need individual validation** — Merge one at a time with `typecheck + lint + test` after each. This catches the exact culprit on failure.
 
@@ -24,4 +24,4 @@ Apply to every ecosystem. Numbers are stable across files — other references c
 
 21. **Supersede instead of another rebase round** — When remaining PRs keep flipping to CONFLICTING after each merge AND the beyond-Dependabot pass (`$PM update`/`cargo update`) reaches the SAME dep at an equal-or-newer in-range version, skip further rebase+CI rounds: run the beyond-pass, validate, push, then close those PRs with a comment naming the superseding commit ("Superseded: vite 8.2.1 via <sha>"). Condition to check first: PR target version ≤ what the update command reaches in-range. Observed: 2 PRs × ~8 min rebase+CI saved, and the result was NEWER than the stale PRs (vite 8.2.1 > 8.2.0, thiserror 2.0.20 > 2.0.19). pnpm v10 `pnpm update` also bumps the package.json ranges, so manifest + lockfile both end up current — the close-as-superseded is honest. This beats Pattern 2's "wait for next session" whenever the beyond-pass covers the dep anyway.
 
-25. **`prodBranch: null` = single-trunk repo — and jq's `//` eats the null** — Projects whose dev branch is the ONLY branch set `"prodBranch": null` in `.deps/config.json`. Then: skip promote entirely (no promote PR, no main↔prod diff in status; the merge report is the final artifact). ⚠ `jq -r '.prodBranch // "prod"'` maps an explicit `null` to `"prod"` — the alternative operator treats null as absent — so auto-promote would open a PR against a branch that doesn't exist. Guard first: `jq -e '.prodBranch != null'` before any promote step.
+25. **`prodBranch: null` = single-trunk repo — and jq's `//` eats the null** — Projects whose dev branch is the ONLY branch set `"prodBranch": null` in `.deps/config.json`. Then: skip promote entirely (no promote PR, no main↔prod diff in status; the merge report is the final artifact). ⚠ `jq -r '.prodBranch // "prod"'` maps an explicit `null` to `"prod"` — the alternative operator treats null as absent — so auto-promote would open a PR against a branch that doesn't exist. Guard first: `jq -e '.prodBranch != null'` before any promote step. `scripts/branch_config.py` implements this guard (empty output = no prod branch); use it instead of `jq`.

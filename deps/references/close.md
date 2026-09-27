@@ -12,8 +12,10 @@ Closes superseded or stale Dependabot PRs.
 ### 1. Detect Superseded PRs
 
 ```bash
-# List all open Dependabot PRs
-gh pr list --author "app/dependabot" --state open --json number,title,headRefName
+DEV_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" devBranch) || exit 1
+# List all open Dependabot PRs against the dev branch (paginated; see merge.md)
+OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+python3 "$DEPS_DIR/scripts/collect_prs.py" --repo "$OWNER_REPO" --base "$DEV_BRANCH" | jq -r '.[] | "\(.number)\t\(.title)\t\(.head.ref)"'
 ```
 
 Parse package names and versions from PR titles. Group by package. If multiple PRs exist for the same package, the older version is superseded.

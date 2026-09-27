@@ -104,6 +104,11 @@ done
 
 The skills are then available in every Claude Code session. Link only the ones you need.
 
+**Codex:** link the same two directories into Codex's skills directory instead. Both skills resolve
+their own paths (`runtime.md` in each) and need no Claude-specific setup; the stop hook below is
+Claude Code only. For the Visual Companion, set `DEV_SUPERPOWERS_ROOT` to the active superpowers
+plugin root.
+
 **Stop hook for `/dev` (optional)**
 
 ```bash
@@ -150,6 +155,7 @@ permanent for Claude Code, add it under `"env"` in `~/.claude/settings.json`.
 ```bash
 dev/analyzers/benchmark/run.sh                        # analyzers against known bugs (needs claude CLI)
 cd dev/hooks && python3 -m unittest test_gate_check   # stop hook
+python3 -m unittest discover -s deps/tests            # deps helper scripts
 dev/tests/check-setup.sh                              # installation
 dev/tests/check-screens.sh                            # rendering of the companion building blocks
 ```

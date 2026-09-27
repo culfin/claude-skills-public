@@ -2,6 +2,47 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.1 — 2026-09-27
+
+Seven defects found in an independent review of v1.0 that were still present in v2.0, each fixed
+with the smallest change — plus Codex support.
+
+**dev**
+- Gate 5k waited for CI with `gh run list --branch` but never pushed: it could read the previous
+  commit's green run as the verdict. Now the gate commit is made available through an already
+  allowed route (else: blocker), and only runs whose `headSha` equals the gate commit count.
+- "The error was already there before" now needs proof: the same failure reproduced on the unchanged
+  base in a separate worktree, with the change's own tests still running. A note is not enough.
+- Evidence belongs to one state of the code: a later change reopens the checks it touches.
+- Old `@skills:` names of the former third-party analyzers map to `analyzers/`.
+
+**deps**
+- PR listing used `gh pr list` (30 PRs by default, all target branches). New
+  `scripts/collect_prs.py`: paginated, only the dev branch, fails instead of undercounting.
+- `.deps/config.json` with `"prodBranch": null` was turned into `prod` by `jq`'s `//` (pattern 25).
+  New `scripts/branch_config.py` validates both branch names; empty prod = no promote.
+- Major updates with a migration: the text said "migrate before merging", the steps committed the
+  migration to the dev branch first — broken until the update landed. Migration now goes onto the
+  PR branch; update and migration are tested and merged as one head.
+- Revert counted commits (`HEAD~N..HEAD`) and reverted a bisect hit unchecked — both can hit someone
+  else's push. Now every merge SHA of the run goes into a ledger under `.git`; only those are
+  reverted, bisect runs in its own worktree with a fresh install per step.
+- Auto-merge detection stopped on any workflow file mentioning "dependabot" and "merge". Now only an
+  enabled workflow that really merges, or GitHub auto-merge on a PR, counts as competition.
+- Patterns 4 and 5 were stated as laws ("Playwright never runs locally", "dev-deps have 100 % pass
+  rate"); they are observations now.
+
+**Both**
+- Codex: `runtime.md` per skill maps tool names to host capabilities; paths resolve from the skill's
+  own directory (`$DEV_DIR`, `$DEPS_DIR`); the Visual Companion is found via
+  `DEV_COMPANION_SCRIPTS_DIR` / `DEV_SUPERPOWERS_ROOT`, with Claude Code's plugin cache as fallback.
+- Found while testing on macOS: a loop variable named `path` overwrites `$PATH` in zsh.
+
+`collect_prs.py`, `branch_config.py` and their tests come from that review's package; not adopted
+from it: the JSON evidence ledger with its validator (checks form, not truth — the one rule worth
+keeping is above), the shortening of the 35 deps patterns to ten general lessons, and its own
+review procedures (dev keeps the benchmarked `analyzers/`).
+
 ## v2.0 — 2026-09-27
 
 **dev — no third-party analysis skills any more.** The quality gate used to call `/bug-prospector`,

@@ -1,6 +1,6 @@
 ---
 name: deps
-description: "Use when user says /deps, /deps setup, /deps check, /deps merge, /deps audit, /deps close, or /deps promote. Manages Dependabot dependency updates AND security alerts: analyzes impact, merges PRs to main with testing, fixes transitive vulnerabilities via overrides, closes superseded PRs, promotes to prod via PR."
+description: "Use when user says /deps, /deps setup, /deps check, /deps merge, /deps audit, /deps close, or /deps promote, or asks to use deps for one of these. Manages Dependabot dependency updates AND security alerts: analyzes impact, merges PRs to main with testing, fixes transitive vulnerabilities via overrides, closes superseded PRs, promotes to prod via PR."
 ---
 
 # Dependency Update Management
@@ -24,6 +24,12 @@ Automates the Dependabot PR lifecycle: analyze, merge, test, promote.
 | `/deps merge --limit N` | Merge only the first N PRs (for incremental merging across sessions) | `references/merge.md` |
 | `/deps` (no subcommand) | Show status: open Dependabot PRs, **open security alerts**, last merge report date, main↔prod diff | See "Status" below |
 
+## Paths and host
+
+`$DEPS_DIR` is the directory of this `SKILL.md` (wherever the host installed it). The helper scripts in
+`$DEPS_DIR/scripts/` are read-only and need only `python3` and `gh`. On hosts other than Claude Code
+(e.g. Codex) read `runtime.md` first.
+
 ## Routing
 
 1. Parse user input for subcommand: `setup`, `merge`, `check`, `audit`, `close`, `promote`
@@ -39,12 +45,13 @@ Automates the Dependabot PR lifecycle: analyze, merge, test, promote.
 When user runs just `/deps`:
 
 ```bash
-# Read branch config (defaults: main/prod)
-DEV_BRANCH=$(cat .deps/config.json 2>/dev/null | jq -r '.devBranch // "main"')
-PROD_BRANCH=$(cat .deps/config.json 2>/dev/null | jq -r '.prodBranch // "prod"')
+# Read branch config (defaults: main/prod; "prodBranch": null → empty = no promote)
+DEV_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" devBranch) || exit 1
+PROD_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" prodBranch) || exit 1   # empty = single-trunk repo, no promote
 
-# Count open Dependabot PRs
-gh pr list --author "app/dependabot" --state open --json number | jq length
+# Count open Dependabot PRs targeting the dev branch (all pages; fails loudly instead of undercounting)
+OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+python3 "$DEPS_DIR/scripts/collect_prs.py" --repo "$OWNER_REPO" --base "$DEV_BRANCH" | jq length
 
 # Count open security alerts by severity (SEPARATE signal from PRs — transitive vulns have NO PR)
 OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
@@ -100,7 +107,7 @@ These rules apply to ALL commands. Never skip or work around them.
 1. **Never merge PRs with red or pending CI** — skip and report
 2. **Never push directly to prod** — always create a PR
 3. **Never rewrite git history** — always `git revert` (new commit), never `git reset --hard`
-4. **Never merge if auto-merge workflow exists on remote** — hard STOP, run setup first
+4. **Never merge while something else merges Dependabot PRs** — an *enabled* workflow that merges or auto-merges them, or GitHub auto-merge switched on for a PR. A disabled or unrelated workflow file is not a blocker (check in merge.md step 6); a real competitor → STOP, run setup first
 5. **Always run local validation after every runtime merge** — typecheck + lint + unit tests; revert and stop on failure. Dev-deps: validate once after all.
 6. **Always wait for CI before promote** — E2E/Playwright runs on GitHub CI, not locally; promote (auto or manual) requires green CI
 7. **Always push reverts immediately** — dev branch must never stay broken
@@ -129,8 +136,8 @@ Read `references/ecosystems.md` for project type detection, package manager iden
 | 1 | Lockfile breaks 60% of sequential merges | js |
 | 2 | Grouped PRs conflict after leader merge | js |
 | 3 | Next.js type cache causes false failures | js |
-| 4 | Playwright never runs locally | ci |
-| 5 | Dev-deps have 100% pass rate | workflow |
+| 4 | E2E often cannot run locally — check, don't assume | ci |
+| 5 | Dev-deps rarely break — batch them, but still validate | workflow |
 | 6 | Runtime deps need individual validation | workflow |
 | 7 | `gh pr merge --squash` is silent on success | ci |
 | 8 | Test script names vary | js |

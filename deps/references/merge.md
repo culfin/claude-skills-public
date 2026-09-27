@@ -14,13 +14,19 @@ Must be empty. If not → STOP: "Uncommitted changes detected. Commit or stash b
 
 ### 2. Read branch config
 ```bash
-# Read dev branch from config, default to "main"
-DEV_BRANCH=$(cat .deps/config.json 2>/dev/null | jq -r '.devBranch // "main"')
+# Read dev branch from config, default to "main" (validated; stops on an invalid config)
+DEV_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" devBranch) || exit 1
 ```
 
 ### 3. Pull latest dev branch
 ```bash
 git checkout $DEV_BRANCH && git pull origin $DEV_BRANCH
+```
+
+Start this run's merge ledger (used by the revert strategy). It lives inside `.git`, so it is never
+committed and never trips the clean-tree check:
+```bash
+LEDGER="$(git rev-parse --absolute-git-dir)/deps-merged-this-run.txt"; : > "$LEDGER"
 ```
 
 ### 4. Snapshot rollback point
@@ -44,26 +50,43 @@ echo "Package manager: $PM"
 
 Use `$PM` consistently for all subsequent commands (`$PM install`, `$PM run typecheck`, etc.).
 
-### 6. Verify no auto-merge workflow on remote (TWO checks required)
-```bash
-# Check 1: No auto-merge workflow FILES in repo
-for f in .github/workflows/*.yml .github/workflows/*.yaml; do
-  [ -f "$f" ] || continue
-  if grep -qi "dependabot" "$f" && grep -qi "merge" "$f"; then
-    echo "FOUND: $f — STOP"
-  fi
-done
+### 6. Verify nothing else merges Dependabot PRs
 
-# Check 2: No active auto-merge WORKFLOWS via GitHub API
-gh api repos/{owner}/{repo}/actions/workflows --jq '.workflows[] | select(.name | test("dependabot|auto.merge"; "i")) | .name'
+Competition means something that **actually merges** and is **actually enabled** — not a file that
+mentions both words. A workflow disabled on GitHub, one triggered by `merge_group`, or one that only
+labels PRs is no competitor.
+
+```bash
+OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+# a) enabled workflows whose file merges or enables auto-merge
+gh api "repos/$OWNER_REPO/actions/workflows" --paginate --jq '.workflows[] | select(.state=="active") | .path' |
+while read -r wf; do   # not "path": in zsh that variable is $PATH
+  case "$wf" in .github/workflows/*) ;; *) continue ;; esac   # skip GitHub's built-in dynamic workflows
+  gh api "repos/$OWNER_REPO/contents/$wf?ref=$DEV_BRANCH" --jq .content 2>/dev/null | base64 -d |
+    grep -qiE 'gh pr merge|automerge|auto-merge' &&
+    echo "CANDIDATE: $wf — read it: does it merge Dependabot PRs?"
+done
+# b) Dependabot PRs with GitHub's own auto-merge switched on
+python3 "$DEPS_DIR/scripts/collect_prs.py" --repo "$OWNER_REPO" --base "$DEV_BRANCH" | jq -r '.[].number' | while read -r n; do
+  gh pr view "$n" --json number,autoMergeRequest -q 'select(.autoMergeRequest != null) | "AUTO-MERGE ON: #\(.number)"'
+done
 ```
-Both must return empty. If either finds something → STOP: "Auto-merge workflow still active on remote. Run /deps setup first."
+Read every `CANDIDATE` file before deciding: STOP ("Run /deps setup first") only if it merges or
+auto-merges Dependabot PRs. For `AUTO-MERGE ON`, disable it on that PR (`gh pr merge <N> --disable-auto`)
+or ask, before touching the PR.
 
 ## Collect and Sort PRs
 
 ### List open Dependabot PRs
 ```bash
-gh pr list --author "app/dependabot" --state open --json number,title,headRefName,statusCheckRollup,updatedAt
+# Every open Dependabot PR against the dev branch — paginated. `gh pr list` stops at 30 by default
+# and includes PRs against other branches. Non-zero exit = coverage unknown: stop, do not continue
+# with a partial list.
+OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+python3 "$DEPS_DIR/scripts/collect_prs.py" --repo "$OWNER_REPO" --base "$DEV_BRANCH" > /tmp/deps-prs.json || exit 1
+jq -r '.[] | "\(.number)\t\(.head.sha)\t\(.title)"' /tmp/deps-prs.json
+# CI state per PR, right before deciding on it:
+# gh pr view <N> --json headRefOid,statusCheckRollup
 ```
 
 ### Detect and close superseded PRs first
@@ -188,17 +211,22 @@ For each major update:
 2. **Usage scan** — find every file that imports/uses the package. For each usage, check if it uses any API that changed.
 3. **Risk assessment:**
    - **Low risk** (merge normally): Major bumps that don't affect our usage (e.g., dropped support for old Node versions we don't use, renamed internal APIs we don't call).
-   - **Medium risk** (merge + migrate): Breaking changes that affect our code but have a clear migration path. Apply the migration BEFORE merging — create a migration commit on a temp branch, then merge the Dependabot PR.
+   - **Medium risk** (migrate, then merge together): Breaking changes that affect our code but have a clear migration path. Update and migration land as **one** reviewed state — the dev branch is never broken in between.
    - **High risk** (skip + report): Breaking changes with unclear migration, or infrastructure changes that affect the whole stack (e.g., Node version bumps that mismatch CI). Skip and explain in detail in the report what needs to happen.
-4. **Migration strategy for medium risk:**
+4. **Migration strategy for medium risk:** the migration goes onto the Dependabot PR's branch, so
+   update and migration are tested and merged as one candidate. Never commit the migration to the
+   dev branch first — until the update lands, that state is broken for everyone.
    ```
    a) Read migration guide from changelog/docs
-   b) Find affected files via grep
-   c) Apply code changes (rename APIs, update imports, adjust config)
-   d) Commit migration: "refactor: migrate to {package} v{version}"
-   e) THEN merge the Dependabot PR via gh pr merge --squash
-   f) Pull, install, validate (typecheck + lint + test)
-   g) If validation fails: revert BOTH the migration commit AND the merge
+   b) gh pr checkout <N>   (or, if the PR cannot be updated: a branch from the dev branch with
+      the version bump + migration, opened as its own PR; close the Dependabot PR as superseded)
+   c) Find affected files via grep, apply code changes (rename APIs, update imports, adjust config)
+   d) Commit "refactor: migrate to {package} v{version}" on that branch, install, validate locally
+      (typecheck + lint + test)
+   e) Push the branch; wait for required CI on its new head SHA (not the PR's old run)
+   f) Merge only when both are green: gh pr merge <N> --squash --match-head-commit <sha>
+   g) If validation fails before the merge: nothing to revert — report it, leave the PR open.
+      Dependabot will not rebase a PR with foreign commits; say so in the report.
    ```
 5. **Infrastructure majors** (Node Docker image, @types/node):
    - Check if the new Node version is LTS (`node --version` schedule)
@@ -378,15 +406,25 @@ the user (pattern 31 in `patterns-js.md`).
 
 ### f) Revert strategy (on failure)
 
+**Revert only what this run merged — by SHA, never by counting.** Record every merge commit the
+moment it lands, in the report's ledger:
+
 ```bash
-# The squash-merge was done via GitHub API, so main has the merge commit.
-# Revert the most recent merge commit (and any test commits for this PR).
-git revert --no-commit HEAD~N..HEAD   # N = number of commits since before this PR's merge
-git commit -m "revert: $PACKAGE update (tests failed)"
+MERGED_SHA=$(gh pr view <N> --json mergeCommit -q .mergeCommit.oid)   # after gh pr merge
+echo "<N> $PACKAGE $MERGED_SHA" >> "$LEDGER"
+```
+
+On failure, revert exactly the ledger entry (and any test-coverage commit this run made for it):
+
+```bash
+git fetch origin && git checkout $DEV_BRANCH && git pull --ff-only origin $DEV_BRANCH
+git revert --no-edit $MERGED_SHA
 git push origin $DEV_BRANCH
 ```
 
-**Note:** Since lockfile fixes are deferred to "After All Merges", the revert only needs to cover the merge commit itself (and any test-coverage commits for this PR). This is typically `git revert HEAD` for a single merge.
+`HEAD~N..HEAD` is wrong: if anyone else pushed in the meantime, it reverts their work. If the
+cause points at a commit that is **not** in the ledger — someone else's push — do not revert it:
+stop, and report the evidence to the user.
 
 - Report the failure with details (which test failed, error message)
 - **STOP processing** — do not merge further PRs
@@ -455,15 +493,21 @@ $PM lint
 $PM test                   # Unit tests (exact script from package.json)
 ```
 
-If local validation fails, use git bisect to find the causing merge:
+If local validation fails, use git bisect to find the causing merge — in a separate worktree, so the
+user's checkout stays untouched, and with a fresh install per step:
 ```bash
+git worktree add /tmp/deps-bisect $DEV_BRANCH && cd /tmp/deps-bisect
 git bisect start HEAD $ROLLBACK_HASH
-git bisect run sh -c '$PM typecheck && $PM test'
+git bisect run sh -c "$FROZEN_INSTALL && $PM typecheck && $PM test"   # FROZEN_INSTALL: npm ci | pnpm install --frozen-lockfile | yarn install --immutable
 BAD_COMMIT=$(git bisect view --format="%H")
-git bisect reset
+git bisect reset && cd - && git worktree remove /tmp/deps-bisect
+grep -q "$BAD_COMMIT" "$LEDGER" || { echo "Not ours: $BAD_COMMIT — stop and report"; exit 1; }
 git revert $BAD_COMMIT --no-edit
 git push origin $DEV_BRANCH
 ```
+Bisect points at a commit, not at a cause: confirm the failure on that commit and a green run on its
+parent before reverting. An install that fails for unrelated reasons is not a "bad" revision
+(`git bisect skip`).
 Update the report: mark the identified package as "reverted after local validation failure".
 
 ### Wait for CI (E2E validation)

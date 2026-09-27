@@ -133,6 +133,9 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
   AND the decisive output line follows it: `- [x] Typecheck + lint + tests — 0 errors, 412 passed`.
   No evidence → the checkmark stays open. "Looks right", "should pass" and "I already checked
   that earlier" are not evidence.
+- **Evidence belongs to one state of the code.** Any code change after a check — a fix from 5c,
+  a simplification, a rebase — reopens every checkmark whose scope it touches; rerun those checks on
+  the new state. A result from before the change is history, not evidence.
 - **A command whose output was not read has not run.** Exit code 0 is not enough if the
   output went through a pipe (`| tail`, `| head`, `2>/dev/null`) — a pipe can swallow the
   status of the left-hand side. When in doubt, repeat the command without the pipe.
@@ -167,7 +170,7 @@ These steps run regardless of `@skills:` configuration — they are hardcoded in
   supposed to meet — not the reasoning for why the solution is correct. If you pass along your
   conclusions, you get their confirmation back instead of a review.
 
-**Scope and analyzers:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Each analysis below is one subagent that receives `analyzers/CONTRACT.md` plus its analyzer file — how to dispatch it, what to hand over and the output format are in the contract. The `Result:` line of each report is the evidence for its checkmark. Nothing needs to be installed.
+**Scope and analyzers:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Each analysis below is one subagent that receives `analyzers/CONTRACT.md` plus its analyzer file — how to dispatch it, what to hand over and the output format are in the contract. The `Result:` line of each report is the evidence for its checkmark. Nothing needs to be installed. Older ROADMAPs may still name the former third-party skills under `@skills:` (`bug-prospector`, `security-audit`, `performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`, also with a leading `/`): treat each as the matching analyzer, not as a missing skill.
 
   **5c-i. Bug hunt (phase scope)** (`analyzers/bugs.md`) — analyzes the files changed in this phase through 7 lenses (assumptions, state machines, boundary conditions, data lifecycle, error paths, time-dependent behavior, platform divergence). **Scope:** Only the changed files and their immediate callers/dependencies — NOT the entire codebase.
 
@@ -253,7 +256,20 @@ This builds up a quality knowledge log across phases and makes cross-phase patte
 - `.github/workflows/` exists in the project, OR
 - `@gate: ci-wait` is set
 
-If CI is configured: wait for CI completion via `gh run watch` or `gh run list --branch <branch>`. Timeout: 10 minutes. On CI failure: show logs, repair, create a new Gate commit. `[x]` may only be set after CI is green.
+If CI is configured:
+1. **CI must see the gate commit.** A local commit triggers nothing. Make it available through the
+   route the project already allows (push of the phase branch, PR update, workflow dispatch). If no
+   such route is authorized, stop and name that as the blocker — never push to a protected or
+   production branch for this, and never read an older run as the answer.
+2. **Only runs of this exact commit count.** Record the SHA (`git rev-parse HEAD`) and accept a run
+   only if its `headSha` equals it: `gh run list --commit <sha> --json databaseId,status,conclusion,name`.
+   The newest run on the branch may still be the previous commit's green one; an empty list means
+   "not started yet", not "passed". Every required workflow needs its own result; `skipped` or
+   `cancelled` is not a pass.
+3. Wait with `gh run watch <id>`. After 10 minutes without a verdict, report it as pending with the
+   run IDs instead of cancelling. On failure: show logs, repair, new gate commit, repeat from 1.
+
+`[x]` only with every required run of this SHA green; the evidence line names the SHA and run IDs.
 
 If no CI: skip, omit the checklist entry.
 - After completion: check off `[ ] CI status check` in STATE.md Gate Checklist.
@@ -272,7 +288,7 @@ one of these thoughts comes up, that is the signal to **do** the step — not to
 | "The analyzer hung, let's skip it" | The 15-minute timeout in 5c is meant for **one** hanging subagent, not as a shortcut. Timeout means: note it as "timeout — skipped" in STATE.md so the gap stays visible. Two timeouts in the same gate are a finding, not background noise. |
 | "tsc is green, the build will go through" | That is exactly why 5f is a separate step: `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
 | "The tests already ran earlier" | Earlier was before `/simplify`, before the fixes from 5c and before 5d — each of them changes code. 5e runs **after** all fixes, otherwise it proves the wrong state. |
-| "The error was already there before" | Could be — then it must be documented (STATE.md, Blockers & Risks), not silently passed over. Undocumented, it becomes your own regression on the next run. |
+| "The error was already there before" | Then prove it: reproduce the **same** failure (same test, same cause — not just the same count) on the unchanged base, in a separate worktree, never by resetting the user's tree. It only counts as pre-existing if this change neither causes nor hides it and the tests covering this change still run and pass. Record it in STATE.md (Blockers & Risks) with the evidence; it never excuses a failing required CI run. Unproven means it is yours. |
 | "I know what the check would find" | Then it costs nothing. A check whose result you predict is the cheapest one — and the one where the prediction is most often wrong. |
 | "The user wants to finish quickly" | The user wants a finished state, not one that looks finished. Requests for speed do not shrink the gate; whoever wants to shrink it says so explicitly and chooses `@gate: fast` or a suitable `@type:`. |
 | "Set the checkmark, I'll write the evidence later" | Later the context is gone and the checkmark stays. Evidence and checkmark come into being together or not at all. |

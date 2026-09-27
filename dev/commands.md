@@ -68,7 +68,7 @@ Explicitly saves session state for clean handoff to next conversation.
    - `Resume`: specific next action (e.g., "`/dev next` to continue planning Phase 6")
 2. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
-   - Then stop the server: `~/.claude/skills/dev/scripts/companion-stop.sh <session_dir>`
+   - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
 3. Show confirmation: "Session saved. Next time, run `/dev` to resume."
 
 ---

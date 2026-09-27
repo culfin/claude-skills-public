@@ -129,11 +129,13 @@ Store in `.deps/config.json` if overridden:
 **This is critical for safety. Both systems cannot coexist.**
 
 ```bash
-# Find ALL auto-merge workflows (don't assume filename)
+# Find workflows that merge Dependabot PRs (don't assume filename). A hit is a candidate:
+# read it and confirm it really merges before proposing removal — a workflow that only labels
+# PRs or runs on merge_group is not a competitor.
 FOUND_WORKFLOWS=()
 for f in .github/workflows/*.yml .github/workflows/*.yaml; do
   [ -f "$f" ] || continue
-  if grep -qi "dependabot" "$f" && grep -qi "merge" "$f"; then
+  if grep -qi "dependabot" "$f" && grep -qiE 'gh pr merge|automerge|auto-merge' "$f"; then
     FOUND_WORKFLOWS+=("$f")
     echo "Found: $f"
   fi

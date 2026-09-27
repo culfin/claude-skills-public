@@ -8,8 +8,9 @@ Creates a PR to promote dependency updates from main to prod, and syncs branches
 
 1. **Read branch config:**
    ```bash
-   DEV_BRANCH=$(cat .deps/config.json 2>/dev/null | jq -r '.devBranch // "main"')
-   PROD_BRANCH=$(cat .deps/config.json 2>/dev/null | jq -r '.prodBranch // "prod"')
+   DEV_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" devBranch) || exit 1
+   PROD_BRANCH=$(python3 "$DEPS_DIR/scripts/branch_config.py" prodBranch) || exit 1   # empty = single-trunk repo, no promote
+   [ -n "$PROD_BRANCH" ] || { echo "prodBranch is null: single-trunk repo, nothing to promote"; exit 0; }
    ```
 2. **Pull latest dev branch:** `git checkout $DEV_BRANCH && git pull origin $DEV_BRANCH`
 3. **Check for REAL divergence (prod ahead of main):**

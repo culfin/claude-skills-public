@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, or /dev check. Also use at session start when ROADMAP.md exists in project root (then only a one-line status)."
+description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, or /dev check. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
 ---
 
 ## Language
@@ -49,7 +49,8 @@ Manages a project's ROADMAP.md and sequences superpowers cycles for each phase. 
 
 ## Files of This Skill
 
-Load only what the current step needs.
+`$DEV_DIR` is the directory of this `SKILL.md`; all paths below are relative to it. Load only what
+the current step needs.
 
 | File | Holds | Read when |
 |---|---|---|
@@ -58,6 +59,7 @@ Load only what the current step needs.
 | `state.md` | What STATE.md holds and when each part changes | Before writing STATE.md |
 | `companion.md` | Visual Companion: when browser vs terminal, mandatory triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
+| `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per session, before the first tool call of the workflow |
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
 | `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |

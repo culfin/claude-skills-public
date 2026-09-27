@@ -2,7 +2,7 @@
 
 Read before trusting or dismissing any CI result. Numbers are stable across files — other references cite them as "pattern N".
 
-4. **Playwright never runs locally** — Requires DB + specific ports. E2E validation happens via CI after push, not locally.
+4. **E2E often cannot run locally — check, don't assume** — In the project this came from, Playwright needed a database and fixed ports, so E2E ran only in CI after the push. Where the project can run it locally, do. Either way the E2E result must belong to the candidate being merged.
 
 7. **`gh pr merge --squash` is silent on success** — Don't expect output. Check with `git pull` after to confirm the merge landed.
 

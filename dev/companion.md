@@ -42,7 +42,7 @@ The Visual Companion is a browser-based server that renders HTML screens. It is 
 # The wrapper resolves the newest installed superpowers companion and sets
 # the display host itself: if DEV_COMPANION_URL_HOST is set (e.g. a Tailscale name),
 # the server listens on all interfaces and reports that host, otherwise localhost.
-~/.claude/skills/dev/scripts/companion.sh --project-dir <project-root>
+$DEV_DIR/scripts/companion.sh --project-dir <project-root>
 # Returns JSON, including:
 #   "url":        http://<host>:PORT/?key=<TOKEN>  ← MUST be used verbatim
 #   "screen_dir": <session>/content  ← write HTML screens here
