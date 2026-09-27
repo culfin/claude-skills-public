@@ -129,7 +129,8 @@ Three modes, taken from your request: a focused review of one area, a launch aud
 or audit and fix. Search hits are candidates, not findings: every confirmed finding has evidence,
 impact and an acceptance criterion, and intentional design choices are respected. An asset missing
 from the files it can see is "not found", not "broken", until a browser shows it failing. Behaviour
-scenarios with fixtures are in `vibepolish/evals/` (run by hand, see its README).
+scenarios with fixtures are in `vibepolish/evals/`; `vibepolish/evals/run.sh` runs the executable ones
+(uses model credit), results in `vibepolish/evals/RESULTS.md`.
 
 ---
 
@@ -163,6 +164,7 @@ With a model — each run starts sessions with the `claude` CLI and uses your pl
 ```bash
 dev/analyzers/benchmark/run.sh          # do the analyzers find five known production bugs?
 sentry/tests/scenarios/run.sh           # 13 sentry decision scenarios
+vibepolish/evals/run.sh                 # 6 executable vibepolish cases (git repos, real edits)
 ```
 
 Limits: the scenarios check decisions on synthetic facts, not live systems. Model runs vary —

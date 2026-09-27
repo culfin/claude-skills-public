@@ -68,7 +68,9 @@ A pass requires a performed check. Record reasons for skipped/blocked checks and
 
 Capture relevant pre-change failures so new regressions remain distinguishable. Verify a fix against its acceptance criterion and important neighboring behavior. Use existing test/build/lint/type tools where applicable and inspect actual results. Commands that did not run or do not exist cannot pass.
 
-Use targeted checks per batch, then broader applicable checks at integration boundaries. For low-impact cosmetic changes a visual check may suffice; sensitive behavior requires stronger evidence. If checks are unavailable, perform meaningful alternatives and label the remaining limitation.
+Use targeted checks per batch, then broader applicable checks at integration boundaries. For low-impact cosmetic changes a visual check may suffice; sensitive behavior requires stronger evidence. If a check is unavailable, a substitute marks as checked only the acceptance criteria it demonstrably covers — static analysis does not replace a real keyboard or browser flow, a unit test does not replace an end-to-end journey. Criteria it does not cover stay *not checked* or *blocked*. An independent review is never replaced by reviewing your own change.
+
+For substantial visual changes, close with a before/after record: the same route, state and viewport; the problem observed before; the improvement shown after in legibility, operability or consistency. No beauty score, and not for trivial text edits. Without browser access, leave visual verification explicitly open.
 
 Separate four outcomes:
 

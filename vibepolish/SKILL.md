@@ -81,7 +81,7 @@ Separate **no source changes** from **no external side effects**. Clicking butto
 - Prefer installed tooling. Temporary package execution is still code execution: choose a trusted tool and version, assess its effects, and do not treat `npx`/`pipx` as an automatic exemption.
 - Keep secrets and personal data out of commands, reports, screenshots, and stored logs. Secret scanning should emit redacted locations and types, not matched values.
 
-Before fixing, capture relevant existing check results and representative screenshots or measurements. Use the same conditions for comparisons. Record pre-existing failures separately. Do not execute every available check for a trivial focused review.
+Before fixing, capture relevant existing check results and representative screenshots or measurements. Use the same conditions for comparisons. Record pre-existing failures separately — but a failure counts as pre-existing only when the same test or check fails for the same cause on the unchanged starting state under comparable conditions, and the changed behavior can still be checked meaningfully. Equal failure counts prove nothing; missing coverage is not a baseline. Compare in a separate checkout or from the recorded starting state — never reset or stash the user's changes to do it. Unclear cause keeps the check open; required CI is not waived, and a limited result is never reported as all green. Do not execute every available check for a trivial focused review.
 
 Map routes/layouts for broad audits. Cover critical journeys and distinct layouts, then sample repeated pages and states based on risk. Expand a sample when a finding suggests a shared defect. Browser unavailability reduces verification coverage; it does not establish a pass.
 
@@ -89,7 +89,7 @@ Map routes/layouts for broad audits. Cover critical journeys and distinct layout
 
 Use the finding schema and status model in [Reporting and verification](references/reporting-verification.md).
 
-Every confirmed finding needs evidence, user/system impact, expected versus actual behavior, and a testable acceptance criterion. A missing implementation in the repository does not prove a missing capability at the gateway, hosting provider, or external service. Mark such cases as hypotheses or checks requiring access. The same holds for assets: a file referenced but absent from the sources you have is "not found in the supplied files" — build steps, a CDN or a public directory outside your scope may still serve it. Only an observed failed request (browser, HTTP status) makes it a verified broken asset.
+Every confirmed finding needs evidence, user/system impact, expected versus actual behavior, and a testable acceptance criterion. A missing implementation in the repository does not prove a missing capability at the gateway, hosting provider, or external service. Mark such cases as hypotheses or checks requiring access. Assets have three levels of evidence: *not found in the supplied material* (a build step, CDN or public directory outside your view may still provide it — a hypothesis, not a defect); *broken locally*, shown by a reproducible build, runtime or decoding failure (a confirmed defect of that build — not proof of a production outage); and *broken on the target system*, shown by an observed failed request or render there.
 
 Separate:
 
@@ -113,13 +113,15 @@ Before a fix, identify the acceptance criterion and check baseline. Make small, 
 
 Record the starting working-tree state and preserve existing user changes. For substantial or risky batches, keep a practical recovery checkpoint: commits if authorized by user/project conventions, reviewed patches, or targeted snapshots. Ensure the checkpoint distinguishes your changes from pre-existing work and includes relevant untracked files without capturing secrets. Use isolation only when it preserves the necessary starting state: a branch alone does not isolate a dirty working tree, and a fresh worktree does not automatically include uncommitted changes. Do not automatically commit, push, or deploy; follow the user's request and project conventions.
 
-If the project uses the `/dev` workflow, run fixes through its quality gate (`/dev check` outside a phase) instead of a separate verification round. Verify changed behavior and relevant regressions. Add tests where they meaningfully protect behavior or risk; do not add tests solely to mirror a cosmetic edit. Run broader checks once at integration boundaries unless a failure or new change warrants repetition.
+**Projects that use `/dev`.** During an active phase (`[~]` or `[!]` in `ROADMAP.md`) the fixes belong to that phase: record them there and leave verification to its quality gate — `/dev check` refuses to start during a phase. Outside a phase `/dev check` is the gate, but it ends with a commit: use it only when commits are already authorized (by the user or project conventions); otherwise run the equivalent checks without committing and name the gate steps still open. Calling another skill never grants a permission this one lacks. Reuse earlier gate results only while code, scope and acceptance criteria are unchanged; never run a second gate or create a second closing commit for the same change.
+
+Verify changed behavior and relevant regressions. A visual change without browser access stays *visually unverified* — say so, and support it with what can be measured (contrast ratio, sizes) instead. Add tests where they meaningfully protect behavior or risk; do not add tests solely to mirror a cosmetic edit. Run broader checks once at integration boundaries unless a failure or new change warrants repetition.
 
 When a fix becomes materially larger or riskier than assessed, pause that fix, explain the new information, and continue independent authorized work where possible.
 
 ## 7. Close with a bounded result
 
-Report what was inspected, what changed, how it was verified, and remaining blockers or unknowns. Distinguish audit completion, implementation completion, verified fixes, and release readiness. Passing builds alone do not establish production readiness.
+Report what was inspected, what changed, how it was verified, and remaining blockers or unknowns. Even a one-line fix ends with that line: which checks ran, which did not (for example "no browser available — visual result not verified"), and, in a `/dev` project, where the change stands with respect to its gate (the active phase's gate, or open). Distinguish audit completion, implementation completion, verified fixes, and release readiness. Passing builds alone do not establish production readiness.
 
 For follow-up runs, retain finding IDs, record the new revision/deployment, recheck open findings and changed dependencies, and broaden coverage only when justified. Never reuse a prior pass as current evidence without assessing relevant changes.
 

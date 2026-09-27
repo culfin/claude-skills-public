@@ -1,0 +1,1 @@
+Last deploy check (2026-09-20): GET https://harbor.example/brand/logo.svg -> 200, image/svg+xml, 2.1 kB

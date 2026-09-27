@@ -2,6 +2,27 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.7 — 2026-09-27
+
+**vibepolish** — an external review of v2.6.1 checked against the current text; all six points held:
+- `/dev` handover: v2.6 sent fixes to `/dev check`, which commits and refuses to start during a
+  phase. Now: in an active phase the phase's gate; outside it `/dev check` only where commits are
+  already authorized; another skill never grants a missing permission; no second gate or commit.
+- Pre-existing failures need the same test failing for the same cause on the unchanged start —
+  equal counts prove nothing; no resets of user work to compare; no "all green" for limited results.
+- Substitute checks mark only the criteria they cover; static analysis does not replace a keyboard or
+  browser flow; self-review never replaces an independent one.
+- Assets: *not found in the supplied material* / *broken locally* (reproducible build, runtime or
+  decoding failure — a real defect, not a production outage) / *broken on the target system*. v2.6
+  wrongly required an HTTP failure for any defect.
+- Substantial visual changes close with a before/after record (same route, state, viewport); without
+  a browser the visual result stays unverified — now stated in `SKILL.md`, not only in a reference.
+- Every fix, however small, ends with a line on checks run, checks open and the `/dev` gate state.
+- Six new executable eval cases (active `/dev` phase, no-commit, same failure count with a different
+  cause, visual fix without browser, injected instructions, CDN-served asset) and `evals/run.sh`,
+  which records the commands a session really ran and the resulting git state. Results:
+  `evals/RESULTS.md` — 22 of 24 assertions on Claude Code; Codex not run.
+
 ## v2.6.1 — 2026-09-27
 
 **vibecode-polish is now called vibepolish** (directory, skill name, display name). Nothing else
