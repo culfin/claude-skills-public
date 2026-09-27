@@ -13,23 +13,45 @@ Creates a PR to promote dependency updates from main to prod, and syncs branches
    [ -n "$PROD_BRANCH" ] || { echo "prodBranch is null: single-trunk repo, nothing to promote"; exit 0; }
    ```
 2. **Pull latest dev branch:** `git checkout $DEV_BRANCH && git pull origin $DEV_BRANCH`
-3. **Check for REAL divergence (prod ahead of main):**
+3. **Does prod hold content main lacks?** (content, not commit topology — see Safety Rule 12)
    ```bash
    git fetch origin $PROD_BRANCH
-   PROD_AHEAD_REAL=$(git rev-list --count --no-merges origin/$DEV_BRANCH..origin/$PROD_BRANCH)
+   # Does prod hold content that main lacks? Merge prod into main *in memory* (nothing is written
+   # to the working tree or any branch) and compare the result with main's tree. Equal = main already
+   # contains everything; merge-only topology is fine. Unlike counting --no-merges commits, this also
+   # catches content introduced INSIDE a merge commit (a conflict resolution or hotfix on prod).
+   # Needs git >= 2.38. A conflict (non-zero exit) counts as "prod has own content".
+   MERGED=$(git merge-tree --write-tree origin/$DEV_BRANCH origin/$PROD_BRANCH 2>/dev/null | head -1) || MERGED=conflict
+   if [ "$MERGED" = "$(git rev-parse origin/$DEV_BRANCH^{tree})" ]; then PROD_OWN_CONTENT=0; else PROD_OWN_CONTENT=1; fi
    ```
-   - If `PROD_AHEAD_REAL > 0` → prod has real commits (a hotfix landed directly on prod) that main doesn't. **Auto-fix:** merge prod into main first:
+   - `PROD_OWN_CONTENT == 1` → a hotfix or a conflict resolution landed on prod. Merge prod into the
+     dev branch first, push, and let CI run on the new dev head (step 4 then checks that SHA):
      ```bash
      git merge origin/$PROD_BRANCH --no-edit
      git push origin $DEV_BRANCH
      ```
-   - If `PROD_AHEAD_REAL == 0` (prod is ahead only by promote merge commits) → **do nothing.** main already holds all content; the merge nodes are expected for a merge-commit promote workflow without sync-back. A blind `git merge origin/prod` here would just pull those merge nodes into main for no benefit. Skip the auto-fix and proceed.
-   - This ensures main is always a content-superset of prod before creating the promote PR — measured by real commits, not merge topology.
-4. **Verify CI is green on $DEV_BRANCH:**
+   - `PROD_OWN_CONTENT == 0` → **do nothing**, even if prod is ahead by promote merge commits. main
+     already contains everything; a sync merge would only move merge nodes around.
+4. **Candidate CI — every required check green on exactly the commit you promote:**
    ```bash
-   gh run list --branch $DEV_BRANCH --limit 1 --json status,conclusion,name
+   OWNER_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+   CANDIDATE=$(git rev-parse origin/$DEV_BRANCH)          # the commit the promote PR will carry
+   # Every check run on exactly this commit (not "the newest run on the branch"):
+   gh api "repos/$OWNER_REPO/commits/$CANDIDATE/check-runs" --paginate \
+     --jq '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion)"'
+   # Which checks are required: branch protection, if readable (404/403 = not readable →
+   # the required set is every workflow that runs on a push to $DEV_BRANCH):
+   REQUIRED=$(gh api "repos/$OWNER_REPO/branches/$DEV_BRANCH/protection/required_status_checks" \
+     --jq '.checks[].context' 2>/dev/null) || REQUIRED=""   # on 404/403 gh prints the error body to stdout
    ```
-   - CI must show `conclusion: "success"`. If CI is red or pending → STOP: "CI on $DEV_BRANCH is not green. Please wait or fix the failures before promoting."
+   Green means: at least one run exists for `CANDIDATE`, **every required check is present** in that
+   list, and each is `completed` / `success`. An empty list is "not started", not green. `queued`,
+   `in_progress`, `cancelled`, `timed_out` or `skipped` on a required check is not green. A required check that
+   never ran because its workflow skips such commits (`paths-ignore`) is not green either — the candidate
+   is unverified; say so instead of promoting. A green run
+   of an *older* commit proves nothing about this one — after any merge, rebase or conflict
+   resolution the candidate SHA changes and this step starts over. Not green → STOP:
+   "CI on $CANDIDATE is not green (<check>: <state>). Wait or fix before promoting."
 5. **Check report exists:** `.deps/last-report.md`
    - If not → warn: "No merge report found. Showing diff instead."
 
@@ -100,7 +122,7 @@ Rebase creates new commit SHAs on prod, which makes the branches diverge."
 
 **After the user has merged the promote PR on GitHub**, prod has a merge commit that main doesn't know about. Syncing it back keeps `origin/main..origin/prod` at zero, so any later count there means real drift at a glance. Skipping it is harmless: a promote merge node is merge-only divergence, which Safety Rule 12 explicitly does not treat as drift.
 
-> **Scope:** this runs only when `/deps promote` itself created and merged the PR — here the sync-back deliberately pulls back `/deps`'s *own* fresh promote merge commit (so it uses the raw `PROD_AHEAD`, unlike the Step 3 pre-flight which measures real drift with `--no-merges`). If this repo promotes via a different workflow that intentionally skips sync-back (e.g. a project's own prod-release command, leaving prod ahead by merge nodes by design), `/deps promote` is not the promote path and this step does not run — do not retrofit a sync-back onto that workflow.
+> **Scope:** this runs only when `/deps promote` itself created and merged the PR — here the sync-back deliberately pulls back `/deps`'s *own* fresh promote merge commit (so it uses the raw `PROD_AHEAD`, unlike the Step 3 pre-flight, which compares content). If this repo promotes via a different workflow that intentionally skips sync-back (e.g. a project's own prod-release command, leaving prod ahead by merge nodes by design), `/deps promote` is not the promote path and this step does not run — do not retrofit a sync-back onto that workflow.
 
 **Option A: Automatic (if still in the same session)**
 
@@ -122,7 +144,7 @@ fi
 
 **Option B: Not in this session**
 
-Nothing picks it up later — and nothing needs to. `/deps` status and the Step 3 pre-flight count divergence with `--no-merges` and deliberately ignore promote merge nodes (Safety Rule 12). prod simply stays ahead by merge-only commits; the next promote PR works the same either way.
+Nothing picks it up later — and nothing needs to. `/deps` status and the Step 3 pre-flight compare content, and a promote merge node adds none (Safety Rule 12). prod simply stays ahead by merge-only commits; the next promote PR works the same either way.
 
 **Inform user:**
 "After merging the PR on GitHub, confirm here and I will sync prod back into main. If you skip it, nothing breaks — prod is then ahead only by the merge commit, which is not drift."

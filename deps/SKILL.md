@@ -65,10 +65,13 @@ ls -la .deps/last-report.md 2>/dev/null
 git fetch origin $PROD_BRANCH 2>/dev/null
 MAIN_AHEAD=$(git rev-list --count origin/$PROD_BRANCH..origin/$DEV_BRANCH 2>/dev/null)
 PROD_AHEAD=$(git rev-list --count origin/$DEV_BRANCH..origin/$PROD_BRANCH 2>/dev/null)
-# Only NON-MERGE commits count as real divergence. A merge-commit-only promote
-# workflow (e.g. PR main→prod with --merge, no sync-back) leaves prod "ahead" by
-# merge nodes while main holds all the actual content — that is NOT drift.
-PROD_AHEAD_REAL=$(git rev-list --count --no-merges origin/$DEV_BRANCH..origin/$PROD_BRANCH 2>/dev/null)
+# Does prod hold content that main lacks? Merge prod into main *in memory* (nothing is written
+# to the working tree or any branch) and compare the result with main's tree. Equal = main already
+# contains everything; merge-only topology is fine. Unlike counting --no-merges commits, this also
+# catches content introduced INSIDE a merge commit (a conflict resolution or hotfix on prod).
+# Needs git >= 2.38. A conflict (non-zero exit) counts as "prod has own content".
+MERGED=$(git merge-tree --write-tree origin/$DEV_BRANCH origin/$PROD_BRANCH 2>/dev/null | head -1) || MERGED=conflict
+if [ "$MERGED" = "$(git rev-parse origin/$DEV_BRANCH^{tree})" ]; then PROD_OWN_CONTENT=0; else PROD_OWN_CONTENT=1; fi
 ```
 
 Display:
@@ -78,12 +81,12 @@ Dependency Status:
   Security alerts:     N high / N moderate / N low   (or "none")
   Last merge report:   YYYY-MM-DD (or "none")
   main ahead of prod:  N commits
-  prod ahead of main:  N commits   (M real / rest merge-only)   ⚠️ only if M > 0
+  prod ahead of main:  N commits   (merge-only, in sync | ⚠️ prod has content main lacks)
 ```
 **If security alerts > 0:** note that alerts are distinct from update PRs (transitive vulns
 have no PR) and point to `/deps audit` to fix them, or `/deps check` to analyze read-only.
-Show the `⚠️` and the sync offer **only when `PROD_AHEAD_REAL > 0`**. When `PROD_AHEAD > 0`
-but `PROD_AHEAD_REAL == 0`, render it as in-sync, e.g.:
+Show the `⚠️` and the sync offer **only when `PROD_OWN_CONTENT == 1`**. When `PROD_AHEAD > 0`
+but `PROD_OWN_CONTENT == 0`, render it as in-sync, e.g.:
 `  prod ahead of main:  23 commits (merge-only — in sync, no drift)`
 
 ```
@@ -94,11 +97,13 @@ Available commands:
   /deps promote — Promote to production
 ```
 
-**If prod is ahead of main with REAL commits (`PROD_AHEAD_REAL > 0`):** Display warning and offer to sync immediately:
-"⚠️ prod is {PROD_AHEAD_REAL} real commit(s) ahead of main (not promote merge nodes). Should I merge prod into main to synchronize the branches?"
+**If prod holds content main lacks (`PROD_OWN_CONTENT == 1`):** show what it is
+(`git diff origin/$DEV_BRANCH "$MERGED"` — the content a merge would bring in; on conflict,
+`git log --oneline origin/$DEV_BRANCH..origin/$PROD_BRANCH`), then offer to sync:
+"⚠️ prod contains changes main doesn't have (a hotfix or a conflict resolution on prod). Should I merge prod into main?"
 If yes → run the sync-back (see promote.md Step 5).
 
-**If prod is ahead only by merge commits (`PROD_AHEAD > 0` but `PROD_AHEAD_REAL == 0`):** do NOT warn and do NOT offer a sync. This is the expected steady state for a merge-commit promote workflow without sync-back (main is the linear trunk; prod accumulates promote merge nodes). main already holds all the content, so there is no drift to fix.
+**If prod is ahead only by merge commits (`PROD_AHEAD > 0` but `PROD_OWN_CONTENT == 0`):** do NOT warn and do NOT offer a sync. This is the expected steady state for a merge-commit promote workflow without sync-back (main is the linear trunk; prod accumulates promote merge nodes). main already holds all the content, so there is no drift to fix.
 
 ## Safety Rules (NON-NEGOTIABLE)
 
@@ -115,7 +120,7 @@ These rules apply to ALL commands. Never skip or work around them.
 9. **Merge via GitHub API** — `gh pr merge --squash --delete-branch`, not local git merge
 10. **Detect test scripts from package.json** — never guess script names, read them
 11. **Fix ALL warnings after merges** — lint, build, and test output must be warning-free before report
-12. **Prod must never be ahead of main with REAL commits** — measure divergence with `--no-merges` (`git rev-list --count --no-merges $DEV_BRANCH..$PROD_BRANCH`). A non-zero count means a hotfix or change landed on prod that main lacks → sync prod back into main (see promote.md Step 5). **Merge-commit-only "ahead" is NOT drift** and must not trigger a sync: a promote workflow that merges `main→prod` with `--merge` and no sync-back (e.g. a project's own prod-release command) leaves prod ahead by promote merge nodes forever, while main holds all content as the linear trunk. Check for *real* divergence in `/deps` status and `/deps promote` pre-flight; ignore merge-only ahead.
+12. **Prod must never hold content main lacks** — decided by content, not by commit topology: merge prod into main in memory (`git merge-tree`, see Status) and compare with main's tree. Equal → in sync, even if prod is ahead by promote merge commits; do NOT sync-merge for topology alone. Different → a hotfix or a conflict resolution landed on prod; sync prod back into main (promote.md Step 5) and rerun checks. Counting `--no-merges` commits is not enough: content inside a merge commit is invisible to it.
 
 ## Branch Strategy
 

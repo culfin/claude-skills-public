@@ -2,6 +2,47 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.3 — 2026-09-27
+
+A second external review of v2.1.2 (dev and deps unchanged since): four defects confirmed and
+fixed, two omitted functions added.
+
+**deps**
+- Promote accepted "the newest run on the branch" (`gh run list --limit 1`) as CI proof — possibly an
+  older commit's success, and without checking that every required workflow ran. Now: every check run
+  on exactly the candidate SHA, every required check (branch protection, if readable) present and
+  successful; empty, pending, cancelled, skipped or never-run (`paths-ignore`) is not green. On a
+  404, `gh api` prints the error body to stdout — guarded so it is not read as a check name.
+- "prod ahead only by merge commits = in sync" was decided with `--no-merges`, which cannot see
+  content introduced inside a merge commit (a conflict resolution or hotfix on prod). Now decided by
+  content: prod is merged into main in memory (`git merge-tree`) and compared with main's tree.
+  Equal → no sync merge, whatever the topology.
+
+**dev**
+- An analyzer that timed out was marked "timeout — skipped" and did not block the gate. Now: one retry
+  or an independent substitute; until a report exists the checkbox stays open and the phase `[!]`.
+  The implementing agent's own review is never the substitute.
+- E2E: defined by the user flows and assertions the phase touched, not by a tool. A substitute counts
+  only with the same flows and assertions; unit tests (Swift Testing, xUnit) do not prove UI flows;
+  missing infrastructure blocks instead of "warn and skip"; pre-existing failures follow the gate's
+  proof rule.
+- New `scripts/check-evidence.py` (13 tests): every checked gate item carries its evidence and the
+  state of the code it ran on (`@<tree id>` of the working tree, without STATE.md/ROADMAP.md). Before
+  the gate commit and before completion it reports open, evidence-less and stale items. The id
+  survives the gate commit if exactly the checked content is committed. It checks consistency, not
+  truth. Chosen instead of the review's JSON evidence files, which would add a second record per gate.
+- New `superpowers.md` and `scripts/check-superpowers.py` (from the review, with its tests): which
+  install is active, a static capability check, freshness "unknown" unless checked, no switching
+  mid-phase, the update path, and a prepared maintenance prompt. Nothing is installed, updated or
+  scheduled.
+- Companion: a missing script is now also reported on stderr.
+
+The review's original regression suite still fails in three places, each on purpose: `gate_state`
+(replaced by `check-evidence.py`), the companion choosing Claude Code's recorded active install
+instead of refusing, and the stop hook counting committed work on other branches (v2.1.2).
+All twelve decision scenarios match on Claude Code with this final state. Codex: not run — only a
+wrapper without the real CLI is installed here.
+
 ## v2.2 — 2026-09-27
 
 **New skill: sentry.** Grown in one production project and generalised for publication:

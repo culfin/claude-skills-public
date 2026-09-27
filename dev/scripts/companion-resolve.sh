@@ -28,6 +28,7 @@ resolve_companion() {
     [[ -n "$root" ]] && candidate="$root/skills/brainstorming/scripts/$entry"
   fi
   if [[ -z "$candidate" || ! -f "$candidate" ]]; then
+    echo "Companion script missing: ${candidate:-no active superpowers install found} — set DEV_SUPERPOWERS_ROOT to the active superpowers plugin root (see superpowers.md)." >&2
     echo "{\"error\": \"superpowers companion script not found ($entry). Set DEV_SUPERPOWERS_ROOT to the active superpowers plugin root.\"}"
     return 1
   fi

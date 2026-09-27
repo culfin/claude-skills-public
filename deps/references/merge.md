@@ -518,11 +518,13 @@ Update the report: mark the identified package as "reverted after local validati
 After all merges are pushed to $DEV_BRANCH, CI runs automatically on GitHub. This includes E2E/Playwright tests.
 
 ```bash
-# Check CI status on latest commit — MUST verify headSha, see below
-gh run list --branch $DEV_BRANCH --limit 1 --json status,conclusion,name,headSha
+# CI of exactly the commit you pushed — all required checks, see "Candidate CI" in promote.md
+CANDIDATE=$(git rev-parse HEAD)
+gh api "repos/$OWNER_REPO/commits/$CANDIDATE/check-runs" --paginate \
+  --jq '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion)"'
 ```
 
-**⚠️ Stale-success trap: `--limit 1` alone is NOT proof.** Right after a push (or when a
+**⚠️ Stale-success trap: "the newest run on the branch" is NOT proof.** Right after a push (or when a
 dispatch silently failed) the newest run may not be registered yet — `-L1` then shows the
 PREVIOUS commit's green run and reads as "CI green" for code it never tested. Always compare
 the run's `headSha` against your pushed commit (`git rev-parse HEAD`); if they differ, the

@@ -45,6 +45,7 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | 5g | E2E Tests | Full suite |
 | 5h | — | Dropped; test gaps are reported by 5c-v |
 | 5i | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
+| before 5j | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be the same, current value before the check commit |
 | 5j | Check-Commit | `chore: dev check [gate-pass]` |
 | 5k | CI-Status-Check | Conditional — if `.github/workflows/` exists or `@gate: ci-wait` set on any phase. When no ROADMAP.md: only `.github/workflows/` triggers this step. |
 

@@ -1,42 +1,54 @@
 # E2E / Integration Tests — Detail
 
-**Step 1: Determine testability.** Not every project type benefits from browser-based E2E tests. Decide based on the technology:
+**What this step must prove:** the user flows this phase touched work end to end on the candidate —
+through the real UI or the real public interface, with the assertions that matter to a user. The
+tool is secondary; what counts is which flows and assertions actually ran.
 
-| Technology | Playwright suitable? | Alternative |
-|-------------|---------------------|-------------|
-| Web app (Next.js, React, Vue, Svelte, etc.) | Yes — preferred | Cypress, Vitest Browser Mode |
-| REST/GraphQL API (without UI) | No | Vitest/Jest integration tests, `supertest`, `httpie` |
-| CLI tool | No | Shell-based tests, Vitest |
-| Native app (iOS/macOS) | No | XCTest, Swift Testing (`xcodebuild test` / `swift test`) |
-| Native app (Windows/WinUI) | No | xUnit (`dotnet test`) |
-| Library/package | No | The framework's unit tests |
-| Hybrid (web app + API) | Yes for UI parts | API parts: integration tests |
+**Step 1: Name the flows and assertions.** From the spec (or the approved chat draft), list the
+user flows the phase changed or added and, per flow, the assertions that prove it works (e.g.
+"valid checkout completes", "invalid field shows its message", "form submits with the keyboard").
+This list is what the step is measured against.
 
-**Step 2: Detect existing test infrastructure.** Check for config files in the project root:
-- `playwright.config.ts` / `playwright.config.js` → Playwright
-- `cypress.config.ts` / `cypress.json` → Cypress
-- `vitest.config.ts` with browser mode → Vitest Browser
-- `package.json` scripts containing `test:e2e`, `test:integration`, `e2e` → use those
-- `.xcodeproj` / `Package.swift` → XCTest / Swift Testing
-- `*.csproj` with xUnit → xUnit
+**Step 2: Pick the level that can actually exercise them.**
 
-**Step 3: Run tests.**
+| Technology | Proves UI flows | Does **not** prove UI flows on its own |
+|---|---|---|
+| Web app (Next.js, React, Vue, Svelte, …) | Playwright (preferred), Cypress, Vitest Browser Mode | unit tests, component tests without a browser |
+| REST/GraphQL API (no UI) | integration tests against a running server (`supertest`, HTTP calls) | unit tests of handlers |
+| CLI tool | tests that run the built binary with real arguments | unit tests of internal functions |
+| Native app (iOS/macOS) | XCUITest (UI tests in `xcodebuild test`) | XCTest/Swift Testing unit tests |
+| Native app (Windows/WinUI) | UI automation (WinAppDriver, FlaUI, Appium) | xUnit unit tests |
+| Library/package | the public API tested as a consumer would call it | — |
+| Hybrid (web app + API) | browser tests for UI parts, integration tests for API parts | — |
 
-If Playwright is suitable and configured:
-1. Look for existing spec files matching the changed feature area (e.g., specs in `e2e/` whose names relate to the phase).
-2. Run matching specs first. If they pass, run the full relevant project/suite to catch regressions.
-3. Use the `/playwright-cli` skill for execution if available.
+A **substitute** for the preferred tool counts only if it runs the same flows with the same
+assertions against the same candidate (e.g. Cypress instead of Playwright, a Playwright CLI run instead
+of the Playwright MCP). Record which substitute ran and which flows/assertions it covered. A unit
+suite, a build or a screenshot is never a substitute for a UI flow.
 
-If Playwright is NOT suitable or not configured:
-1. Run the project's existing test command (`test:e2e`, `test:integration`, or `test`).
-2. If no test infrastructure exists at all: **warn and skip**, but log as Blocker in STATE.md ("No test framework configured — phase N had no automated test").
+**Step 3: Find the project's infrastructure.**
+- `playwright.config.*` → Playwright; `cypress.config.*` → Cypress; `vitest.config.*` with browser
+  mode → Vitest Browser
+- `package.json` scripts `test:e2e`, `test:integration`, `e2e` → use those
+- `.xcodeproj` with a UI test target → XCUITest; `*.csproj` with a UI automation project → that
 
-**Step 4: Handle missing specs.**
-If the phase introduced new functionality but no matching test spec exists: flag it and **write a basic smoke test** before running — and see it fail once against a deliberately broken implementation, as the spec checker (5c-v) requires. This ensures new features always get at least one automated test.
+**Step 4: Run.** Matching specs for the changed area first, then the full relevant suite to catch
+regressions. For every flow from step 1: which test covered it, and its result.
 
-**Failure handling:**
-- Test fails due to phase changes → fix before proceeding.
-- Test fails due to pre-existing/flaky issue → document in STATE.md under Blockers & Risks, proceed.
-- After fixes: re-run failing tests to confirm green.
+**Step 5: Missing coverage.** A changed flow without a test gets one now — written from the
+requirement, seen failing once against a deliberately broken implementation, then green (as the
+spec checker 5c-v requires).
 
-Only proceed to post-skills when tests are green (or failures are documented as pre-existing).
+**No infrastructure for the needed level** (no browser runner, no UI test target): that is not a
+pass and not a skip. Either set up the smallest runner that can cover the flows (with the user's
+agreement if it adds dependencies), or the E2E checkbox stays open and the phase stays `[!]` —
+record in STATE.md which flows are unverified and why.
+
+**Failures:**
+- Caused by the phase → fix, rerun.
+- Believed to be pre-existing → only with the proof from `gate.md` ("The error was already there
+  before"): the same failure, same cause, reproduced on the unchanged base; the change causes and
+  hides nothing; the tests covering this phase's flows still run and pass. Then the phase completes
+  *with a known pre-existing failure*, named as such — never "all green". Flaky without proof is not
+  pre-existing. None of this excuses a failing required CI run.
+- After fixes: rerun the failing tests on the new candidate.

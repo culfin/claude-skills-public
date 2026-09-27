@@ -60,6 +60,7 @@ the current step needs.
 | `companion.md` | Visual Companion: when browser vs terminal, mandatory triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
 | `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per session, before the first tool call of the workflow |
+| `superpowers.md` | Which superpowers install is active, static check, update path (prepares only) | Session start before the first phase step; before any plugin update |
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
 | `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
@@ -319,7 +320,7 @@ Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 
-1. **Verify Gate Checklist:** Read STATE.md, confirm ALL Quality Gate items are `[x]`. If any unchecked → STOP, return to first unchecked step 5.
+1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 — every Quality Gate item `[x]`, with evidence, on the current state (the gate commit keeps that state). If any unchecked → STOP, return to first unchecked step 5.
 2. **Verify CI (if applicable):** If CI status check in checklist — confirm it is `[x]` (green). If not → wait or fix CI first.
 3. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present
 4. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**

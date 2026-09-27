@@ -130,7 +130,11 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - Omit conditional entries if the condition is not met — do not mark them `[—]`, just omit them
 - Each step checks off its entry after completion
 - **Every checkmark needs evidence.** An `[x]` is only set if the step has run
-  AND the decisive output line follows it: `- [x] Typecheck + lint + tests — 0 errors, 412 passed`.
+  AND the decisive output line follows it, plus the state of the code it ran on:
+  `- [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04`.
+  The `@…` value comes from `python3 "$DEV_DIR/scripts/check-evidence.py" id`, taken when the check
+  ran (a tree id of the working tree without STATE.md/ROADMAP.md; it survives the gate commit
+  unchanged if exactly that content is committed).
   No evidence → the checkmark stays open. "Looks right", "should pass" and "I already checked
   that earlier" are not evidence.
 - **Evidence belongs to one state of the code.** Any code change after a check — a fix from 5c,
@@ -163,7 +167,13 @@ These steps run regardless of `@skills:` configuration — they are hardcoded in
 - **Warnings** (style, minor improvements): note them but proceed — `/simplify` already handled code quality.
 - After completion: check off `[ ] Change review` in STATE.md Gate Checklist.
 
-**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see "Subagent Model Choice" above: bug hunt/performance/Tech-Stack → cheap tier, Security review → standard/capable). Wait for all, at most **15 minutes**. If a subagent is still running after 15 minutes: cancel it, mark its findings as "timeout — skipped", note it in STATE.md, continue with 5d. A hanging analyzer does not block the entire gate.
+**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see "Subagent Model Choice" above: bug hunt/performance/Tech-Stack → cheap tier, Security review → standard/capable). Wait for all, at most **15 minutes** each. A subagent still running after 15 minutes is cancelled and
+**started once more** — as a fresh subagent, if useful with the scope split in two. Still no report →
+its checkbox stays open with "timeout", the phase stays `[!]`, and you say so. Meanwhile the rest of the
+gate may go on (5d–5g do not wait for it), but the phase cannot be completed without that report.
+Only an **independent** substitute counts: another subagent with the same analyzer file, or an
+equivalent tool the project already uses for the same questions — never the implementing agent
+reviewing its own change. Record which substitute ran and why it covers the same checks.
 
 **Dispatch prompt for the analyzers — two rules that determine the hit rate:**
 - **Prompt for refutation, not for checking.** "Find what is wrong with this change"
@@ -241,6 +251,11 @@ Summary: Determine testability by tech stack, detect existing infrastructure (Pl
 This builds up a quality knowledge log across phases and makes cross-phase patterns visible. The summary stays in STATE.md permanently (it is not removed on phase completion like the checklist).
 - After completion: check off `[ ] Gate summary (STATE.md)` in STATE.md Gate Checklist.
 
+**Before 5j — evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md --before-commit`
+must exit 0. It lists every item that is open, has no evidence, or was checked on an older state of
+the code; rerun those checks, do not edit the `@…` value by hand. It checks consistency, not truth —
+reading the evidence stays your job.
+
 **5j. Gate commit** — once ALL checklist items are `[x]`: create an atomic commit that captures the gate-verified state. This commit is the canonical "this phase passed QA" snapshot.
 - Commit message: `chore: quality gate — Phase N <name> [gate-pass]`
 - **Before committing: check the baseline.** Read `git branch --show-current` and `git status --porcelain`.
@@ -288,7 +303,7 @@ one of these thoughts comes up, that is the signal to **do** the step — not to
 | Thought | Reality |
 |---------|--------------|
 | "The phase is too small for the full gate" | Size says nothing about blast radius. One line in an auth path weighs more than 300 lines of markup. The only legitimate reduction is `@gate: fast` — and that depends on `@type:`, not on a feeling. |
-| "The analyzer hung, let's skip it" | The 15-minute timeout in 5c is meant for **one** hanging subagent, not as a shortcut. Timeout means: note it as "timeout — skipped" in STATE.md so the gap stays visible. Two timeouts in the same gate are a finding, not background noise. |
+| "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass. Retry once or run an independent substitute (see 5c); until one reports, the checkbox stays open and the phase stays `[!]`. Two timeouts in the same gate are a finding, not background noise. |
 | "tsc is green, the build will go through" | That is exactly why 5f is a separate step: `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
 | "The tests already ran earlier" | Earlier was before `/simplify`, before the fixes from 5c and before 5d — each of them changes code. 5e runs **after** all fixes, otherwise it proves the wrong state. |
 | "The error was already there before" | Then prove it: reproduce the **same** failure (same test, same cause — not just the same count) on the unchanged base, in a separate worktree, never by resetting the user's tree. It only counts as pre-existing if this change neither causes nor hides it and the tests covering this change still run and pass. Record it in STATE.md (Blockers & Risks) with the evidence, and say it in the gate summary and the final report: the phase is *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. Unproven means it is yours. |
