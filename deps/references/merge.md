@@ -433,6 +433,14 @@ git diff --quiet pnpm-lock.yaml 2>/dev/null || {
 }
 ```
 
+**⚠ Before staging, check `pnpm-workspace.yaml` — `$PM install`/`add` may have waived a security policy there.** If the project sets `minimumReleaseAge`, pnpm appends too-fresh packages to a `minimumReleaseAgeExclude:` block in that file, creating it if absent, and says nothing. Committing it disables the guard for exactly the packages it exists to catch. The narrow `git add pnpm-lock.yaml` above does not pick the file up — that is deliberate, but it also means the change sits unnoticed in your working tree:
+
+```bash
+git status --porcelain pnpm-workspace.yaml   # expect NO output
+```
+
+Not empty → do NOT stage it. Roll the too-fresh versions back to the highest ones that already satisfy the window. Full mechanics, including why `pnpm clean --lockfile` is the wrong repair, in SKILL.md pattern 35.
+
 **Why one lockfile commit:** Each Dependabot squash-merge includes a lockfile generated against a different base. Sequential merges create duplicated keys. Fixing per PR creates more conflicts for the next PR (observed: 60% breakage rate). One fix after all merges is cleaner.
 
 ### Local validation (final)

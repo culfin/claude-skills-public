@@ -86,7 +86,7 @@ statt sie ungeprüft zu mergen oder liegen zu lassen.
 
 Unterstützt npm, pnpm, Yarn, Bun, Cargo, Swift Package Manager und Gradle. Standardmäßig wird auf `main`
 entwickelt und nach `prod` ausgeliefert; abweichende Zweignamen stehen in `.deps/config.json`.
-Der Skill enthält 34 im Betrieb gelernte Muster, etwa wie sich ein echter
+Der Skill enthält 35 im Betrieb gelernte Muster, etwa wie sich ein echter
 Update-Fehler von einer überlasteten CI unterscheiden lässt.
 
 ---
