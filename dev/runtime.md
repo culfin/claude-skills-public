@@ -14,7 +14,7 @@ what the host actually offers.
   Choice" in `gate.md`); otherwise the subagent inherits the current model.
 - **Visual Companion:** needs the superpowers brainstorm companion. `scripts/companion.sh` finds it
   via `DEV_COMPANION_SCRIPTS_DIR` or `DEV_SUPERPOWERS_ROOT` (set one of them on hosts other than
-  Claude Code), else in Claude Code's plugin cache. Not found → the screen step is blocked; say so.
+  Claude Code), else the active install recorded in Claude Code's `installed_plugins.json`. Not found → the screen step is blocked; say so.
 - **Stop hook** (`hooks/gate-check.py`): Claude Code only, a reminder, not enforcement. On Codex the
   gate runs the same without it.
 - **Slash commands:** `/dev check` names a workflow. Where the host has no slash commands, the user

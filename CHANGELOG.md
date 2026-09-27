@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.1.2 — 2026-09-27
+
+Three findings from running the external review's twelve decision scenarios against v2.1.1 (Claude
+Code, isolated, read-only; 11 of 12 matched, all 12 after these fixes; Codex not run).
+
+**dev**
+- A proven pre-existing failure ended as a plain `[gate-pass]` with the failure only in STATE.md.
+  The gate summary now has a "Known pre-existing failures" line and the report says "completed with
+  a known pre-existing failure", never "all green".
+- Stop hook: a `[gate-pass]` commit on another local branch silenced the reminder even when the
+  edited files were still uncommitted in this checkout — that gate cannot have checked them. Now
+  only HEAD counts while an edited file is uncommitted; committed work on a feature or worktree
+  branch still counts (the 2026-09-25 fix for false reminders stays).
+- The Visual Companion resolved "the newest superpowers version in the cache", which can be an
+  inactive install. It now reads the active `installPath` from `installed_plugins.json`.
+
 ## v2.1.1 — 2026-09-27
 
 Two more gaps from the same external review, found when its report arrived.

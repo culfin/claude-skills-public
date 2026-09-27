@@ -235,6 +235,7 @@ Summary: Determine testability by tech stack, detect existing infrastructure (Pl
 - Found: <N critical + M notes> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
+- Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```
 
 This builds up a quality knowledge log across phases and makes cross-phase patterns visible. The summary stays in STATE.md permanently (it is not removed on phase completion like the checklist).
@@ -290,7 +291,7 @@ one of these thoughts comes up, that is the signal to **do** the step — not to
 | "The analyzer hung, let's skip it" | The 15-minute timeout in 5c is meant for **one** hanging subagent, not as a shortcut. Timeout means: note it as "timeout — skipped" in STATE.md so the gap stays visible. Two timeouts in the same gate are a finding, not background noise. |
 | "tsc is green, the build will go through" | That is exactly why 5f is a separate step: `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
 | "The tests already ran earlier" | Earlier was before `/simplify`, before the fixes from 5c and before 5d — each of them changes code. 5e runs **after** all fixes, otherwise it proves the wrong state. |
-| "The error was already there before" | Then prove it: reproduce the **same** failure (same test, same cause — not just the same count) on the unchanged base, in a separate worktree, never by resetting the user's tree. It only counts as pre-existing if this change neither causes nor hides it and the tests covering this change still run and pass. Record it in STATE.md (Blockers & Risks) with the evidence; it never excuses a failing required CI run. Unproven means it is yours. |
+| "The error was already there before" | Then prove it: reproduce the **same** failure (same test, same cause — not just the same count) on the unchanged base, in a separate worktree, never by resetting the user's tree. It only counts as pre-existing if this change neither causes nor hides it and the tests covering this change still run and pass. Record it in STATE.md (Blockers & Risks) with the evidence, and say it in the gate summary and the final report: the phase is *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. Unproven means it is yours. |
 | "I know what the check would find" | Then it costs nothing. A check whose result you predict is the cheapest one — and the one where the prediction is most often wrong. |
 | "The user wants to finish quickly" | The user wants a finished state, not one that looks finished. Requests for speed do not shrink the gate; whoever wants to shrink it says so explicitly and chooses `@gate: fast` or a suitable `@type:`. |
 | "Set the checkmark, I'll write the evidence later" | Later the context is gone and the checkmark stays. Evidence and checkmark come into being together or not at all. |

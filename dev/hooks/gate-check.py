@@ -15,7 +15,8 @@ already declined the check for the session. The user decides whether to run /dev
 - Only code files inside the project root count; docs/, .scratch/, .claude/, .superpowers/ are
   ignored only directly at the root, as is .worktrees/ (separate checkouts); node_modules/ everywhere.
 - Signal "gate has run": the newest commit (HEAD and all local branches, including worktree
-  branches) of the project root with [gate-pass] in the subject (author time) is not older than
+  branches — but only HEAD while an edited file is still uncommitted in this checkout) of the
+  project root with [gate-pass] in the subject (author time) is not older than
   the last code change (second precision). This way commit -F, git -C and heredocs count; failed
   commits and commits in other repos do not.
 - At most one notice per session. Fail-open: missing timestamp, failing git or any other
@@ -92,6 +93,7 @@ def _text(content):
 def scan(lines, root):
     pos = last_edit = 0
     last_edit_ts = None
+    edited = set()
     dev_seen = False
     for line in lines:
         line = line.strip()
@@ -122,21 +124,34 @@ def scan(lines, root):
                 continue
             name = block.get("name", "")
             if name in EDIT_TOOLS:
-                if is_code(str(inp.get("file_path") or inp.get("notebook_path") or ""), root):
+                target = str(inp.get("file_path") or inp.get("notebook_path") or "")
+                if is_code(target, root):
+                    edited.add(target)
                     last_edit = pos
                     last_edit_ts = _epoch(obj.get("timestamp"))
             elif name == "Skill" and str(inp.get("skill", "")).split(":")[-1] == "dev":
                 dev_seen = True
-    return last_edit, last_edit_ts, dev_seen
+    return last_edit, last_edit_ts, dev_seen, edited
 
 
-def gate_time(root):
+def has_uncommitted(root, paths):
+    """True if any of the edited files differs from HEAD in this checkout (or is untracked)."""
+    if not paths:
+        return False
+    r = subprocess.run(["git", "-C", root, "status", "--porcelain", "--"] + sorted(paths),
+                       capture_output=True, text=True, timeout=5)
+    if r.returncode != 0:
+        raise RuntimeError(r.stderr.strip())
+    return bool(r.stdout.strip())
+
+
+def gate_time(root, head_only=False):
     # Author time (%at) instead of commit time: rebase, amend and cherry-pick reset the commit
     # time and would make an old gate look newer. Only the marker in the subject (%s) counts;
     # --grep searches the whole message, hence the post-filtering.
     r = subprocess.run(
-        ["git", "-C", root, "log", "-n", "50", "HEAD", "--branches", "--fixed-strings",
-         "--grep=[gate-pass]", "--format=%at%x09%s"],
+        ["git", "-C", root, "log", "-n", "50", "HEAD"] + ([] if head_only else ["--branches"]) +
+        ["--fixed-strings", "--grep=[gate-pass]", "--format=%at%x09%s"],
         capture_output=True, text=True, timeout=5)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip())
@@ -157,7 +172,7 @@ def decide(payload, state_dir="/tmp", env=None):
         if not root:
             return None
         with open(payload.get("transcript_path"), encoding="utf-8", errors="replace") as fh:
-            last_edit, last_edit_ts, dev_seen = scan(fh, root)
+            last_edit, last_edit_ts, dev_seen, edited = scan(fh, root)
     except Exception:
         return None
     if dev_seen:
@@ -167,7 +182,8 @@ def decide(payload, state_dir="/tmp", env=None):
     if not last_edit or last_edit_ts is None or os.path.exists(state):
         return None
     try:
-        gate = gate_time(root)
+        # Edits still uncommitted here cannot be covered by a gate on another branch.
+        gate = gate_time(root, head_only=has_uncommitted(root, edited))
     except Exception:
         return None
     if gate >= int(last_edit_ts):

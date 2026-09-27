@@ -127,6 +127,18 @@ class DevGateCheckTest(unittest.TestCase):
         git(self.root, "checkout", "-q", "-")
         self.assertIsNone(self.run_with([edit(self.src("src/a.ts"))]))
 
+    def test_gate_on_other_branch_does_not_cover_uncommitted_edits_here(self):
+        # The edited file still has uncommitted changes in this checkout, so a gate commit on
+        # another branch cannot have checked it (external review, 2026-09-27).
+        path = self.src("src/a.ts")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as fh:
+            fh.write("export const a = 1;\n")
+        git(self.root, "checkout", "-q", "-b", "feature")
+        self.gate_commit("2026-09-25T10:05:00Z")
+        git(self.root, "checkout", "-q", "-")
+        self.assertTrue(hinted(self.run_with([edit(path)])))
+
     def test_edits_in_nested_worktrees_dir_are_ignored(self):
         self.assertIsNone(self.run_with([edit(self.src(".worktrees/feature/src/a.ts"))]))
 

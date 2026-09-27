@@ -11,5 +11,5 @@ done
 t "Stop-Hook dev/hooks/gate-check.py in ~/.claude/settings.json" \
   "python3 -c 'import json,os,sys;s=json.load(open(os.path.expanduser(\"~/.claude/settings.json\")));sys.exit(0 if \"dev/hooks/gate-check.py\" in json.dumps(s.get(\"hooks\",{}).get(\"Stop\",[])) else 1)'"
 t "Hook executable and tests green" "[ -x \"$REPO/dev/hooks/gate-check.py\" ] && (cd \"$REPO/dev/hooks\" && python3 -m unittest -q test_gate_check >/dev/null 2>&1)"
-t "superpowers companion found" "ls ~/.claude/plugins/cache/claude-plugins-official/superpowers/*/skills/brainstorming/scripts/start-server.sh >/dev/null 2>&1"
+t "superpowers companion found (active install)" "(source \"$REPO/dev/scripts/companion-resolve.sh\" && resolve_companion start-server.sh >/dev/null)"
 exit $f
