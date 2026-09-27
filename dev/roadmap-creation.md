@@ -46,19 +46,19 @@ First, discover what skills are available and what might be missing:
 Show both installed and newly discovered skills as options.
 
 **Placement guidance for the user:**
-- **Read-only analysis** (tech-talk-reportcard, workflow-audit, performance-check, security-audit, scan-similar-bugs, ui-scan, dead-code-scanner) → safe as automatic triggers
-- **Code-modifying** (safe-refactor, generate-tests) → better on-demand, not automatic
-- **Project-type-dependent** (playwright-cli: web only, release-screenshots: App Store only)
+- **Read-only analysis** (reports, audits, stack-specific reviews) → safe as automatic triggers
+- **Code-modifying** (refactoring tools, test generators) → better on-demand, not automatic
+- **Project-type-dependent** (browser automation: web only, store screenshots: app stores only)
+
+The gate's own analyzers (`analyzers/`) are not configured here — they always run.
 
 **Recommended defaults** (mark as Recommended in AskUserQuestion):
 
-Note: `/simplify`, `/review-changes`, `/bug-prospector` (phase-scope), `/performance-check` (phase-scope), and E2E/integration tests are hardcoded as mandatory in the Quality Gate (step 5) and do NOT need to be configured here. `/bug-prospector` (full) + `/performance-check` (full) + `/dead-code-scanner` (quick) are mandatory at milestone-end. `/bug-prospector` (full) + `/performance-check` (full) + `/dead-code-scanner` (full) are mandatory at pre-release. Only list additional, optional skills below.
+Note: `/simplify`, Change review, Bug hunt (phase-scope), Performance review (phase-scope), and E2E/integration tests are hardcoded as mandatory in the Quality Gate (step 5) and do NOT need to be configured here. Bug hunt (full) + Performance review (full) + Dead-code scan (quick) are mandatory at milestone-end. Bug hunt (full) + Performance review (full) + Dead-code scan (full) are mandatory at pre-release. Only list additional, optional skills below.
 
 - Post-phase any: `requesting-code-review`
 - Post-phase UI (web): `playwright-cli` (for interactive browser testing beyond E2E)
 - Post-phase UI (native): `writing-clearly-and-concisely`
-- Pre-phase UI (SwiftUI/UIKit): `workflow-audit`
-- Milestone-start: `tech-talk-reportcard`
 
 **6. Preview and confirm** — Write and commit (Recommended), Edit first, Start over.
 

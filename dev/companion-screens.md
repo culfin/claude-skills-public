@@ -61,9 +61,9 @@ Gate summary with 3 or more findings, and `/dev review`. Findings per checker, c
 <table style="width:100%;border-collapse:collapse">
   <tr style="text-align:left;border-bottom:1px solid var(--border)"><th>Checker</th><th>Critical</th><th>Notices</th><th>Status</th></tr>
   <tr><td>Spec checker</td><td style="color:var(--error)">1</td><td>0</td><td style="color:var(--success)">fixed</td></tr>
-  <tr><td>bug-prospector-neutral</td><td style="color:var(--error)">1</td><td>2</td><td style="color:var(--success)">fixed</td></tr>
-  <tr><td>security-review</td><td>0</td><td>1</td><td style="color:var(--warning)">notice open</td></tr>
-  <tr><td>performance-check</td><td>0</td><td>0</td><td style="color:var(--success)">—</td></tr>
+  <tr><td>Bug hunt</td><td style="color:var(--error)">1</td><td>2</td><td style="color:var(--success)">fixed</td></tr>
+  <tr><td>Security review</td><td>0</td><td>1</td><td style="color:var(--warning)">notice open</td></tr>
+  <tr><td>Performance review</td><td>0</td><td>0</td><td style="color:var(--success)">—</td></tr>
 </table>
 <p class="subtitle" style="margin-top:12px">Tests: Spec checker 1 gap, test red→green verified · Build ✓ · E2E ✓</p>
 ```

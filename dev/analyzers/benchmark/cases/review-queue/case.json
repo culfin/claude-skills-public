@@ -1,0 +1,3 @@
+{"analyzer":"security",
+ "requirement":"WordPress plugin: review queue for imported listings. Drafts are shown on a review page; logged-in moderators, or holders of a signed link from the notification mail (no login), can publish or discard them.",
+ "expected":[{"id":"state-check","origin":"real","what":"The POST handler checks only the post type, never that the listing is still a draft. With a valid link (no login) a crafted form can trash, publish or retitle any already published listing by ID.","where":"review-queue.php, template_redirect handler","severity":"critical"}]}

@@ -9,9 +9,9 @@ The gate is **mandatory**: it cannot be skipped and not configured away via ROAD
 
 | Role | Tier |
 |-------|------|
-| Read-only analysis in Step 5c: `/bug-prospector` or `bug-prospector-neutral` (tool per stack), `/performance-check`, Tech-Stack Review | **cheap tier** |
-| `/security-audit` or `/security-review` (phase or full scope), Spec checker (5c-v) | **standard/capable tier** |
-| Milestone-end & pre-release full scans (`/bug-prospector` full, `/performance-check` full, `/security-audit` full, `/dead-code-scanner` full) | **capable tier** |
+| Read-only analysis in Step 5c: Bug hunt, Performance review, Tech-Stack Review | **cheap tier** |
+| Security review (phase or full scope), Spec checker (5c-v) | **standard/capable tier** |
+| Milestone-end & pre-release full scans (Bug hunt full, Performance review full, Security review full, Dead-code scan full) | **capable tier** |
 
 Only the **dispatch model choice** is affected — which checks run and their triggers remain unchanged.
 
@@ -57,13 +57,13 @@ A `Makefile`, `justfile` or CI workflow that defines these steps wins over the t
 | `@type:` | Special behavior in the Quality Gate |
 |----------|------------------------------|
 | `ui` | Tech-Stack Review shadcn/next-best-practices conditionally active |
-| `backend` | Security Audit always active (even without auth files); pg:design-postgres-tables conditionally active |
-| `auth` | Security Audit always active (full scope, not phase scope) |
-| `security` | Security Audit always active (full scope); Spec checker: acceptance criteria without a test are always critical |
-| `refactor` | `/scan-similar-bugs` in full-codebase mode instead of phase scope |
-| `data` | pg:design-postgres-tables always active; Security Audit active |
-| `migration` | Specific risks: irreversibility, data loss. In addition to the `data` checks: (1) Security Audit always active, (2) `/bug-prospector` explicitly checks for a missing DOWN migration / rollback path, (3) the E2E test must include a migration smoke test (migrate up + verify data + migrate down if possible). `@gate: fast` is FORBIDDEN for migration phases. |
-| `docs` | Purely documentation phases (README, API docs, changelog, CLAUDE.md). Minimal gate: `/simplify`, `/review-changes`, typecheck + lint run normally. **Dropped automatically:** Security Audit, E2E Tests, Production Build, Spec checker (5c-v), `/scan-similar-bugs`, `/performance-check`, Tech-Stack Review. `@gate: fast` is semantically wrong here — use `@type: docs` instead. |
+| `backend` | Security review always active (even without auth files); pg:design-postgres-tables conditionally active |
+| `auth` | Security review always active (full scope, not phase scope) |
+| `security` | Security review always active (full scope); Spec checker: acceptance criteria without a test are always critical |
+| `refactor` | Similar-bugs scan in full-codebase mode instead of phase scope |
+| `data` | pg:design-postgres-tables always active; Security review active |
+| `migration` | Specific risks: irreversibility, data loss. In addition to the `data` checks: (1) Security review always active, (2) Bug hunt explicitly checks for a missing DOWN migration / rollback path, (3) the E2E test must include a migration smoke test (migrate up + verify data + migrate down if possible). `@gate: fast` is FORBIDDEN for migration phases. |
+| `docs` | Purely documentation phases (README, API docs, changelog, CLAUDE.md). Minimal gate: `/simplify`, Change review, typecheck + lint run normally. **Dropped automatically:** Security review, E2E Tests, Production Build, Spec checker (5c-v), Similar-bugs scan, Performance review, Tech-Stack Review. `@gate: fast` is semantically wrong here — use `@type: docs` instead. |
 
 ### `@gate:` Annotation — Controlling the Gate Mode
 
@@ -72,18 +72,18 @@ Phases can control the gate mode via a `@gate:` annotation:
 | Annotation | Effect |
 |------------|--------|
 | `@gate: full` | Standard — all steps run (default, does not need to be specified) |
-| `@gate: fast` | Skips conditional parallel checks (Tech-Stack Review, Security Audit, scan-similar-bugs). Mandatory steps (simplify, review-changes, bug-prospector, performance-check, tsc, build, E2E) always run. For fast iteration phases. |
+| `@gate: fast` | Skips conditional parallel checks (Tech-Stack Review, Security review, Similar-bugs scan). Mandatory steps (simplify, Change review, Bug hunt, Performance review, tsc, build, E2E) always run. For fast iteration phases. |
 | `@gate: ci-wait` | Adds an explicit CI status wait before `[x]`, even if CI is otherwise not configured. |
 
 **When to use `@gate: fast`:** Only for config-only changes or when you deliberately want to iterate fast. Pure documentation phases use `@type: docs` instead (a smaller gate than `fast`). Never for phases with auth, API, or DB changes.
 
 **Conflict rule — `@gate: fast` is automatically ignored for:**
 - `@type: security`, `@type: auth` — security checks are always mandatory for these types
-- `@type: backend` with DB migrations — Security Audit stays active
-- `@type: refactor` — `/scan-similar-bugs` stays active in full-codebase mode, even with `@gate: fast`. Refactoring moves code — that is exactly the case where similar bug patterns can show up elsewhere. `scan-similar-bugs` is the only CONDITIONAL check that runs for refactor phases despite `@gate: fast`.
-- If changed files match auth/API/migration patterns — Security Audit stays active regardless of `@gate:`
+- `@type: backend` with DB migrations — Security review stays active
+- `@type: refactor` — Similar-bugs scan stays active in full-codebase mode, even with `@gate: fast`. Refactoring moves code — that is exactly the case where similar bug patterns can show up elsewhere. Similar-bugs scan is the only CONDITIONAL check that runs for refactor phases despite `@gate: fast`.
+- If changed files match auth/API/migration patterns — Security review stays active regardless of `@gate:`
 
-On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: /scan-similar-bugs stays active — @type:refactor"`), then continue with the override.
+On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: Similar-bugs scan stays active — @type:refactor"`), then continue with the override.
 
 ---
 
@@ -101,16 +101,16 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 
 <!-- MANDATORY — always, even with @gate: fast -->
 - [ ] /simplify
-- [ ] /review-changes
-- [ ] /bug-prospector (phase scope)
-- [ ] /performance-check (phase scope)
+- [ ] Change review
+- [ ] Bug hunt (phase scope)
+- [ ] Performance review (phase scope)
 - [ ] Spec checker (5c-v)                      <!-- against @spec:, otherwise chat draft from STATE.md -->
 <!-- CONDITIONAL — dropped with @gate: fast; omit if condition not met -->
 - [ ] Tech-Stack Review: next-best-practices   <!-- next.config.* changed -->
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
-- [ ] Security Audit                           <!-- auth/api/migration changed OR @type: backend/auth/security/data -->
-- [ ] /scan-similar-bugs                       <!-- dropped with @gate: fast -->
+- [ ] Security review                           <!-- auth/api/migration changed OR @type: backend/auth/security/data -->
+- [ ] Similar-bugs scan                       <!-- dropped with @gate: fast -->
 
 <!-- MANDATORY — always, even with @gate: fast -->
 - [ ] Typecheck + lint + tests
@@ -126,7 +126,7 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 **Rules for creating the checklist:**
 - Create the checklist immediately on the `[~]` → `[!]` transition
 - Read the phase's `@gate:` annotation — with `fast`: omit all CONDITIONAL entries
-- **`@type: docs`**: omit all CONDITIONAL entries + additionally omit `Production Build`, `E2E Tests` and `Spec checker (5c-v)`. Only `/simplify`, `/review-changes`, `tsc + lint + tests`, `Gate summary`, `Gate commit` remain.
+- **`@type: docs`**: omit all CONDITIONAL entries + additionally omit `Production Build`, `E2E Tests` and `Spec checker (5c-v)`. Only `/simplify`, Change review, `Typecheck + lint + tests`, `Gate summary`, `Gate commit` remain.
 - Omit conditional entries if the condition is not met — do not mark them `[—]`, just omit them
 - Each step checks off its entry after completion
 - **Every checkmark needs evidence.** An `[x]` is only set if the step has run
@@ -150,15 +150,15 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 
 These steps run regardless of `@skills:` configuration — they are hardcoded into the phase lifecycle and cannot be overridden or removed via ROADMAP.md annotations. The phase stays `[!]` until every checklist item is `[x]`.
 
-**5a. /simplify** — modifies code: reviews all changed code for reuse, quality, and efficiency; fixes issues automatically. Must run first so that `/review-changes` sees the cleaned-up code.
+**5a. /simplify** — modifies code: reviews all changed code for reuse, quality, and efficiency; fixes issues automatically. Must run first so that Change review sees the cleaned-up code.
 - After completion: check off `[ ] /simplify` in STATE.md Gate Checklist.
 
-**5b. /review-changes** — pre-commit review of all changes (after simplify) for bugs, security vulnerabilities, performance issues, and missing tests. Read-only — flags issues, does not auto-fix.
+**5b. Change review** (`analyzers/review.md`) — a broad first pass over the whole diff (after simplify): does it meet the requirement, is anything missing or stray, are there tests, is anything irreversible in it. Read-only — flags issues, does not auto-fix.
 - **Critical issues** (security vulnerabilities, data loss risks, logic errors): fix them before proceeding to 5c.
 - **Warnings** (style, minor improvements): note them but proceed — `/simplify` already handled code quality.
-- After completion: check off `[ ] /review-changes` in STATE.md Gate Checklist.
+- After completion: check off `[ ] Change review` in STATE.md Gate Checklist.
 
-**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see "Subagent Model Choice" above: bug-prospector/performance-check/Tech-Stack → cheap tier, security-audit → standard/capable). Wait for all, at most **15 minutes**. If a subagent is still running after 15 minutes: cancel it, mark its findings as "timeout — skipped", note it in STATE.md, continue with 5d. A hanging analyzer does not block the entire gate.
+**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see "Subagent Model Choice" above: bug hunt/performance/Tech-Stack → cheap tier, Security review → standard/capable). Wait for all, at most **15 minutes**. If a subagent is still running after 15 minutes: cancel it, mark its findings as "timeout — skipped", note it in STATE.md, continue with 5d. A hanging analyzer does not block the entire gate.
 
 **Dispatch prompt for the analyzers — two rules that determine the hit rate:**
 - **Prompt for refutation, not for checking.** "Find what is wrong with this change"
@@ -167,15 +167,15 @@ These steps run regardless of `@skills:` configuration — they are hardcoded in
   supposed to meet — not the reasoning for why the solution is correct. If you pass along your
   conclusions, you get their confirmation back instead of a review.
 
-**Scope and tool:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Wherever `/bug-prospector` or `/security-audit` appears below, the mapping **analysis tool per stack** in `tech-stack-triggers.md` applies: in web, Rust and mixed projects, a stack-neutral bug hunter and `/security-review` run.
+**Scope and analyzers:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Each analysis below is one subagent that receives `analyzers/CONTRACT.md` plus its analyzer file — how to dispatch it, what to hand over and the output format are in the contract. The `Result:` line of each report is the evidence for its checkmark. Nothing needs to be installed.
 
-  **5c-i. /bug-prospector (phase scope)** — analyzes the files changed in this phase through 7 lenses (assumptions, state machines, boundary conditions, data lifecycle, error paths, time-dependent behavior, platform divergence). **Scope:** Only the changed files and their immediate callers/dependencies — NOT the entire codebase.
+  **5c-i. Bug hunt (phase scope)** (`analyzers/bugs.md`) — analyzes the files changed in this phase through 7 lenses (assumptions, state machines, boundary conditions, data lifecycle, error paths, time-dependent behavior, platform divergence). **Scope:** Only the changed files and their immediate callers/dependencies — NOT the entire codebase.
 
-  **5c-ii. /performance-check (phase scope)** — scans changed files for performance anti-patterns (memory leaks, unnecessary re-renders, N+1 queries, hot-path bloat, missing indexes on new queries, unoptimized data fetching). **Scope:** Only changed files and immediate context.
+  **5c-ii. Performance review (phase scope)** (`analyzers/performance.md`) — scans changed files for performance anti-patterns (memory leaks, unnecessary re-renders, N+1 queries, hot-path bloat, missing indexes on new queries, unoptimized data fetching). **Scope:** Only changed files and immediate context.
 
   **5c-iii. Tech-Stack Review (conditional)** — triggered based on `$TECH_STACKS` and changed files. Trigger matrix: `tech-stack-triggers.md`. Skip silently if no relevant files were changed.
 
-  **5c-iv. /security-audit (conditional)** — triggered when changed files touch security-sensitive areas. Trigger matrix: `tech-stack-triggers.md`. Skip if no security-sensitive files were changed.
+  **5c-iv. Security review (conditional)** (`analyzers/security.md`) — triggered when changed files touch security-sensitive areas. Trigger matrix: `tech-stack-triggers.md`. Skip if no security-sensitive files were changed.
 
   **5c-v. Spec checker** — read-only, prompted for refutation; receives the diff (incl. untracked files) and the spec from `@spec:`, **without** the reasoning behind the implementation. Reports, each with a quote of the spec line: (a) required, but missing or only partially implemented; (b) implemented, but not required; (c) implemented, but probably wrong; (d) acceptance criterion without a test. (a), (c) and (d) are critical, (b) is a note; with `@type: security`, (d) is always critical. For (d): write the test and **see it red once** — briefly break the checked code, test red, restore the code, test green; record the invocation and result as evidence in the checklist. Without `@spec:` (small phase, draft only in chat) it checks against the approved chat draft with acceptance criteria from STATE.md, failing that against the phase description in the ROADMAP; if neither exists, it is dropped with the note "no spec".
 
@@ -185,9 +185,9 @@ These steps run regardless of `@skills:` configuration — they are hardcoded in
 - **Non-critical findings** (edge cases, optimization suggestions, style hints): note in STATE.md Blockers & Risks, proceed.
 - After completion: check off all applicable `[ ]` items in STATE.md Gate Checklist.
 
-**5d. /scan-similar-bugs** — after any fixes from the parallel block: scan the broader codebase for the same patterns that were just fixed. Prevents regression of the same class of bug elsewhere. Scope: full codebase, but focused on patterns found in 5c.
+**5d. Similar-bugs scan** (`analyzers/similar-bugs.md`, input: the list of fixes from 5b/5c) — after any fixes from the parallel block: scan the broader codebase for the same patterns that were just fixed. Prevents regression of the same class of bug elsewhere. Scope: full codebase, but focused on patterns found in 5c.
 - Findings: fix automatically where straightforward, note complex ones in STATE.md.
-- After completion: check off `[ ] /scan-similar-bugs` in STATE.md Gate Checklist.
+- After completion: check off `[ ] Similar-bugs scan` in STATE.md Gate Checklist.
 
 **5e. Verification + Unit Tests** — after all fixes from 5a–5d:
 1. Run typecheck, lint and unit/integration tests with the project's own commands — see "Project Commands per Stack" above.
@@ -227,7 +227,7 @@ Summary: Determine testability by tech stack, detect existing infrastructure (Pl
 
 ```markdown
 ### Gate summary — Phase N: <Name>
-- Found: <N critical + M notes> (simplify: X fixes, bug-prospector: Y findings, security: W findings)
+- Found: <N critical + M notes> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
 ```
@@ -284,12 +284,12 @@ one of these thoughts comes up, that is the signal to **do** the step — not to
 
 | Mistake | Fix |
 |---------|-----|
-| Putting code-modifying skills (safe-refactor) as automatic pre-phase triggers | Use on-demand only — too heavy for every phase start |
+| Putting code-modifying skills (refactoring or test generators) as automatic pre-phase triggers | Use on-demand only — too heavy for every phase start |
 | Adding web-only skills (playwright-cli) to native app projects | Match skills to project type during `/dev init` |
 | Running all post-skills sequentially | Most are read-only — run in parallel for speed |
 | Editing ROADMAP.md manually without updating annotations | Use `/dev add`, `/dev skip`, `/dev reorder` instead |
-| Skipping milestone-start skills to "save time" | They establish baselines — run them, especially tech-talk-reportcard |
-| Using `@gate: fast` for auth/API/DB phases | `@gate: fast` disables Security Audit — use only for config changes; docs phases take `@type: docs` |
+| Skipping milestone-start skills to "save time" | They establish baselines — if configured, run them |
+| Using `@gate: fast` for auth/API/DB phases | `@gate: fast` disables Security review — use only for config changes; docs phases take `@type: docs` |
 | Deleting a Gate summary from STATE.md | The summary is permanent — only the Gate Checklist is removed after [x] |
 | Phase directly `[~]` → `[x]` without gate | FORBIDDEN — always `[!]` in between. The gate is not optional |
 | Ignoring CI status and setting `[x]` anyway | If CI is configured: the gate is only green when CI is green |

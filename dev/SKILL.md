@@ -90,7 +90,7 @@ Store detected stacks as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn,
 
 Summary: Tech skills kick in at two points — during **brainstorming (4a)**, depending on `@type:` and
 `$TECH_STACKS`, and in **gate step 5c** as read-only reviews, triggered by the files the phase
-actually changed. Two matrices: *Tech-Stack Review* (nextjs, shadcn, ui-scan,
+actually changed. Two matrices: *Tech-Stack Review* (nextjs, shadcn, Accessibility review,
 postgres, swift, winui, rust, tauri, svelte) and *Security Review* (auth/login/session/middleware,
 API routes/actions, DB schema, as well as `@type: auth`/`backend`). Critical findings → fix **before 5d**.
 
@@ -137,7 +137,7 @@ digraph session_start {
    Milestone 2: UI Shell (3/5 phases done)
    Next: Phase 4 — Connections View (@type:ui @gate:fast)
    Tech Stack: [nextjs, shadcn, postgres]
-   Pre-skills: [workflow-audit]  Post-skills: [requesting-code-review]
+   Pre-skills: [<from ROADMAP>]  Post-skills: [requesting-code-review]
    Blockers: <from STATE.md, if any>
    ```
    Show `@gate:` only if not `full`. Show `$TECH_STACKS` only on first session start or if changed.
@@ -219,21 +219,21 @@ digraph phase {
   "Superpowers Cycle" -> "Mark [!], create Gate Checklist";
   "Mark [!], create Gate Checklist" -> "QUALITY GATE";
   "QUALITY GATE" -> "/simplify (MANDATORY)";
-  "/simplify (MANDATORY)" -> "/review-changes (MANDATORY)";
-  "/review-changes (MANDATORY)" -> "Parallel Analysis Block";
-  "Parallel Analysis Block" -> "/bug-prospector (phase scope)";
-  "Parallel Analysis Block" -> "/performance-check (phase scope)";
+  "/simplify (MANDATORY)" -> "Change review (MANDATORY)";
+  "Change review (MANDATORY)" -> "Parallel Analysis Block";
+  "Parallel Analysis Block" -> "Bug hunt (phase scope)";
+  "Parallel Analysis Block" -> "Performance review (phase scope)";
   "Parallel Analysis Block" -> "Tech-Stack Review (conditional)";
-  "Parallel Analysis Block" -> "/security-audit (conditional)";
+  "Parallel Analysis Block" -> "Security review (conditional)";
   "Parallel Analysis Block" -> "Spec checker (5c-v)";
-  "/bug-prospector (phase scope)" -> "Fix Critical Findings";
-  "/performance-check (phase scope)" -> "Fix Critical Findings";
+  "Bug hunt (phase scope)" -> "Fix Critical Findings";
+  "Performance review (phase scope)" -> "Fix Critical Findings";
   "Tech-Stack Review (conditional)" -> "Fix Critical Findings";
-  "/security-audit (conditional)" -> "Fix Critical Findings";
+  "Security review (conditional)" -> "Fix Critical Findings";
   "Spec checker (5c-v)" -> "Fix Critical Findings";
-  "Fix Critical Findings" -> "/scan-similar-bugs (after fixes)";
-  "/scan-similar-bugs (after fixes)" -> "tsc + lint + unit tests";
-  "tsc + lint + unit tests" -> "Production Build";
+  "Fix Critical Findings" -> "Similar-bugs scan (after fixes)";
+  "Similar-bugs scan (after fixes)" -> "Typecheck + lint + tests";
+  "Typecheck + lint + tests" -> "Production Build";
   "Production Build" -> "E2E Tests (MANDATORY)";
   "E2E Tests (MANDATORY)" -> "Gate summary in STATE.md";
   "Gate summary in STATE.md" -> "Gate commit";
@@ -261,7 +261,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 ### 3. Pre-Skill → Brainstorming Handoff
 
-If pre-skills produced output files (e.g., `workflow-audit` generates `.workflow-audit/handoff.yaml`), check for these files and pass them as context to brainstorming:
+If pre-skills produced output files (e.g. a handoff file in a dot-directory of the project), check for these files and pass them as context to brainstorming:
 - "The following pre-skill output is available as context: [file path]"
 - Read the file and include relevant findings in the brainstorming context
 
@@ -285,7 +285,7 @@ In both cases: State context: phase name, type, milestone goal, any pre-skill ou
 **4c. Execution (resume):** Invoke `superpowers:subagent-driven-development` with plan path. **Scope boundary (important):** SDD only performs **implementing tasks + per-task reviews**, then **STOP** — it must
 - **not** run `finishing-a-development-branch` (no merge/PR): `/dev` owns completion via its Quality Gate (Step 5) → Gate commit → any later sync/merge step;
 - **not** create a new/nested worktree — work in the **current** branch/worktree (sessions that already run in their own worktree would otherwise get project-local `.worktrees/` created by 6.x);
-- **not** run a final whole-branch review — `/dev`'s gate (`/review-changes`, `/bug-prospector`, `/security-audit`) covers that.
+- **not** run a final whole-branch review — `/dev`'s gate (Change review, Bug hunt, Security review) covers that.
 Pass this boundary explicitly when invoking SDD.
 
 **4d. Verification:** Invoke `verification-before-completion`.
@@ -299,9 +299,9 @@ The `[!]` status means: implementation is done, but the mandatory Quality Gate h
 
 ### 5. Mandatory Quality Gate
 
-**→ Read `gate.md`.** Summary: `/simplify` → `/review-changes` → parallel analyses (bugs,
+**→ Read `gate.md`.** Summary: `/simplify` → Change review → parallel analyses (bugs,
 performance, tech-stack and security reviews, spec checker) → fix critical findings →
-`/scan-similar-bugs` → typecheck + lint + tests → production build → E2E → gate summary → gate
+Similar-bugs scan → typecheck + lint + tests → production build → E2E → gate summary → gate
 commit `[gate-pass]` → CI status. Every checkmark needs evidence; the phase stays `[!]` until all
 are `[x]`.
 
@@ -311,7 +311,7 @@ are `[x]`.
 
 Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis skills run in parallel. Skills needing final code state run after analysis completes.
 
-**Note:** `/simplify`, `/review-changes`, `/bug-prospector`, `/performance-check`, `/security-audit`, `/scan-similar-bugs`, Spec checker, `/ui-scan`, build verification, unit tests, and E2E tests have already run in step 5. Do not run them again as post-skills even if listed in `@skills:post[]`.
+**Note:** `/simplify`, Change review, Bug hunt, Performance review, Security review, Similar-bugs scan, Spec checker, Accessibility review, build verification, unit tests, and E2E tests have already run in step 5. Do not run them again as post-skills even if listed in `@skills:post[]`.
 
 **The Gate commit has already happened** — post-skills run on the gate-verified code state.
 
@@ -367,9 +367,9 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 | All milestones done | "Roadmap complete!" Offer add/review. |
 | `@skills` parse error | Warn, use defaults. |
 | `@gate: fast` + `@type: security/auth` | Warn: "`@gate: fast` ignored — @type requires full gate". Continue with `full`. |
-| `@gate: fast` + `@type: refactor` | Warn: "`@gate: fast`: `/scan-similar-bugs` stays active — @type:refactor". Only this one check remains, the rest as with `fast`. |
+| `@gate: fast` + `@type: refactor` | Warn: "`@gate: fast`: Similar-bugs scan stays active — @type:refactor". Only this one check remains, the rest as with `fast`. |
 | `@gate: fast` + `@type: migration` | Warn: "`@gate: fast` ignored — @type:migration always requires full gate". Continue with `full`. |
-| `@gate: fast` + auth/API files changed | Warn: "Security Audit active despite @gate:fast — security-relevant files changed." |
+| `@gate: fast` + auth/API files changed | Warn: "Security review active despite @gate:fast — security-relevant files changed." |
 | `@gate:` unknown value | Warn, fall back to `full`. |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |

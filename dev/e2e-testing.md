@@ -7,8 +7,8 @@
 | Web app (Next.js, React, Vue, Svelte, etc.) | Yes — preferred | Cypress, Vitest Browser Mode |
 | REST/GraphQL API (without UI) | No | Vitest/Jest integration tests, `supertest`, `httpie` |
 | CLI tool | No | Shell-based tests, Vitest |
-| Native app (iOS/macOS) | No | XCTest, Swift Testing (`/run-tests`) |
-| Native app (Windows/WinUI) | No | xUnit (`/run-tests`) |
+| Native app (iOS/macOS) | No | XCTest, Swift Testing (`xcodebuild test` / `swift test`) |
+| Native app (Windows/WinUI) | No | xUnit (`dotnet test`) |
 | Library/package | No | The framework's unit tests |
 | Hybrid (web app + API) | Yes for UI parts | API parts: integration tests |
 
@@ -32,7 +32,7 @@ If Playwright is NOT suitable or not configured:
 2. If no test infrastructure exists at all: **warn and skip**, but log as Blocker in STATE.md ("No test framework configured — phase N had no automated test").
 
 **Step 4: Handle missing specs.**
-If the phase introduced new functionality but no matching test spec exists: flag it and **generate a basic smoke test** using `/generate-tests` before running. This ensures new features always get at least one automated test.
+If the phase introduced new functionality but no matching test spec exists: flag it and **write a basic smoke test** before running — and see it fail once against a deliberately broken implementation, as the spec checker (5c-v) requires. This ensures new features always get at least one automated test.
 
 **Failure handling:**
 - Test fails due to phase changes → fix before proceeding.

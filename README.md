@@ -30,10 +30,14 @@ makes sure no phase counts as done without being verified.
 2. **Plan and build** — via the [superpowers](https://github.com/obra/superpowers) plugin:
    specification, implementation plan, execution by subagents with a review per task.
 3. **Quality gate** — cannot be switched off. Code cleanup, review, parallel analyses (bugs,
-   performance, security, stack-specific rules), a check against the specification, type check,
+   performance, security, stack-specific rules — the analyzers ship with the skill), a check against the specification, type check,
    lint, tests, production build, end-to-end tests and CI status.
 4. **Close** — a gate commit with `[gate-pass]` in the subject, a summary in `STATE.md` and the
    phase checked off in the roadmap.
+
+**Its own analyzers.** The gate's analyses ship with the skill (`dev/analyzers/`) and run as
+subagents — no other skills required. `dev/analyzers/benchmark/` measures whether they find known
+bugs.
 
 **Principles the skill enforces**
 
@@ -126,7 +130,7 @@ PY
 | What | Why |
 |---|---|
 | [superpowers](https://github.com/obra/superpowers) plugin | Brainstorming, plans, subagent execution, Visual Companion |
-| Analysis skills such as those in [Terryc21/xcode-workflow-skills](https://github.com/Terryc21/xcode-workflow-skills) (`bug-prospector`, `performance-check`, `scan-similar-bugs`, …) | The analysis steps of the quality gate. Missing skills are reported and skipped, not fatal. |
+| Nothing else for the quality gate | Its analyses (change review, bug hunt, performance, security, similar bugs, dead code, accessibility) ship with the skill in `dev/analyzers/` and run as subagents. Stack-specific skills can be added per project via `@skills:`. |
 | Google Chrome | Only for `dev/tests/check-screens.sh` |
 
 **Opening the Visual Companion from another device:** by default the server listens on
@@ -144,6 +148,7 @@ permanent for Claude Code, add it under `"env"` in `~/.claude/settings.json`.
 ## Tests
 
 ```bash
+dev/analyzers/benchmark/run.sh                        # analyzers against known bugs (needs claude CLI)
 cd dev/hooks && python3 -m unittest test_gate_check   # stop hook
 dev/tests/check-setup.sh                              # installation
 dev/tests/check-screens.sh                            # rendering of the companion building blocks

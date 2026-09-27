@@ -39,13 +39,13 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 All phases `[x]` or `[—]`:
 
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
-2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents (**model explicit: capable tier for full scans**, see "Subagent Model Choice" in `gate.md`), wait for all to complete:
-   - **`/bug-prospector`** (full mode, tool per stack) — deep analysis of the entire milestone scope through all 7 lenses.
-   - **`/performance-check`** (full mode) — comprehensive performance anti-pattern scan across the milestone's changes.
-   - **`/security-audit`** (full mode, tool per stack) — complete security scan of the entire milestone scope. Even if every phase already had conditional security audits, full mode uncovers cross-cutting attack surfaces (interplay of several components, cumulative risks).
+2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see "Subagent Model Choice" in `gate.md`), wait for all to complete:
+   - **Bug hunt** (full mode) — deep analysis of the entire milestone scope through all 7 lenses.
+   - **Performance review** (full mode) — comprehensive performance anti-pattern scan across the milestone's changes.
+   - **Security review** (full mode) — complete security scan of the entire milestone scope. Even if every phase already had conditional security audits, full mode uncovers cross-cutting attack surfaces (interplay of several components, cumulative risks).
    - Critical findings from all three: fix before proceeding.
    - Non-critical findings: note in STATE.md under Blockers & Risks.
-3. **Mandatory: `/dead-code-scanner`** (quick mode) — scans for unused code accumulated across the milestone's phases. Hardcoded, runs regardless of configuration.
+3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode) — scans for unused code accumulated across the milestone's phases. Hardcoded, runs regardless of configuration.
    - If dead code is found: show findings, fix automatically where safe (unused imports, unreferenced functions), ask for confirmation on larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
 5. **Update STATE.md** (Progress table, Current Position to next milestone).
@@ -100,8 +100,8 @@ digraph debug_decision {
   "Fix directly" -> "Continue phase";
   "Start Debug" -> "Claude: debugger.md flow";
   "Claude: debugger.md flow" -> "Root Cause -> Fix";
-  "Root Cause -> Fix" -> "scan-similar-bugs";
-  "scan-similar-bugs" -> "Continue phase";
+  "Root Cause -> Fix" -> "Similar-bugs scan";
+  "Similar-bugs scan" -> "Continue phase";
 }
 ```
 
@@ -109,7 +109,7 @@ Read and follow `debugger.md` in this skill directory for the Claude-side flow. 
 
 Key integration points:
 - Debug files record which `/dev` phase was active (if any)
-- After fix: `scan-similar-bugs` runs automatically
+- After fix: Similar-bugs scan runs automatically
 - After archive: returns to the `[~]` phase if one was in progress
 - Knowledge base (`.debug/knowledge-base.md`) accelerates future debugging
 
@@ -161,12 +161,12 @@ After the commit: **Show screen** — updated roadmap (building block "Roadmap" 
 
 **Triggered by:** `/dev review`
 
-1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents (**model explicit: capable tier**, see "Subagent Model Choice" in `gate.md`):
-   - **`/bug-prospector`** (full mode, tool per stack) — entire codebase, 7 lenses.
-   - **`/performance-check`** (full mode) — entire codebase.
-   - **`/security-audit`** (full mode, tool per stack) — entire codebase. Critical — must be green before release.
+1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see "Subagent Model Choice" in `gate.md`):
+   - **Bug hunt** (full mode) — entire codebase, 7 lenses.
+   - **Performance review** (full mode) — entire codebase.
+   - **Security review** (full mode) — entire codebase. Critical — must be green before release.
    - Critical findings from all three: fix before proceeding. Non-critical: note in STATE.md.
-2. **Mandatory: `/dead-code-scanner`** (full mode) — comprehensive scan of the entire codebase. Fix findings, then re-run typecheck + lint (`gate.md`, "Project Commands per Stack").
+2. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, full mode) — comprehensive scan of the entire codebase. Fix findings, then re-run typecheck + lint (`gate.md`, "Project Commands per Stack").
 3. **Read Gate summaries** — read all `### Gate summary` entries from STATE.md. If there are none (first release or fresh project): output the note "No gate history available — this is the first release", skip this step. If present: show a consolidated quality picture: which findings were found and fixed across all phases? Are there recurring patterns?
 4. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause

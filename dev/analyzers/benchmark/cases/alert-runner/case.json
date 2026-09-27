@@ -1,0 +1,5 @@
+{"analyzer":"bugs",
+ "requirement":"Bash script run every five minutes from cron (set -euo pipefail): queries Prometheus 3 over its HTTP API for several conditions and sends push alerts.",
+ "expected":[
+  {"id":"pipe-early-exit","origin":"real","what":"`grep -m1` in the HUNG_AGE pipeline under set -e + pipefail aborts the whole script (no match → exit 1; or SIGPIPE on printf when there is a match with long output). Checks after it (certificates, backups) silently never run.","where":"check-alerts.sh, check 4","severity":"critical"},
+  {"id":"url-encoding","origin":"real","what":"prom_instances encodes only spaces and double quotes. Queries with { } = ! + are sent unencoded; Prometheus answers with a parse error, which the parser swallows as 'no results' — host-down and website-down checks never fire.","where":"check-alerts.sh, prom_instances","severity":"critical"}]}

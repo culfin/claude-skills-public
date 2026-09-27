@@ -1,0 +1,3 @@
+{"analyzer":"performance",
+ "requirement":"WordPress plugin: lists upcoming courses on the front page (next 2), a list page and a feed. A course is upcoming if its end date, or its start date when there is no end, is today or later. About 150 courses with nine meta rows each; the front page is the busiest page.",
+ "expected":[{"id":"meta-join-explosion","origin":"real","what":"The meta_query with three OR branches plus the meta_key sort makes WordPress join postmeta six times; the meta_key filter sits in WHERE, so the joins multiply (9^6 ≈ 530,000 combinations per course) — seconds per call, on every front-page view. Critical.","where":"upcoming.php, ct_upcoming()","severity":"critical"}]}

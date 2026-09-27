@@ -1,0 +1,5 @@
+{"analyzer":"bugs",
+ "requirement":"Bash maintenance tasks run by a scheduler: mail-health.sh (set -uo pipefail) connects to a mail server over SSH, collects queue and service state, pushes metrics and sends alerts; updates.sh (set -euo pipefail) reports pending package updates weekly.",
+ "expected":[
+  {"id":"ssh-failure-false-alarm","origin":"real","what":"The exit code of remote_exec is not checked and the ===END=== marker is never verified. When SSH fails, all sections are empty, POSTFIX_STATE/DOVECOT_STATE are not 'active', and two false critical 'DOWN' alerts go out (plus zero metrics).","where":"mail-health.sh, OUTPUT=$(remote_exec …)","severity":"critical"},
+  {"id":"unbound-variable","origin":"real","what":"UA_STATUS is never assigned (only UA_TIMER). Under set -u, updates.sh aborts on the SUMMARY line on every run.","where":"updates.sh, last line","severity":"critical"}]}

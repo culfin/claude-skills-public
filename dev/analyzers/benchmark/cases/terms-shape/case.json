@@ -1,0 +1,3 @@
+{"analyzer":"bugs",
+ "requirement":"WordPress plugin: turns a course post into a plain array for templates and a JSON feed, including its topic taxonomy terms (the taxonomy comes from a companion plugin that may be deactivated).",
+ "expected":[{"id":"wp-error","origin":"real","what":"wp_get_object_terms() returns a WP_Error (e.g. taxonomy not registered); `?: []` does not catch it because an object is truthy, so 'topics' becomes a WP_Error and implode()/foreach on it fails.","where":"fields.php, ct_shape() topics","severity":"critical"}]}

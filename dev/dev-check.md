@@ -33,14 +33,14 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | Step | Tool | Notes |
 |------|------|-------|
 | 5a | `/simplify` | Scope: `$CHECK_SCOPE` |
-| 5b | `/review-changes` | Scope: `$CHECK_SCOPE` |
-| 5c-i | `/bug-prospector` | Scope: `$CHECK_SCOPE`; tool per stack (`tech-stack-triggers.md`) |
-| 5c-ii | `/performance-check` | Scope: `$CHECK_SCOPE` |
+| 5b | Change review | Scope: `$CHECK_SCOPE` |
+| 5c-i | Bug hunt | Scope: `$CHECK_SCOPE` |
+| 5c-ii | Performance review | Scope: `$CHECK_SCOPE` |
 | 5c-iii | Tech-Stack Review | Conditional — same trigger matrix as gate, evaluated against `$CHECK_SCOPE` |
-| 5c-iv | `/security-audit` | Conditional — same trigger matrix as gate, evaluated against `$CHECK_SCOPE`; tool per stack |
+| 5c-iv | Security review | Conditional — same trigger matrix as gate, evaluated against `$CHECK_SCOPE` |
 | 5c-v | Spec checker | Only if the user names a spec; otherwise it is skipped with the note "no spec" |
-| 5d | `/scan-similar-bugs` | After fixes from 5c |
-| 5e | tsc + lint + unit tests | Full suite |
+| 5d | Similar-bugs scan | After fixes from 5c |
+| 5e | Typecheck + lint + tests | Full suite |
 | 5f | Production Build | Full build |
 | 5g | E2E Tests | Full suite |
 | 5h | — | Dropped; test gaps are reported by 5c-v |
@@ -54,7 +54,7 @@ Steps 5c run as parallel Agent subagents (15-minute timeout). Any step failure s
 
 ```markdown
 ### Check summary — YYYY-MM-DD — N files
-- Found: <N critical + M notices> (simplify: X fixes, bug-prospector: Y findings, security: W findings)
+- Found: <N critical + M notices> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green verified | no gaps>
 ```

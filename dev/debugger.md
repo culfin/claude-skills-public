@@ -288,7 +288,7 @@ Regression test first, at a seam that reproduces the real bug pattern. If there 
 
 ### Step 6: Post-Fix Integration
 
-1. Run `scan-similar-bugs` to find same pattern elsewhere
+1. Run the similar-bugs scan (`analyzers/similar-bugs.md`) to find the same pattern elsewhere
 2. Add findings to Issue Rating Table
 3. If similar bugs found → show to user, fix or note for later
 4. Write regression test if feasible
@@ -338,7 +338,7 @@ ALL must be true:
 - [ ] Build passes
 - [ ] Tests pass
 - [ ] Related functionality still works
-- [ ] scan-similar-bugs ran
+- [ ] Similar-bugs scan ran
 - [ ] Issue Rating Table complete
 
 **Red flags:** "seems to work," "I think it's fixed" — NOT verified.
@@ -363,6 +363,6 @@ Step 4 — Investigate:
   Phase 3: Check data — category IS nil for CSV-imported items. Confirmed.
 Step 5 — Fix: Replace `item.category!` with `item.category ?? "Uncategorized"`
          Build passes, tap works, test added for nil category
-Step 6 — scan-similar-bugs: found 2 more force unwraps on optional fields
+Step 6 — Similar-bugs scan: found 2 more force unwraps on optional fields
 Step 7 — Archive, commit, knowledge base updated
 ```

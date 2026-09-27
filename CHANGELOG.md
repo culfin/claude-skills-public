@@ -2,6 +2,28 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.0 — 2026-09-27
+
+**dev — no third-party analysis skills any more.** The quality gate used to call `/bug-prospector`,
+`/performance-check`, `/security-audit`, `/review-changes`, `/scan-similar-bugs` and
+`/dead-code-scanner` from another repository. They were written for Swift; other stacks got a
+fallback, and when they were not installed, the "mandatory" gate skipped them with a warning.
+
+- New `dev/analyzers/`: change review, bug hunt, security, performance, similar bugs, dead code,
+  accessibility — each an instruction file for one read-only subagent, with language notes for
+  Swift, TypeScript/JavaScript, Rust, PHP, Python, shell and SQL. `CONTRACT.md` fixes what the gate
+  hands over, how an analyzer works (sweep for risky constructs, then judge every hit, then lenses)
+  and the report format. Nothing to install.
+- New `dev/analyzers/benchmark/`: five anonymised cases from real production bugs and a runner that
+  checks, in isolation, whether the analyzers find them. Results and their limits are in its README.
+- Tech-stack skills (Next.js, shadcn, Svelte, …) stay optional extras; a missing one is skipped, a
+  missing analyzer cannot happen.
+- Checklist names changed accordingly: "Change review", "Bug hunt", "Performance review",
+  "Security review", "Similar-bugs scan", "Dead-code scan".
+
+Breaking: projects whose `ROADMAP.md` lists the old skill names under `@skills:` keep calling them
+as extras; `/dev` itself no longer does.
+
 ## v1.2 — 2026-09-27
 
 **dev**
