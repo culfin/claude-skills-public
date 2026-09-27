@@ -1,33 +1,41 @@
-# `/sentry check [prod|dev]` — triage
+# `/sentry check [prod|dev]`
 
-Analyzes and proposes; changes nothing in Sentry and nothing in the repository. The only file it
-writes is the local report.
+Read [collection](collection.md). This workflow proposes fixes; it never edits source, changes
+Sentry state or creates tickets. It may save a sanitized report unless the user requests no writes.
 
-1. **Collect.** Per environment in scope (all separately — see "The one rule" in `SKILL.md`):
-   `search_issues(..., query:"is:unresolved environment:<env>", sort:"freq")`, top ~8 each. Also
-   look at `firstSeen:-24h` for new issues — a fresh issue with few events can matter more than an
-   old frequent one. Merge the lists by issue ID: an issue seen in several environments is one
-   issue — report it once, with all its environments, and let the most important one (production
-   before staging before local) decide its priority.
-2. **Sort out local noise.** In `localNoise` environments, mark an issue as noise only when it shows
-   the `localNoiseHints`. Everything else there is a real issue.
-3. **Detail per issue** (`get_sentry_resource` on the issue): title, culprit, event and user counts,
-   first/last seen, release, environment. A regression (resolved before, now back) goes to the top.
-4. **Root cause for the one to three most important** (frequency × users affected × newness):
-   locate the culprit in the code from the stack trace, read the surrounding code and the change
-   history of that spot (`git log -L` or blame on the lines). `analyze_issue_with_seer` can give a
-   starting point where the plan includes it — its answer is a hypothesis to check against the code,
-   not a finding. Result: a concrete fix proposal in one or two sentences with `file:line`.
-5. **Report** to `.sentry/reports/last-<scope>.md` (create the directory if needed):
+1. Collect frequent, fresh and regressed issues with explicit scope, time window and coverage.
+   Deduplicate and classify representative events; keep real server errors in local-noise
+   environments. Rank severity and affected user flows before raw frequency.
+2. Investigate the one to three most important issues. Verify issue/project identity, relevant
+   event environment, release, stack trace and source-map quality. Map the release to repository
+   commit metadata; a release name is not necessarily a Git SHA. Read deployed source/history
+   without resetting the user's checkout, then compare with current code. Mark mapping uncertainty.
+3. State confirmed cause only when code and reproduction or equivalent evidence support it.
+   Otherwise state the hypothesis and the next discriminating check. Seer output, if authorized,
+   is supporting evidence, not a verdict. Distinguish already-fixed-but-not-deployed issues from
+   fixes still needed. Proposals give current file/line only when verified, otherwise identify
+   the missing source mapping instead of inventing a location.
+4. Prepare the report below. Include issue links and short sanitized summaries; remove sensitive
+   values from titles, URLs and copied error text too. Use invented equivalent inputs in examples.
+5. Before saving, verify `.sentry/reports/` is ignored by Git and resolves inside the project,
+   with no symlink redirection. If it is not ignored, keep the report in chat and offer setup;
+   check does not edit `.gitignore`. Never overwrite a tracked report. Archive an existing local
+   `last-<scope>.md` to a unique timestamp/run name, then atomically replace the last report. An
+   archive/write failure leaves the previous report intact and is reported. Partial runs get a
+   clearly labelled partial report, never a success header. Status never writes reports.
+6. Show prioritized findings, limitations and `/sentry fix <ID>` for the chosen candidate.
 
-   ```
-   # Sentry triage YYYY-MM-DD (scope: prod|dev|all)
-   ## <ID> — <title>   [priority: high/medium/low]
-   Events: <n> · users: <n> · release: <sha> · last seen: <ts> · env: <env>
-   Root cause: <checked explanation, or "hypothesis: …" if not confirmed in code>
-   Fix: <proposal> — `<file>:<line>`
-   ```
+```text
+# Sentry triage — <UTC timestamp> — scope <prod|dev|all>
+Target: <org/project> · Window: <start> to <end>
+Coverage: <complete query / sampled triage / partial; failed and unchecked areas>
+Queries: <tools, filters, page/aggregate evidence; no credentials>
 
-   No raw event payloads in the report (see "Personal data" in `SKILL.md`).
-6. **In chat:** the priority list, `/sentry fix <ID>` as the next step, and for a scoped run the
-   scope that stayed unchecked.
+## <issue ID> — <sanitized title> — <priority> — <verified link>
+Environments: <matched; unmapped; origin evidence>
+Metrics: <value + exact scope/window, or unavailable>
+Evidence: <event IDs, release and verified source revision; no raw payload>
+Cause: <confirmed / hypothesis / already fixed in current code>
+Proposal: <minimal change and verified source location, or next investigation>
+Verification needed: <regression test or equivalent evidence>
+```
