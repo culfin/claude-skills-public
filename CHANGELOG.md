@@ -2,6 +2,33 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.5 — 2026-09-27
+
+**sentry** — four rules from a live run against the Sentry MCP server:
+- The MCP issue search takes a relative `period` (`24h` … `90d`), not start/end; the skill no longer
+  asks for a frozen UTC window it cannot express, and never invents parameters.
+- Completeness test for list tools: fewer results than `limit` = complete; exactly `limit` = "at
+  least N" (raise the limit to 100 or label it a lower bound).
+- The MCP has no environment inventory; environments come from aggregating error events, which only
+  lists environments that had errors — "no errors seen" is not "does not exist".
+- Catalog search also returns tools that create or change projects; status and check call only
+  tools annotated `readOnlyHint: true`.
+- New `sentry/tests/scenarios/`: the review's ten decision scenarios plus three for the rules above,
+  with a runner that keeps the criteria away from the answering session.
+- `all` now says explicitly: discover environments first, even when a discovery path is blocked.
+- Results (Claude Code, sonnet): 13 of 13 in the last run; across four runs 11–13, with the failures
+  moving between cases — run-to-run variance, not a fixed gap. One failure was a flaw in a test case
+  (it did not say that the aggregation tool was available) and was fixed in the case. Codex: not run.
+
+**README** — rewritten: Claude Code and Codex side by side (Codex installs into `~/.agents/skills`),
+a table of what every command changes, requirements per host, quick start, updating and removing,
+local tests separated from model-run benchmarks. The test block now runs as copied (it used to
+`cd` away). "Every test must have failed once" now says what is meant: new tests for untested
+acceptance criteria. Hook and remote-companion setup moved to `SETUP.md`.
+
+**dev** — `check-setup.sh` accepts a partial install: a skill that is not linked and a stop hook
+that is not registered are reported as optional, not as errors; a wrong link still fails.
+
 ## v2.4 — 2026-09-27
 
 **sentry** — rebuilt on an external review of v2.2 (the review's version, plus three details from

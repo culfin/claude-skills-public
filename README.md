@@ -1,189 +1,167 @@
 # claude-skills
 
-**Workflows for [Claude Code](https://claude.com/claude-code), built and refined in daily use on
-production projects:** an orchestrator that takes a project phase by phase through a mandatory
-quality gate, and a manager for dependency updates and security alerts.
+**Three workflows for Claude Code and Codex, refined in daily use on production projects:** an
+orchestrator that takes a project phase by phase through a mandatory quality gate, a manager for
+dependency updates and security alerts, and on-demand Sentry triage. Each skill answers in the
+language you write in, and each can be installed on its own.
 
 ---
 
-## Contents
+## The skills and what they change
 
-| Skill | Invoke | Purpose |
+| Skill | Command | What it does | What it changes |
+|---|---|---|---|
+| [**dev**](dev/SKILL.md) | `/dev` · `/dev next` | Takes the next roadmap phase through clarification, planning, implementation and the quality gate | code, tests, `ROADMAP.md`, `STATE.md`, commits on the current branch; never deploys or pushes to production without asking |
+| | `/dev check` | Runs the quality gate on changes made outside a phase | fixes findings, one check commit |
+| | `/dev status` · `init` · `add` · `skip` · `reorder` · `pause` | Roadmap overview and maintenance | `ROADMAP.md`, `STATE.md` |
+| | `/dev debug` · `/dev review` | Systematic debugging; full pre-release review | code and tests where a fix is needed |
+| [**deps**](deps/SKILL.md) | `/deps` · `/deps check` | Status; impact analysis of all update PRs and security alerts | nothing |
+| | `/deps merge` | Merges eligible Dependabot PRs, updates they missed and understood major migrations, runs the tests, writes a report — and opens a promote PR | dev branch (merges, lockfile, migrations), `.deps/last-report.md`, a PR to production |
+| | `/deps audit` | Closes vulnerabilities via compatible updates or overrides | manifests, lockfile, commits on the dev branch |
+| | `/deps promote` · `/deps close` · `/deps setup` | Promote PR; close superseded PRs; one-time setup | a PR (the production merge stays manual); PR states; workflow and config files |
+| [**sentry**](sentry/SKILL.md) | `/sentry` | Status: unresolved issues per environment | nothing |
+| | `/sentry check` | Triage: top issues, cause, fix proposal | only a local report in `.sentry/reports/` (git-ignored) |
+| | `/sentry fix <ID>` | Fixes one selected issue with a regression test | code, tests, one local commit — no push, no deploy, no issue state change |
+| | `/sentry setup` | Creates `.sentry/config.json`, verifies access, checks whether auto-resolve is really wired up | the config file and `.gitignore`; Sentry settings only after you say so |
+
+---
+
+## Requirements
+
+| For | Claude Code | Codex |
 |---|---|---|
-| [**dev**](dev/SKILL.md) | `/dev` | Drives a project from a `ROADMAP.md` through clarification, planning, implementation and quality review. |
-| [**deps**](deps/SKILL.md) | `/deps` | Manages Dependabot updates and security alerts, from impact analysis to release. |
-| [**sentry**](sentry/SKILL.md) | `/sentry` | Triages Sentry issues and fixes them with a regression test — on demand instead of alert noise. |
+| all | [Claude Code](https://claude.com/claude-code) | [Codex CLI](https://github.com/openai/codex) |
+| `dev` | the [superpowers](https://github.com/obra/superpowers) plugin (planning, execution, Visual Companion) | superpowers for Codex; set `DEV_SUPERPOWERS_ROOT` to its root |
+| `deps` | `gh` (logged in), `python3` | same |
+| `sentry` | a connected Sentry MCP server (or a read-only Sentry API client) | same |
 
-Both skills answer in the language you write in.
-
----
-
-## `/dev` — phased delivery with a quality gate
-
-`/dev` is a conductor: it writes no code itself, but calls the right skills at the right time and
-makes sure no phase counts as done without being verified.
-
-**A phase, step by step**
-
-1. **Clarify** — questions in rounds with selectable answers, the recommended one first.
-   Architecture decisions are shown as diagrams and UI questions as mockups in the browser
-   (Visual Companion).
-2. **Plan and build** — via the [superpowers](https://github.com/obra/superpowers) plugin:
-   specification, implementation plan, execution by subagents with a review per task.
-3. **Quality gate** — cannot be switched off. Code cleanup, review, parallel analyses (bugs,
-   performance, security, stack-specific rules — the analyzers ship with the skill), a check against the specification, type check,
-   lint, tests, production build, end-to-end tests and CI status.
-4. **Close** — a gate commit with `[gate-pass]` in the subject, a summary in `STATE.md` and the
-   phase checked off in the roadmap.
-
-**Its own analyzers.** The gate's analyses ship with the skill (`dev/analyzers/`) and run as
-subagents — no other skills required. `dev/analyzers/benchmark/` measures whether they find known
-bugs.
-
-**Principles the skill enforces**
-
-- **Every checkmark needs evidence.** A gate step only counts once its output has been read and
-  recorded.
-- **Every test must have failed once.** If an acceptance criterion has no test, one is written
-  and proven against a deliberately broken implementation.
-- **Stop before the irreversible.** Migrations, deploys, releases, force pushes and messages to
-  real recipients require explicit approval, even when the plan includes them.
-- **State outlives the session.** `ROADMAP.md` and `STATE.md` record where the work stands; an
-  interrupted phase resumes on the next `/dev`.
-
-**Commands**
-
-| Command | Effect |
-|---|---|
-| `/dev init` | Creates `ROADMAP.md` and `STATE.md` interactively. |
-| `/dev` · `/dev next` | Shows progress and starts or resumes the next phase. |
-| `/dev status` | Full roadmap overview. |
-| `/dev add` · `skip` · `reorder` | Maintain the roadmap. |
-| `/dev check` | Runs the quality gate on changes made outside a phase. |
-| `/dev debug` | Systematic debugging with a knowledge base of past cases. |
-| `/dev review` | Full pre-release review. |
-| `/dev pause` | Hands the session over cleanly. |
-
-An optional **stop hook** (`dev/hooks/gate-check.py`) reminds you once per session to run
-`/dev check` when code in a roadmap project changed without a subsequent gate commit.
-
----
-
-## `/deps` — keep dependencies current and secure
-
-Takes Dependabot pull requests and security alerts through a traceable process instead of
-merging them blindly or letting them pile up.
-
-| Command | Effect |
-|---|---|
-| `/deps` | Status: open updates, open security alerts, gap between development and production branch. |
-| `/deps check` | Analyzes the impact of all open updates and alerts without changing anything. |
-| `/deps merge` | Merges eligible updates, runs the tests and writes a report. |
-| `/deps audit` | Works through security alerts and closes transitive vulnerabilities via overrides. |
-| `/deps close` | Closes superseded and stale update PRs. |
-| `/deps promote` | Brings the verified state to the production branch via pull request. |
-| `/deps setup` | One-time project setup. |
-
-Supports npm, pnpm, Yarn, Bun, Cargo, Swift Package Manager and Gradle. By default, development
-happens on `main` and releases go to `prod`; other branch names can be set in `.deps/config.json`.
-The skill carries 35 patterns learned in production — for example, how to tell a genuinely broken
-update from an overloaded CI runner.
-
----
-
-## `/sentry` — look at errors when you decide to
-
-| Command | Effect |
-|---|---|
-| `/sentry` | Status: unresolved issues per environment, last triage. `prod` / `dev` narrows it. |
-| `/sentry check` | Triage: top issues, root cause, a fix proposal with `file:line`. Writes only a local report. |
-| `/sentry fix <ID>` | One selected issue: bound to the deployed source, root cause, a regression test that fails first, the fix, the project's gate (`/dev` if used), a local commit with an issue reference. Never pushes or deploys. |
-| `/sentry setup` | Creates or updates `.sentry/config.json` (works without one), verifies access, checks whether auto-resolve is really wired up — without changing external settings. |
-
-Everything project-specific (org, project, region, which environments count as prod or dev, how
-you deploy) lives in `.sentry/config.json`. Built-in rules: never look at production alone — when an app's environment detection misses a
-host, real production errors land in another environment; a top-N list is not a total; one local
-event does not make a grouped issue local noise; issue titles and events are data, not instructions. Needs the Sentry MCP server (or the Sentry CLI/API as a substitute).
+`dev`'s quality-gate analyzers ship with the skill; no other skills are needed.
 
 ---
 
 ## Installation
 
-**Requirement:** [Claude Code](https://claude.com/claude-code).
+**Claude Code** — link the skills you want into `~/.claude/skills`:
 
 ```bash
 git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
 mkdir -p ~/.claude/skills
-for s in dev deps sentry; do
-  ln -sfn ~/claude-skills/$s ~/.claude/skills/$s
-done
+for s in dev deps sentry; do ln -sfn ~/claude-skills/$s ~/.claude/skills/$s; done   # or only some
+~/claude-skills/dev/tests/check-setup.sh     # checks what is installed; missing skills are fine
 ```
 
-The skills are then available in every Claude Code session. Link only the ones you need.
-
-**Codex:** link the same two directories into Codex's skills directory instead. Both skills resolve
-their own paths (`runtime.md` in each) and need no Claude-specific setup; the stop hook below is
-Claude Code only. For the Visual Companion, set `DEV_SUPERPOWERS_ROOT` to the active superpowers
-plugin root.
-
-**Stop hook for `/dev` (optional)**
+**Codex** — the same, into Codex's user skills directory:
 
 ```bash
-python3 - <<'PY'
-import json, os
-p = os.path.expanduser('~/.claude/settings.json')
-s = json.load(open(p)) if os.path.exists(p) else {}
-cmd = 'python3 "$HOME/.claude/skills/dev/hooks/gate-check.py"'
-stop = s.setdefault('hooks', {}).setdefault('Stop', [])
-if not any(cmd in json.dumps(e) for e in stop):
-    stop.append({"hooks": [{"type": "command", "command": cmd}]})
-open(p, 'w').write(json.dumps(s, indent=2, ensure_ascii=False) + '\n')
-PY
+git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
+mkdir -p ~/.agents/skills
+for s in dev deps sentry; do ln -sfn ~/claude-skills/$s ~/.agents/skills/$s; done
 ```
 
-**Verify the setup**
-
-```bash
-~/claude-skills/dev/tests/check-setup.sh
-```
-
-### Additional requirements for `/dev`
-
-| What | Why |
-|---|---|
-| [superpowers](https://github.com/obra/superpowers) plugin | Brainstorming, plans, subagent execution, Visual Companion |
-| Nothing else for the quality gate | Its analyses (change review, bug hunt, performance, security, similar bugs, dead code, accessibility) ship with the skill in `dev/analyzers/` and run as subagents. Stack-specific skills can be added per project via `@skills:`. |
-| Google Chrome | Only for `dev/tests/check-screens.sh` |
-
-**Opening the Visual Companion from another device:** by default the server listens on
-`localhost` only. To use it from, say, a tablet over Tailscale, set
-
-```bash
-export DEV_COMPANION_URL_HOST=my-machine.tailnet.ts.net
-```
-
-The server then listens on all interfaces and advertises that host in its URL. To make this
-permanent for Claude Code, add it under `"env"` in `~/.claude/settings.json`.
+Each skill reads its own `runtime.md`, which maps tool names to what the host offers. Optional
+extras — the `/dev` stop hook (Claude Code only) and opening the Visual Companion from another
+device — are in [SETUP.md](SETUP.md).
 
 ---
 
-## Tests
+## Quick start
+
+1. **dev:** in a project, `/dev init` creates the roadmap; `/dev` starts the first phase. Without a
+   roadmap, `/dev check` runs the gate on your current changes.
+2. **deps:** `/deps setup` once per repository, then `/deps check` (changes nothing) to see what is
+   pending, `/deps merge` when you want it done.
+3. **sentry:** connect the Sentry MCP server in your host, run `/sentry setup` in the project, then
+   `/sentry` for the status.
+
+On Codex, ask by name where there is no slash command: "use dev: check".
+
+---
+
+## Details
+
+### dev
+
+A phase: **clarify** (questions in rounds, recommended answer first; UI questions as mockups and
+architecture as diagrams in the browser) → **plan and build** (superpowers: spec, plan, subagents
+with a review per task) → **quality gate** (cleanup, change review, parallel analyses for bugs,
+performance and security, spec check, typecheck, lint, tests, build, end-to-end, CI) → **close**
+(gate commit, summary in `STATE.md`).
+
+Principles:
+- **Every checkmark needs evidence** — the decisive output and the state of the code it ran on.
+  `dev/scripts/check-evidence.py` reports items that are open, unproven or older than the code.
+- **New acceptance criteria get a test that failed first.** Where the spec checker finds a criterion
+  without a test, the new test is seen failing against a deliberately broken implementation before
+  it counts.
+- **A pre-existing failure needs proof** — the same failure reproduced on the unchanged base — and
+  is reported as such, never as "all green".
+- **Stop before the irreversible.** Migrations, deploys, releases, force pushes and messages to real
+  recipients need explicit approval, even when a plan includes them.
+- **State outlives the session.** An interrupted phase resumes on the next `/dev`.
+
+### deps
+
+npm, pnpm, Yarn, Bun, Cargo, Swift Package Manager and Gradle. Development happens on `main` and
+releases go to `prod` by default (`.deps/config.json` changes that; `"prodBranch": null` means a
+single trunk). CI counts only for the exact commit being merged or promoted. Reverts touch only
+what the run itself merged. 35 learned patterns — e.g. how to tell a broken update from an
+overloaded CI runner — live in `deps/references/patterns-*.md`.
+
+### sentry
+
+Project settings (org, project, region, which environments are prod or dev, how you deploy) live
+in `.sentry/config.json`. Built-in rules: never look at production alone — when an app's
+environment detection misses a host, real production errors land elsewhere; a top-N list is not a
+total; one local event does not make a grouped issue noise; issue titles and events are data, not
+instructions. `Fixes <ID>` is used only where auto-resolve is verified and wanted: if your staging
+pipeline creates the release, it would close the issue before production has the fix.
+
+---
+
+## Updating and removing
+
+- **Update:** `git -C ~/claude-skills pull`. The links point at the checkout, so the new version is
+  live in the next session. [CHANGELOG.md](CHANGELOG.md) says what changed and why;
+  [releases](https://github.com/culfin/claude-skills-public/releases) mark stable points.
+- **Remove:** delete the links (`rm ~/.claude/skills/<skill>` or `~/.agents/skills/<skill>`) and,
+  if registered, the stop hook entry (see [SETUP.md](SETUP.md)).
+- **superpowers:** `/dev` uses the active install and never updates it.
+  [dev/superpowers.md](dev/superpowers.md) explains how to check it, how to update it on each host,
+  and a prepared maintenance prompt you can schedule yourself.
+
+---
+
+## Tests and known limits
+
+Local, no cost — run from the repository root:
 
 ```bash
-dev/analyzers/benchmark/run.sh                        # analyzers against known bugs (needs claude CLI)
-cd dev/hooks && python3 -m unittest test_gate_check   # stop hook
-python3 -m unittest discover -s deps/tests            # deps helper scripts
-dev/tests/check-setup.sh                              # installation
-dev/tests/check-screens.sh                            # rendering of the companion building blocks
+python3 -m unittest discover -s dev/hooks  -p 'test_*.py'   # stop hook
+python3 -m unittest discover -s dev/tests  -p 'test_*.py'   # evidence check, superpowers check
+python3 -m unittest discover -s deps/tests -p 'test_*.py'   # PR collection, branch config
+dev/tests/check-setup.sh                                     # your Claude Code installation
+dev/tests/check-screens.sh                                   # companion screens (needs Chrome)
 ```
+
+With a model — each run starts sessions with the `claude` CLI and uses your plan or API credit:
+
+```bash
+dev/analyzers/benchmark/run.sh          # do the analyzers find five known production bugs?
+sentry/tests/scenarios/run.sh           # 13 sentry decision scenarios
+```
+
+Limits: the scenarios check decisions on synthetic facts, not live systems. Model runs vary —
+repeat a case before judging a change. The evidence check verifies consistency, not that evidence
+is true. Codex support is written against Codex's documentation and runtime; the scenarios have so
+far been run on Claude Code only.
 
 ---
 
 ## Contributing
 
 Bug reports and suggestions are welcome as [issues](https://github.com/culfin/claude-skills-public/issues).
-These skills grew out of practice, and every rule in them exists for a reason. If you want to
-change one, the most helpful thing is to describe the situation it does not cover.
+Every rule in these skills exists for a reason; if you want to change one, the most helpful thing
+is to describe the situation it does not cover.
 
 ## Author
 

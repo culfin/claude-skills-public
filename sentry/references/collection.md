@@ -7,13 +7,20 @@ Use for status/check and when selecting event evidence for a fix.
 Retrieve project environments with hidden ones included where supported. Prefer the environment
 inventory over grouped recent events: quiet or hidden environments may have no recent events.
 If inventory is unavailable, use observed events as a bounded fallback and label discovery partial.
+With the Sentry MCP there is no inventory tool: aggregate error events by environment over the
+longest period (`search_events`, dataset `errors`, fields `environment` and `count()`, `90d`). That
+lists only environments *with errors* — a configured environment missing from it is "no errors
+seen", not "does not exist"; say so.
 Missing/untagged environment values must remain visible as an unknown-environment bucket when
 returned by an unfiltered query, not disappear during grouping. Attribute an untagged event to an
 issue only when its event/group identity establishes that relationship; proximity in a summary
 is not evidence of membership.
 
-- `all`: query the configured project's issues without an environment filter as a coverage
-  backstop, plus per-environment results for configured and discovered environments. Unmapped
+- `all` (also: no scope given): **first discover the environments** — inventory, or with the Sentry
+  MCP the event aggregation above; a failed or read-only-blocked discovery path is no reason to fall
+  back to the configured list alone. Then query the configured project's issues without an
+  environment filter as a coverage backstop, plus per-environment results for configured and
+  discovered environments. Unmapped
   environments remain unclassified; do not automatically treat them as dev or local noise.
 - `prod`/`dev`: query each mapped environment in that scope. Show discovered unmapped names as a
   coverage warning; do not inspect their event payloads or silently widen scope. If real production
@@ -23,13 +30,17 @@ is not evidence of membership.
 
 Use identical project, status and time filters for comparable queries. Quote/encode environment
 values with the actual tool/query syntax; a name containing spaces is one value. Default window is
-last 14 days, frozen as UTC start/end. Fresh issues use the last 24 hours **within** that window;
+the last 14 days — as `period: "14d"` where the tool only supports relative periods (Sentry MCP),
+as explicit UTC start/end where it supports them (REST). Fresh issues use the last 24 hours **within** that window;
 regressions need status/history evidence because they may have old first-seen dates.
 
 ## Exact versus sampled results
 
 Status totals require complete pagination or an aggregate explicitly matching the same filters.
-A top-N list is a sample, never a total. Triage may sample approximately eight frequent and eight
+A top-N list is a sample, never a total. A simple completeness test for list tools with a `limit`:
+fewer results than the limit means the list is complete for that query (exact); exactly `limit`
+results means "at least N" — raise the limit (Sentry MCP `search_issues`: up to 100) or paginate,
+and label the number a lower bound if that is not possible. Triage may sample approximately eight frequent and eight
 new issues per environment and include observed regressions/high-impact issues; show the sampling
 limits and do not claim all issues were reviewed. Do not rank only by frequency: security, data
 loss and critical user flows outrank routine noisy errors even with few reported users.

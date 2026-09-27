@@ -11,7 +11,10 @@ Typical capabilities include organization/project discovery, issue search, event
 details and environment/release lookup. Names such as `search_issues`, `search_events`,
 `get_sentry_resource` and catalog discovery are examples, not fixed signatures. Parameter names,
 limits and support for exact queries differ by version. Do not pass REST parameters to MCP blindly.
-Never require a mutation tool for status/check. Search tools may be absent even when resource tools
+Never require a mutation tool for status/check. Tools found through a catalog search
+(e.g. `search_sentry_tools`) include ones that create, update or delete; for status and check call
+only tools annotated `readOnlyHint: true`, and never execute a catalog tool whose annotation is
+missing or false outside an authorized fix/setup step that names that exact change. Search tools may be absent even when resource tools
 work; report capability gaps rather than declaring the whole connection broken.
 
 Use the configured organization, project and verified region on every operation that supports

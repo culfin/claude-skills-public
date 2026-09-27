@@ -30,8 +30,10 @@ selected by the user, ask which issue to fix; do not choose the most frequent on
    invalid config: name the problem and offer setup. Do not invent an organization or project.
 3. Reuse the configured target. Check returned project identity and routing; a mismatch is a
    blocker, not an empty inbox. Verify requested issue ownership even when its short ID looks right.
-4. Fix the query time window once per run (default last 14 days, explicit start/end UTC). Show it
-   in results. Scope and completeness rules are in [collection](references/collection.md).
+4. Fix the query time window once per run (default last 14 days) and use the same one for every
+   query. Express it the way the tool supports it — the Sentry MCP takes a relative `period`
+   (`24h`, `7d`, `14d`, `30d`, `90d`), not start/end; never invent parameters. Show the window and the
+   retrieval time in results. Scope and completeness rules are in [collection](references/collection.md).
 
 ## Status
 
@@ -44,7 +46,7 @@ Show configured project, time window, checked environments, unmapped environment
 queries, for example:
 
 ```text
-Sentry (<project>, scope: all, last 14 days, UTC <start>–<end>):
+Sentry (<project>, scope: all, period 14d, retrieved <UTC time>):
   production   unresolved: 7 (exact)        top: <ID> <sanitized title>
   staging      unresolved: ≥ 25 (1 page)    top: <ID> <sanitized title>
   development  unresolved: 0 (exact)
