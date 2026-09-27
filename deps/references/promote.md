@@ -95,9 +95,9 @@ Rebase creates new commit SHAs on prod, which makes the branches diverge."
 
 **Do NOT merge the PR automatically.** The user must approve and merge on GitHub.
 
-### 5. Sync-back after merge (CRITICAL — prevents prod-ahead)
+### 5. Sync-back after merge (tidiness, not correctness)
 
-**After the user has merged the promote PR on GitHub**, prod has a merge commit that main doesn't know about. This MUST be synced back.
+**After the user has merged the promote PR on GitHub**, prod has a merge commit that main doesn't know about. Syncing it back keeps `origin/main..origin/prod` at zero, so any later count there means real drift at a glance. Skipping it is harmless: a promote merge node is merge-only divergence, which Safety Rule 12 explicitly does not treat as drift.
 
 > **Scope:** this runs only when `/deps promote` itself created and merged the PR — here the sync-back deliberately pulls back `/deps`'s *own* fresh promote merge commit (so it uses the raw `PROD_AHEAD`, unlike the Step 3 pre-flight which measures real drift with `--no-merges`). If this repo promotes via a different workflow that intentionally skips sync-back (e.g. a project's own prod-release command, leaving prod ahead by merge nodes by design), `/deps promote` is not the promote path and this step does not run — do not retrofit a sync-back onto that workflow.
 
@@ -119,9 +119,9 @@ else
 fi
 ```
 
-**Option B: Deferred (next session)**
+**Option B: Not in this session**
 
-The `/deps` status command checks for prod-ahead divergence and offers to sync. The `/deps promote` pre-flight (Step 3) also auto-fixes this before creating a new promote PR. So even if the sync doesn't happen immediately, it will be caught and fixed automatically.
+Nothing picks it up later — and nothing needs to. `/deps` status and the Step 3 pre-flight count divergence with `--no-merges` and deliberately ignore promote merge nodes (Safety Rule 12). prod simply stays ahead by merge-only commits; the next promote PR works the same either way.
 
 **Inform user:**
-"After merging the PR on GitHub: either confirm here (I will synchronize the branches), or the next `/deps` run will detect and fix it automatically."
+"After merging the PR on GitHub, confirm here and I will sync prod back into main. If you skip it, nothing breaks — prod is then ahead only by the merge commit, which is not drift."

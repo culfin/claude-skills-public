@@ -343,7 +343,7 @@ Phases can control the gate mode via a `@gate:` annotation:
 | `@gate: fast` | Skips conditional parallel checks (Tech-Stack Review, Security Audit, scan-similar-bugs). Mandatory steps (simplify, review-changes, bug-prospector, performance-check, tsc, build, E2E) always run. For fast iteration phases. |
 | `@gate: ci-wait` | Adds an explicit CI status wait before `[x]`, even if CI is otherwise not configured. |
 
-**When to use `@gate: fast`:** Only for purely documentation phases, config-only changes, or when you deliberately want to iterate fast. Never for phases with auth, API, or DB changes.
+**When to use `@gate: fast`:** Only for config-only changes or when you deliberately want to iterate fast. Pure documentation phases use `@type: docs` instead (a smaller gate than `fast`). Never for phases with auth, API, or DB changes.
 
 **Conflict rule — `@gate: fast` is automatically ignored for:**
 - `@type: security`, `@type: auth` — security checks are always mandatory for these types
@@ -878,7 +878,7 @@ one of these thoughts comes up, that is the signal to **do** the step — not to
 | Running all post-skills sequentially | Most are read-only — run in parallel for speed |
 | Editing ROADMAP.md manually without updating annotations | Use `/dev add`, `/dev skip`, `/dev reorder` instead |
 | Skipping milestone-start skills to "save time" | They establish baselines — run them, especially tech-talk-reportcard |
-| Using `@gate: fast` for auth/API/DB phases | `@gate: fast` disables Security Audit — use only for docs/config |
+| Using `@gate: fast` for auth/API/DB phases | `@gate: fast` disables Security Audit — use only for config changes; docs phases take `@type: docs` |
 | Deleting a Gate summary from STATE.md | The summary is permanent — only the Gate Checklist is removed after [x] |
 | Phase directly `[~]` → `[x]` without gate | FORBIDDEN — always `[!]` in between. The gate is not optional |
 | Ignoring CI status and setting `[x]` anyway | If CI is configured: the gate is only green when CI is green |

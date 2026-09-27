@@ -74,7 +74,7 @@ Before merging, identify duplicate PRs for the same package (e.g., PR #6 has 0.8
 
 **This is critical. Dependabot only proposes updates within the semver range in package.json (e.g., `^5.9.3` won't propose `6.x`) — and even inside that range its PRs are neither complete nor current.**
 
-**Run BOTH scanners, every time. Not one plus an optional cross-check — both are the scan.** Neither is complete on its own (SKILL.md pattern 12): `pnpm outdated` reads a metadata cache and drops whole rows silently; `npm outdated` queries the registry directly but its `Latest` can lag behind the installed version.
+**Run BOTH scanners, every time. Not one plus an optional cross-check — both are the scan.** Neither is complete on its own (pattern 12 in `patterns-js.md`): `pnpm outdated` reads a metadata cache and drops whole rows silently; `npm outdated` queries the registry directly but its `Latest` can lag behind the installed version.
 
 ```bash
 $PM outdated 2>&1              # may silently OMIT packages; may under-report patch level
@@ -138,7 +138,7 @@ gh pr view $NEXT_PR_NUMBER --json statusCheckRollup --jq '.statusCheckRollup | m
 ```
 If status changed from green to pending → skip this PR for now, add to "CI pending" list.
 
-**Diagnose red CI before skipping (see SKILL.md pattern 23):** many PRs red at once + same
+**Diagnose red CI before skipping (see pattern 23 in `patterns-ci.md`):** many PRs red at once + same
 failing step + sub-minute failure = transient CI-infra outage, not broken updates. Comment
 `@dependabot rebase` on each, wait for fresh runs, merge on green. After the rebase push the
 old checks vanish — an EMPTY `statusCheckRollup` means "new run not registered yet", not
@@ -154,7 +154,7 @@ If user specifies `--limit N` (e.g., `/deps merge --limit 5`), only process the 
    - Merge the **leader** (primary package, e.g., `next`) first
    - Try merging followers (`eslint-config-next`, etc.) immediately after
    - If a follower has `CONFLICTING` mergeability → skip it, mark as "waiting for Dependabot rebase" in the report. Dependabot auto-rebases within minutes.
-   - These skipped PRs will be picked up in the next `/deps merge` session — OR, faster: if the beyond-Dependabot pass reaches the same dep at an equal-or-newer in-range version, close the PR as superseded instead of waiting (SKILL.md pattern 21). Cargo PRs usually DON'T need any of this — their lockfile hunks rarely overlap, merge them back-to-back (pattern 22).
+   - These skipped PRs will be picked up in the next `/deps merge` session — OR, faster: if the beyond-Dependabot pass reaches the same dep at an equal-or-newer in-range version, close the PR as superseded instead of waiting (pattern 21 in `patterns-workflow.md`). Cargo PRs usually DON'T need any of this — their lockfile hunks rarely overlap, merge them back-to-back (pattern 22 (`patterns-ci.md`)).
 3. **Patches first** (compare semver from PR title: "from X.Y.Z to X.Y.W" where X.Y unchanged)
 4. **Then minor updates** (X unchanged)
 5. **Major updates go to Wave 3** (X changed) — separated for deep analysis
@@ -374,7 +374,7 @@ grep -rl "<optionName>" node_modules/.pnpm/<pkg>@<oldver>*/node_modules/<pkg>/di
 Zero hits in both = the option was dead all along and only became visible now. Deleting it
 is behavior-preserving; renaming it to the real key ACTIVATES a path that has never run.
 That is a behavior change — make it deliberately, put it in the commit message, and tell
-the user (SKILL.md pattern 31).
+the user (pattern 31 in `patterns-js.md`).
 
 ### f) Revert strategy (on failure)
 
@@ -439,7 +439,7 @@ git diff --quiet pnpm-lock.yaml 2>/dev/null || {
 git status --porcelain pnpm-workspace.yaml   # expect NO output
 ```
 
-Not empty → do NOT stage it. Roll the too-fresh versions back to the highest ones that already satisfy the window. Full mechanics, including why `pnpm clean --lockfile` is the wrong repair, in SKILL.md pattern 35.
+Not empty → do NOT stage it. Roll the too-fresh versions back to the highest ones that already satisfy the window. Full mechanics, including why `pnpm clean --lockfile` is the wrong repair, in pattern 35 in `patterns-js.md`.
 
 **Why one lockfile commit:** Each Dependabot squash-merge includes a lockfile generated against a different base. Sequential merges create duplicated keys. Fixing per PR creates more conflicts for the next PR (observed: 60% breakage rate). One fix after all merges is cleaner.
 
@@ -505,7 +505,7 @@ Signatures that mean **infrastructure, not regression** — rerun, do NOT revert
   after several deploys in quick succession — a secondary rate limit, not a credentials
   problem. A plain rerun turned all shards green with zero code changes.
 - Failure within seconds of job start, same step across many jobs, all in one time window
-  (see SKILL.md pattern 23).
+  (see pattern 23 in `patterns-ci.md`).
 
 Remedy: `gh run rerun <run_id> --failed`, then re-check. If the rerun is green, the code was
 never at fault — record it in the report as an infra flake, not as a skipped/reverted package.

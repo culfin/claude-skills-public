@@ -89,7 +89,7 @@ is a moderate dompurify via jspdf" is far more useful than echoing GitHub's coun
 
 ## 2b. Before overriding: can the importer simply be DELETED?
 
-Pattern 20 asks whether a newer importer already widens its range. Ask the cheaper question
+Pattern 20 (`patterns-js.md`) asks whether a newer importer already widens its range. Ask the cheaper question
 first: **is the importer used at all?**
 
 ```bash
