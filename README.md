@@ -12,6 +12,7 @@ quality gate, and a manager for dependency updates and security alerts.
 |---|---|---|
 | [**dev**](dev/SKILL.md) | `/dev` | Drives a project from a `ROADMAP.md` through clarification, planning, implementation and quality review. |
 | [**deps**](deps/SKILL.md) | `/deps` | Manages Dependabot updates and security alerts, from impact analysis to release. |
+| [**sentry**](sentry/SKILL.md) | `/sentry` | Triages Sentry issues and fixes them with a regression test — on demand instead of alert noise. |
 
 Both skills answer in the language you write in.
 
@@ -90,6 +91,22 @@ update from an overloaded CI runner.
 
 ---
 
+## `/sentry` — look at errors when you decide to
+
+| Command | Effect |
+|---|---|
+| `/sentry` | Status: unresolved issues per environment, last triage. `prod` / `dev` narrows it. |
+| `/sentry check` | Triage: top issues, root cause, a fix proposal with `file:line`. Writes only a local report. |
+| `/sentry fix <ID>` | Root cause, a regression test that fails first, the fix, `/dev check` if the project uses `/dev`, a commit with `Fixes <ID>`. Never deploys. |
+| `/sentry setup` | Creates `.sentry/config.json`, verifies access, sets up auto-resolve on release. |
+
+Everything project-specific (org, project, region, which environments count as prod or dev, how
+you deploy) lives in `.sentry/config.json`. One rule is built in: never look at production alone —
+when an app's environment detection misses a host, real production errors land in another
+environment. Needs the Sentry MCP server (or the Sentry CLI/API as a substitute).
+
+---
+
 ## Installation
 
 **Requirement:** [Claude Code](https://claude.com/claude-code).
@@ -97,7 +114,7 @@ update from an overloaded CI runner.
 ```bash
 git clone https://github.com/culfin/claude-skills-public.git ~/claude-skills
 mkdir -p ~/.claude/skills
-for s in dev deps; do
+for s in dev deps sentry; do
   ln -sfn ~/claude-skills/$s ~/.claude/skills/$s
 done
 ```

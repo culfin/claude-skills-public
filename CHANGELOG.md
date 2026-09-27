@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.2 — 2026-09-27
+
+**New skill: sentry.** Grown in one production project and generalised for publication:
+- Everything project-specific moved into `.sentry/config.json` (org, project, region, issue prefix,
+  environments per scope, local-noise hints, deploy route); `/sentry setup` creates it and checks
+  that every environment Sentry has seen lands in a scope.
+- Kept from practice: never query production alone; a local-noise environment is counted and
+  checked for real server errors; resolve on release (`Fixes <ID>`) instead of now, so a regression
+  reopens the issue; never deploy.
+- New: `fix` requires a regression test that fails before the fix, and `/dev check` where the
+  project uses `/dev`; Seer answers are hypotheses; `check` states that it writes a local report;
+  raw event payloads stay out of reports and commits; Codex via `runtime.md`.
+- Found in the first live run: one issue can collect events from several environments, and its event
+  count is the total. Status now counts distinct issues and never adds environments up; triage
+  reports each issue once with all its environments.
+
 ## v2.1.2 — 2026-09-27
 
 Three findings from running the external review's twelve decision scenarios against v2.1.1 (Claude

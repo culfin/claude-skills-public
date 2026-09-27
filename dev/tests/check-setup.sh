@@ -5,7 +5,7 @@
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; f=0
 t(){ if eval "$2"; then echo "ok   $1"; else echo "FAIL $1"; f=1; fi; }
-for s in dev deps; do
+for s in dev deps sentry; do
   t "Symlink ~/.claude/skills/$s -> $REPO/$s" "[ \"\$(readlink ~/.claude/skills/$s)\" = \"$REPO/$s\" ]"
 done
 t "Stop-Hook dev/hooks/gate-check.py in ~/.claude/settings.json" \
