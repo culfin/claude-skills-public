@@ -2,6 +2,19 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.1.1 — 2026-09-27
+
+Two more gaps from the same external review, found when its report arrived.
+
+**deps**
+- The update scan missed workspace members: `pnpm outdated` and `npm-check-updates` check only the
+  root package unless given `-r` / `--workspaces --root` (measured with a two-package workspace);
+  and `npm outdated | head -40` cut long lists silently. Flags added, `head` removed. `npm outdated`
+  already covers the workspaces in npm 11 — adding `--workspaces` there would drop the root.
+
+**dev**
+- A review of the same commit no longer counts if the check's scope or acceptance criteria changed.
+
 ## v2.1 — 2026-09-27
 
 Seven defects found in an independent review of v1.0 that were still present in v2.0, each fixed

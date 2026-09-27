@@ -100,10 +100,13 @@ Before merging, identify duplicate PRs for the same package (e.g., PR #6 has 0.8
 **Run BOTH scanners, every time. Not one plus an optional cross-check — both are the scan.** Neither is complete on its own (pattern 12 in `patterns-js.md`): `pnpm outdated` reads a metadata cache and drops whole rows silently; `npm outdated` queries the registry directly but its `Latest` can lag behind the installed version.
 
 ```bash
-$PM outdated 2>&1              # may silently OMIT packages; may under-report patch level
-npm outdated 2>&1 | head -40   # registry-direct; may show Latest < installed
-pnpm dlx npm-check-updates 2>&1   # third scanner: the ONLY one that sees the `packageManager` pin
+# Workspaces: pnpm and ncu look at the root package only unless told otherwise; npm (11) already
+# covers root + workspaces — do NOT add --workspaces there, that drops the root (measured 27.09.2026).
+pnpm outdated -r 2>&1                               # without a workspace: $PM outdated
+npm outdated 2>&1                                   # registry-direct; may show Latest < installed
+pnpm dlx npm-check-updates --workspaces --root 2>&1 # third scanner: the ONLY one that sees the `packageManager` pin
 ```
+Never cut the output (`| head`): a truncated scan looks exactly like a complete one with fewer updates.
 
 Build the work list as the **union** of both, per package:
 

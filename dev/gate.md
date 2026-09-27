@@ -135,7 +135,9 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
   that earlier" are not evidence.
 - **Evidence belongs to one state of the code.** Any code change after a check — a fix from 5c,
   a simplification, a rebase — reopens every checkmark whose scope it touches; rerun those checks on
-  the new state. A result from before the change is history, not evidence.
+  the new state. A result from before the change is history, not evidence. The same holds without a
+  code change: if the scope or the acceptance criteria of the check change, an earlier review of the
+  same commit answered a different question — run it again.
 - **A command whose output was not read has not run.** Exit code 0 is not enough if the
   output went through a pipe (`| tail`, `| head`, `2>/dev/null`) — a pipe can swallow the
   status of the left-hand side. When in doubt, repeat the command without the pipe.

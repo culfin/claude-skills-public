@@ -18,7 +18,8 @@ Read when the project has a `package.json`. Numbers are stable across files — 
 
     ```bash
     $PM outdated 2>&1              # may silently omit rows; may under-report patch level
-    npm outdated 2>&1 | head -40   # registry-direct; may show Latest < installed
+    npm outdated 2>&1              # registry-direct; may show Latest < installed — never pipe into head
+    # in a pnpm workspace: pnpm outdated -r (plain `pnpm outdated` checks the root package only)
     ```
     **Merge rule:** a package is outdated if EITHER tool says so; per package take the HIGHER `Latest`, and discard any `Latest` ≤ installed. Only `Current` vs `Latest` matter — npm's `Wanted` column is meaningless in a pnpm workspace (it reports per-importer copies).
 
