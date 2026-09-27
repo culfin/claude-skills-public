@@ -17,7 +17,7 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    questions per round, each with 2–4 options, the recommended one first with "(Recommended)" and a
    rationale in its description. Questions that depend on an open answer go into the
    next round. **Never as free text** with (a)/(b)/(c) — not even in the first round.
-   If the round contains a question with a UI/UX side (definition in `SKILL.md`), the matching
+   If the round contains a question with a UI/UX side (definition in `companion.md`), the matching
    screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
    and the companion URL is given; the options have the same names in the browser and in the terminal.
 4. **End:** when no decision is left open. Summarize the decisions as a short list

@@ -1,6 +1,6 @@
 # Companion screens — style rules and building blocks for `/dev`
 
-The procedure (server, alive check, URL) is in `SKILL.md`, section "Visual Companion". This file covers
+The procedure (server, alive check, URL) is in `companion.md`. This file covers
 what a screen looks like. Every building block is a **content fragment** (no `<html>`/`<head>`; the server
 wraps it in the frame template). Write it into `screen_dir` with the `Write` tool, never via
 `cat`/heredoc. The companion shows the newest file — for a new screen, write a new file.

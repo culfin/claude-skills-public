@@ -1,9 +1,9 @@
 # `/dev check` — Standalone Quality Gate
 
-Moved out of `SKILL.md`: this procedure is needed exclusively by `/dev check` and
-has nothing to do with the phase lifecycle. It runs **the same** steps 5a–5k as the
+This procedure is needed exclusively by `/dev check` and has nothing to do with the phase
+lifecycle. It runs **the same** steps 5a–5k as the
 phase gate, only with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions
-themselves are in `SKILL.md` under "Mandatory Quality Gate".
+themselves are in `gate.md`.
 
 ## Procedure
 
