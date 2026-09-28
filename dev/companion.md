@@ -55,6 +55,25 @@ $DEV_DIR/scripts/companion.sh --project-dir <project-root>
 - **Alive check** before every HTML write: `<state_dir>/server-info` exists **and** `<state_dir>/server-stopped` is absent; otherwise restart with the **same** `--project-dir` (same port — the open browser tab reconnects by itself, no new URL needed)
 - **Protocol details** (how a screen is written/updated) see superpowers `brainstorming/visual-companion.md` — that guide, versioned with superpowers, is authoritative; `/dev` only keeps its trigger table; look and building blocks are in `companion-screens.md`
 
+### The URL Travels With Every Mention
+
+The link from the first start scrolls away within minutes; the user must never have to search
+for it. So: **every message that shows a screen or refers to the companion in any way ends with the
+current `url` on its own line** — verbatim, including `?key=<TOKEN>`. Not once per session: every time.
+
+"Refers to the companion" includes: a new or updated screen; "see the browser", "on the screen",
+"in the companion"; a question whose options are shown as mockups or diagrams; a gate dashboard, a
+waiting screen, a summary shown there; and any subagent or delegated skill (e.g. brainstorming) that
+writes a screen — it receives the URL and follows the same rule.
+
+- When a question dialog (`AskUserQuestion`) refers to a screen, the text **before** the call ends
+  with the URL — the dialog can cover everything earlier.
+- **Current** means from the latest start or restart: after a restart, take the `url` from the new
+  return value, not from memory. If the alive check fails and the server cannot be restarted, say so
+  instead of repeating a dead link.
+- Where the host has a convention for links (e.g. "URLs last"), the URL line is the last line of
+  the message.
+
 ### Show screen — the Procedure
 
 All mandatory triggers above use the same sequence. Wherever **"Show screen"** appears in this skill, this is
@@ -63,8 +82,9 @@ exactly what is meant — automatically, without asking:
 1. **Ensure the server** — alive check; if not active, start `companion.sh --project-dir <project-root>`
    (same `--project-dir` → same port, an open tab reconnects by itself).
 2. **Write the HTML screen** — content fragment with the `Write` tool into `screen_dir`.
-3. **Share the `url` verbatim** — exactly as returned, including `?key=<TOKEN>`.
-   **Never reconstruct it, never substitute a different host.**
+3. **Share the `url` verbatim** — exactly as returned, including `?key=<TOKEN>`, on its own line at
+   the end of the message; again in every later message that refers to the screen (see "The URL
+   Travels With Every Mention"). **Never reconstruct it, never substitute a different host.**
 
 The screen is the confirmation surface: from it the user immediately sees whether the state is right.
 That is why it always shows the state **after** the change, never the one before.

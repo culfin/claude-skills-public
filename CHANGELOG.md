@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.7.1 — 2026-09-29
+
+**dev** — the Visual Companion URL now travels with every mention. In practice the link from the
+first start scrolled out of view within minutes, and the user had to search the history for it.
+Every message that shows a screen or refers to the companion (new screen, "see the browser", a
+question whose options are drawn there, gate dashboard, delegated brainstorming) ends with the
+current URL on its own line; before a question dialog the URL comes first, since the dialog can
+cover earlier output; after a restart the URL is taken from the new return value, and a dead
+server is reported instead of a dead link.
+
 ## v2.7 — 2026-09-27
 
 **vibepolish** — an external review of v2.6.1 checked against the current text; all six points held:

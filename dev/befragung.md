@@ -19,7 +19,8 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    next round. **Never as free text** with (a)/(b)/(c) — not even in the first round.
    If the round contains a question with a UI/UX side (definition in `companion.md`), the matching
    screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
-   and the companion URL is given; the options have the same names in the browser and in the terminal.
+   and the text before the call ends with the companion URL (the dialog can cover earlier output); the
+   options have the same names in the browser and in the terminal.
 4. **End:** when no decision is left open. Summarize the decisions as a short list
    and have the user confirm it via `AskUserQuestion` ("Is this correct?"). If the user clicked
    through a round accepting only the recommendations and a later question depends on one of those
@@ -30,7 +31,8 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    > approaches; do not ask clarifying questions that are answered below. The understanding is
    > confirmed — do not reflect it back again. The Visual Companion is already running (URL below).
    > Do not offer it; use it directly for every question with a UI/UX side and for
-   > architecture diagrams; building blocks are in `companion-screens.md` of the `/dev` skill. Copy the list
+   > architecture diagrams; building blocks are in `companion-screens.md` of the `/dev` skill. Every
+   > message that shows a screen or refers to it ends with this URL on its own line, verbatim. Copy the list
    > into the spec as the section "Decisions from the interview".
 
 ## ADRs

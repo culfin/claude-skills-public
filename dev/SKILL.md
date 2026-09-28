@@ -65,7 +65,7 @@ the current step needs.
 | `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
 
-**Visual Companion in one sentence:** it is a fixed part of the workflow, used without asking; wherever this skill says **"Show screen"**, follow the procedure in `companion.md`.
+**Visual Companion in one sentence:** it is a fixed part of the workflow, used without asking; wherever this skill says **"Show screen"**, follow the procedure in `companion.md` — and every message that shows a screen or refers to the companion ends with its current URL (details there).
 
 ---
 
@@ -281,7 +281,7 @@ If pre-skills produced output files (e.g. a handoff file in a dot-directory of t
 2. **Architectural → interview in rounds per `befragung.md` (interview rounds)** (in this skill directory, incl. ADRs), then `superpowers:brainstorming` with the handoff note from `befragung.md`.
 3. **Small → `superpowers:brainstorming`** with the instruction: every question via `AskUserQuestion`, recommendation first with "(Recommended)"; look up facts yourself instead of asking. Record the approved chat draft with acceptance criteria in STATE.md under the phase — the basis for the Spec checker (5c-v) and for resuming.
 
-In both cases: State context: phase name, type, milestone goal, any pre-skill output. And the companion instruction: "The Visual Companion is already running (URL below). Do not offer it, use it directly for every question with a UI/UX side and for architecture diagrams; building blocks in `companion-screens.md` of the `/dev` skill." Before that, ensure the companion via the "Show screen" procedure and pass along the URL. Include matching tech skills beforehand — see `tech-stack-triggers.md`, section "During Brainstorming". Brainstorming chains to `superpowers:writing-plans` → `superpowers:subagent-driven-development` internally. After spec produced: add `@spec:` to ROADMAP.md.
+In both cases: State context: phase name, type, milestone goal, any pre-skill output. And the companion instruction: "The Visual Companion is already running (URL below). Do not offer it, use it directly for every question with a UI/UX side and for architecture diagrams; building blocks in `companion-screens.md` of the `/dev` skill. Every message that shows a screen or refers to it ends with this URL on its own line, verbatim — every time, not only the first." Before that, ensure the companion via the "Show screen" procedure and pass along the URL. Include matching tech skills beforehand — see `tech-stack-triggers.md`, section "During Brainstorming". Brainstorming chains to `superpowers:writing-plans` → `superpowers:subagent-driven-development` internally. After spec produced: add `@spec:` to ROADMAP.md.
 
 **4b. Planning (resume):** Invoke `superpowers:writing-plans`. After plan produced: add `@plan:` to ROADMAP.md.
 
