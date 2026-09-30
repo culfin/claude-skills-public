@@ -10,8 +10,12 @@ Every real screen contains the actual names, values and texts of the current pro
 
 ## Style rules
 
+- **Only the user interface** (rule and table in `companion.md`): mockups, wireframes, real
+  screenshots. No roadmaps, plans, specs, strategy, architecture diagrams, findings or decision lists —
+  those go to the terminal.
+- **Visual first.** A screen that is mostly text is wrong — write that text in the chat instead.
+  Text on a screen: headings, labels, captions of at most one or two sentences per block.
 - **One statement per screen**; the heading states it.
-- **Diagram or mockup instead of a bullet list.** Text at most one or two sentences per block.
 - **Colors only via the frame template's variables:** `var(--success)` done/good,
   `var(--warning)` notice/in progress, `var(--error)` critical/blocker, `var(--accent)`
   current/recommended; surfaces `var(--bg-secondary)`, lines `var(--border)`.
@@ -22,51 +26,6 @@ Every real screen contains the actual names, values and texts of the current pro
 - **UI/UX questions** show the states of the view for each option (building block "State grid") and — if
   the project supports mobile and/or dark mode — building block "Responsive/Dark".
 - **No UI/UX side** (data model, library choice, naming): no screen; ask the question in the terminal only.
-
-### Building block: Roadmap
-
-Session start and `/dev status`. Milestones with progress bars, current phase highlighted, blockers at the top.
-Status icons: ✓ done, ⚡ gate, ~ in progress, ○ open, — skipped.
-
-```html
-<h2>Milestone 2: Export — 3 of 5 phases done</h2>
-<p style="color:var(--error)">⛔ Blocker: practice-details field missing in settings — phase 7 is waiting for it</p>
-<div class="section">
-  <div style="display:flex;justify-content:space-between"><strong>M1 Foundations</strong><span style="color:var(--success)">✓ 4/4</span></div>
-  <div style="height:8px;background:var(--bg-tertiary);border-radius:4px"><div style="width:100%;height:8px;background:var(--success);border-radius:4px"></div></div>
-</div>
-<div class="section" style="border:2px solid var(--accent);border-radius:8px;padding:12px">
-  <div style="display:flex;justify-content:space-between"><strong>M2 Export</strong><span style="color:var(--accent)">3/5</span></div>
-  <div style="height:8px;background:var(--bg-tertiary);border-radius:4px"><div style="width:60%;height:8px;background:var(--accent);border-radius:4px"></div></div>
-  <ul style="list-style:none;padding:0;margin-top:8px">
-    <li>✓ Phase 4 — Data model</li>
-    <li>✓ Phase 5 — PDF template</li>
-    <li>✓ Phase 6 — Print view</li>
-    <li style="color:var(--accent);font-weight:600">~ Phase 7 — Header with practice details</li>
-    <li style="color:var(--text-tertiary)">○ Phase 8 — Batch export</li>
-  </ul>
-</div>
-<div class="section">
-  <div style="display:flex;justify-content:space-between"><strong>M3 Tablet</strong><span style="color:var(--text-tertiary)">0/2</span></div>
-  <div style="height:8px;background:var(--bg-tertiary);border-radius:4px"></div>
-</div>
-```
-
-### Building block: Gate dashboard
-
-Gate summary with 3 or more findings, and `/dev review`. Findings per checker, critical/notice, fixed/open.
-
-```html
-<h2>Gate phase 7: 2 critical fixed, 3 notices open</h2>
-<table style="width:100%;border-collapse:collapse">
-  <tr style="text-align:left;border-bottom:1px solid var(--border)"><th>Checker</th><th>Critical</th><th>Notices</th><th>Status</th></tr>
-  <tr><td>Spec checker</td><td style="color:var(--error)">1</td><td>0</td><td style="color:var(--success)">fixed</td></tr>
-  <tr><td>Bug hunt</td><td style="color:var(--error)">1</td><td>2</td><td style="color:var(--success)">fixed</td></tr>
-  <tr><td>Security review</td><td>0</td><td>1</td><td style="color:var(--warning)">notice open</td></tr>
-  <tr><td>Performance review</td><td>0</td><td>0</td><td style="color:var(--success)">—</td></tr>
-</table>
-<p class="subtitle" style="margin-top:12px">Tests: Spec checker 1 gap, test red→green verified · Build ✓ · E2E ✓</p>
-```
 
 ### Building block: UI decision
 
@@ -120,82 +79,43 @@ colors — independent of the page's system theme.
 </div>
 ```
 
-### Building block: Mermaid diagram
-
-Base building block for all diagrams. The `<script>` includes Mermaid **once per screen** — every
-fragment is its own page, which is why it also appears in "Architecture comparison" and "Before/After".
-It loads Mermaid 11 via CDN and follows the system theme;
-without network access, the source in the `<pre>` stays readable.
-
-```html
-<h2>PDF export data flow</h2>
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({ startOnLoad: false, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });
-  await mermaid.run();
-</script>
-<pre class="mermaid">
-flowchart LR
-  E[Result view] -->|click Export| V[PDF template]
-  P[(Practice details)] --> V
-  V --> R[Renderer]
-  R --> D[Save file]
-</pre>
-```
-
-### Building block: Architecture comparison
-
-Architecture phases, step "Approaches": one diagram plus pros/cons per approach.
-
-```html
-<h2>Two ways to the PDF</h2>
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({ startOnLoad: false, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });
-  await mermaid.run();
-</script>
-<div class="split">
-  <div class="mockup"><div class="mockup-header">A · Render in the frontend <span style="color:var(--accent)">· Recommended</span></div><div class="mockup-body">
-    <pre class="mermaid">
-flowchart TB
-  UI[Svelte view] --> H[HTML print template] --> W[Webview print]
-    </pre>
-    <div class="pros-cons"><div class="pros"><h4>Pros</h4><ul><li>Offline, no new dependency</li></ul></div><div class="cons"><h4>Cons</h4><ul><li>Page breaks differ per webview</li></ul></div></div>
-  </div></div>
-  <div class="mockup"><div class="mockup-header">B · Render in the Rust core</div><div class="mockup-body">
-    <pre class="mermaid">
-flowchart TB
-  UI[Svelte view] -->|invoke| K[Rust core] --> L[PDF library]
-    </pre>
-    <div class="pros-cons"><div class="pros"><h4>Pros</h4><ul><li>Identical output on every system</li></ul></div><div class="cons"><h4>Cons</h4><ul><li>New dependency, layout maintained twice</li></ul></div></div>
-  </div></div>
-</div>
-```
-
 ### Building block: Before/After
 
-Architecture phases, step "Design".
+After a visual fix or UI change: the same view before and after, side by side — two mockups or two
+real screenshots (served from `screen_dir` under `/files/<name>`), never two box diagrams.
 
 ```html
-<h2>What changes in the components</h2>
-<script type="module">
-  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
-  mermaid.initialize({ startOnLoad: false, theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });
-  await mermaid.run();
-</script>
+<h2>Export button now sits next to the result, not in the menu</h2>
 <div class="split">
-  <div class="mockup"><div class="mockup-header">Before</div><div class="mockup-body"><pre class="mermaid">
-flowchart LR
-  E[Result view] --> S[Save as text]
-  </pre></div></div>
-  <div class="mockup"><div class="mockup-header" style="color:var(--accent)">After</div><div class="mockup-body"><pre class="mermaid">
-flowchart LR
-  E[Result view] --> V[PDF template] --> D[File]
-  P[(Practice details)] --> V
-  </pre></div></div>
+  <div class="mockup"><div class="mockup-header">Before</div><div class="mockup-body">
+    <div style="display:flex;justify-content:space-between;align-items:center"><strong>Result</strong><span>☰ Menu</span></div>
+    <div style="height:80px;background:var(--bg-tertiary);border-radius:6px;margin-top:8px"></div>
+  </div></div>
+  <div class="mockup"><div class="mockup-header" style="color:var(--accent)">After</div><div class="mockup-body">
+    <div style="display:flex;justify-content:space-between;align-items:center"><strong>Result</strong><span style="padding:4px 10px;border-radius:6px;background:var(--accent);color:white">Export PDF</span></div>
+    <div style="height:80px;background:var(--bg-tertiary);border-radius:6px;margin-top:8px"></div>
+  </div></div>
 </div>
 ```
 
+### Building block: Real screen
+
+Review or acceptance with real data: a screenshot of the running app (taken e.g. with Playwright
+into `screen_dir`, served under `/files/<name>`), with numbered markers on what is wrong or worth
+checking and a one-line caption per marker. No prose section below the image.
+
+```html
+<h2>Result view with real data: two things to check</h2>
+<div style="position:relative;display:inline-block;max-width:100%">
+  <img src="/files/result-view.png" alt="Result view" style="max-width:100%;border:1px solid var(--border);border-radius:6px">
+  <span style="position:absolute;left:62%;top:18%;width:26px;height:26px;border-radius:50%;background:var(--error);color:white;text-align:center;line-height:26px;font-weight:600">1</span>
+  <span style="position:absolute;left:12%;top:71%;width:26px;height:26px;border-radius:50%;background:var(--warning);color:white;text-align:center;line-height:26px;font-weight:600">2</span>
+</div>
+<ol>
+  <li style="color:var(--error)">Total shows 0.0399999 instead of 0.04</li>
+  <li style="color:var(--warning)">The table does not say why a day has 0 h</li>
+</ol>
+```
 ### Building block: Waiting
 
 When the next step happens only in the terminal — prevents a stale screen from staying up.

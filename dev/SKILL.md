@@ -65,7 +65,7 @@ the current step needs.
 | `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
 
-**Visual Companion in one sentence:** it is a fixed part of the workflow, used without asking; wherever this skill says **"Show screen"**, follow the procedure in `companion.md` — and every message that shows a screen or refers to the companion ends with its current URL (details there).
+**Visual Companion in one sentence:** it shows only the user interface of the product (mockups, states, real screenshots — never roadmaps, plans, architecture or findings), is used without asking wherever this skill says **"Show screen"** (procedure in `companion.md`), and while its server runs every message ends with its current URL.
 
 ---
 
@@ -135,7 +135,7 @@ digraph session_start {
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
 6. **Find current position:** First milestone with incomplete phase. If all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
-7. **Show summary** — if ≥ 2 phases remain or a milestone change occurred: **Show screen** (procedure in `companion.md`). Content: building block "Roadmap" (`companion-screens.md`) — milestone blocks, progress bars, phase status icons, blockers in red. Additionally a terminal summary:
+7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
    Next: Phase 4 — Connections View (@type:ui @gate:fast)
@@ -281,7 +281,7 @@ If pre-skills produced output files (e.g. a handoff file in a dot-directory of t
 2. **Architectural → interview in rounds per `befragung.md` (interview rounds)** (in this skill directory, incl. ADRs), then `superpowers:brainstorming` with the handoff note from `befragung.md`.
 3. **Small → `superpowers:brainstorming`** with the instruction: every question via `AskUserQuestion`, recommendation first with "(Recommended)"; look up facts yourself instead of asking. Record the approved chat draft with acceptance criteria in STATE.md under the phase — the basis for the Spec checker (5c-v) and for resuming.
 
-In both cases: State context: phase name, type, milestone goal, any pre-skill output. And the companion instruction: "The Visual Companion is already running (URL below). Do not offer it, use it directly for every question with a UI/UX side and for architecture diagrams; building blocks in `companion-screens.md` of the `/dev` skill. Every message that shows a screen or refers to it ends with this URL on its own line, verbatim — every time, not only the first." Before that, ensure the companion via the "Show screen" procedure and pass along the URL. Include matching tech skills beforehand — see `tech-stack-triggers.md`, section "During Brainstorming". Brainstorming chains to `superpowers:writing-plans` → `superpowers:subagent-driven-development` internally. After spec produced: add `@spec:` to ROADMAP.md.
+In both cases: State context: phase name, type, milestone goal, any pre-skill output. And the companion instruction: "The Visual Companion is already running (URL below). Do not offer it, use it directly for every question with a UI/UX side — and only for those: no plans, approaches, architecture diagrams or text summaries on screens; building blocks in `companion-screens.md` of the `/dev` skill. While the server runs, every message ends with this URL on its own line, verbatim." Before that, ensure the companion via the "Show screen" procedure and pass along the URL. Include matching tech skills beforehand — see `tech-stack-triggers.md`, section "During Brainstorming". Brainstorming chains to `superpowers:writing-plans` → `superpowers:subagent-driven-development` internally. After spec produced: add `@spec:` to ROADMAP.md.
 
 **4b. Planning (resume):** Invoke `superpowers:writing-plans`. After plan produced: add `@plan:` to ROADMAP.md.
 

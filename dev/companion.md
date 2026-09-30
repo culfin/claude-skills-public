@@ -4,32 +4,42 @@ Read before the first screen of a session. What screens look like is in `compani
 
 The Visual Companion is a browser-based server that renders HTML screens. It is used **without asking and without permission** — it is a fixed part of the workflow, not an optional feature.
 
-### Ground Rule: When Browser, When Terminal?
+### Ground Rule: The Companion Shows the User Interface — Nothing Else
+
+The companion exists to show the **user interface of the product being built**: how a view looks,
+which states it has, how a user moves through it, how it renders on desktop/mobile and light/dark.
+Every screen is **visual first** — a mockup, a wireframe or a real screenshot of the running app.
+Text on a screen is limited to captions and labels (one or two sentences per block).
+
+**Never in the companion — always in the terminal:** roadmaps, phase or milestone overviews, plans,
+specs, strategy, approaches and their trade-offs, architecture or data-flow diagrams, gate findings,
+review results, lists of decisions, legal reasoning. If a screen would mostly be text that could just
+as well be written in the chat, it does not belong in the companion — write it in the chat.
 
 | Content | Medium |
 |--------|--------|
-| Roadmap progress, phase overview, milestone summary | **Browser** |
-| UI layout options, design decisions, wireframes | **Browser** |
-| Architecture diagrams, data flow, component relationships | **Browser** |
-| Quality Gate findings dashboard (if ≥ 3 findings) | **Browser** |
-| Conceptual yes/no questions ("Resume?", "Continue?") | **Terminal** |
-| Technical decisions without a visual dimension | **Terminal** |
-| Short answers, confirmations, one-line options | **Terminal** |
+| UI layout options, wireframes, mockups of views, forms, cards, dialogs | **Browser** |
+| States of a view (empty, loading, error, filled), desktop/mobile, light/dark | **Browser** |
+| A user's flow through views (as a row of view mockups, not as a box diagram) | **Browser** |
+| Real screenshots of the running app for review or acceptance, before/after of a visual change | **Browser** |
+| Roadmap, status, phase/milestone summaries, plans, specs | **Terminal** |
+| Architecture approaches, data model, library choice, naming, trade-offs | **Terminal** |
+| Gate and review findings, test results | **Terminal** |
+| Conceptual questions, confirmations, one-line options | **Terminal** |
 
-**Rule of thumb:** If the content consists of more than 3 lines of structured information or has a spatial representation → browser. Exception: questions without a UI/UX side (data model, library choice, naming) stay in the terminal, even if they are longer.
+**Test before every screen:** would the user understand this better by *seeing the interface* than by
+reading it? If the honest answer is "it is text in a nicer box" → terminal.
 
 ### Mandatory Triggers in `/dev` — always, automatically
 
 | Step | What is shown | Format |
 |---------|-----------------|--------|
-| **Session Start** (if ≥ 2 phases or milestone change) | Roadmap progress: milestones as progress bars, current phase highlighted, blockers | Building block "Roadmap" |
-| **`/dev status`** | Complete roadmap overview with all milestones, phases, status icons | Building block "Roadmap" (all milestones) |
-| **Milestone End Summary** | What was built: phase list with Gate summary highlights, next steps | Building blocks "Roadmap" + "Gate dashboard" |
-| **Quality Gate Summary** (if ≥ 3 findings across all checks) | Findings by category: critical/note, what was fixed | Building block "Gate dashboard" |
-| **`/dev review` Pre-Release** | Quality overview across all Gate summaries: findings trend, open blockers | Building block "Gate dashboard" (across all phases) |
 | **Interview / brainstorming — question with a UI/UX side** (any phase size) | The options as mockups side by side, with the states of each option; desktop/mobile and light/dark where the project has both. Answer via `AskUserQuestion`, with the options named identically there | Building blocks "UI decision", "State grid", "Responsive/Dark" |
-| **Brainstorming — solution approaches, architecture phase** | One Mermaid diagram per approach (components/data flow) with pros and cons | Building block "Architecture comparison" |
-| **Brainstorming — design, architecture phase** | Before/after as two diagrams side by side | Building block "Before/After" |
+| **Review or acceptance of views with real data** | Screenshots of the running app, annotated with markers where something is wrong | Building block "Real screen" |
+| **Visual fix or UI change done** | The view before and after, side by side | Building block "Before/After" |
+
+Everything else that earlier went to the browser (roadmap at session start, `/dev status`, milestone
+summary, gate and review dashboards, architecture comparisons) is shown **in the terminal only**.
 
 **When a question has a UI/UX side:** when the answer becomes visible — layout, navigation, a user's flow through views, forms, feedback (error, loading, empty), rendering across sizes and themes. Not: data model, library choice, naming — then no screen, question in the terminal only.
 
@@ -58,13 +68,12 @@ $DEV_DIR/scripts/companion.sh --project-dir <project-root>
 ### The URL Travels With Every Mention
 
 The link from the first start scrolls away within minutes; the user must never have to search
-for it. So: **every message that shows a screen or refers to the companion in any way ends with the
-current `url` on its own line** — verbatim, including `?key=<TOKEN>`. Not once per session: every time.
+for it. So: **as long as a companion server is running in the session, every message to the user
+ends with its current `url` on its own line** — verbatim, including `?key=<TOKEN>`. Not only
+messages that show or mention a screen: every message, until the server is stopped.
 
-"Refers to the companion" includes: a new or updated screen; "see the browser", "on the screen",
-"in the companion"; a question whose options are shown as mockups or diagrams; a gate dashboard, a
-waiting screen, a summary shown there; and any subagent or delegated skill (e.g. brainstorming) that
-writes a screen — it receives the URL and follows the same rule.
+This also binds every subagent or delegated skill (e.g. brainstorming) that writes a screen — it
+receives the URL and follows the same rule.
 
 - When a question dialog (`AskUserQuestion`) refers to a screen, the text **before** the call ends
   with the URL — the dialog can cover everything earlier.
@@ -89,6 +98,6 @@ exactly what is meant — automatically, without asking:
 The screen is the confirmation surface: from it the user immediately sees whether the state is right.
 That is why it always shows the state **after** the change, never the one before.
 
-What a screen looks like — content fragments, style rules, building blocks (Roadmap, Gate dashboard, Waiting, etc.) — is described in `companion-screens.md`.
+What a screen looks like — content fragments, style rules, building blocks (UI decision, State grid, Real screen, Before/After, Waiting, etc.) — is described in `companion-screens.md`.
 
 ---

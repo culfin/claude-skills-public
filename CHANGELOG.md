@@ -2,6 +2,19 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.8 — 2026-09-30
+
+**dev** — the Visual Companion shows only the user interface. In practice screens had turned into
+text in a box: roadmaps, plans, approach comparisons, architecture diagrams, decision lists — all of
+it just as readable in the chat, and none of it worth a browser tab. Now the companion is reserved
+for what has to be *seen*: mockups and wireframes of views, their states, desktop/mobile and
+light/dark, flows as rows of view mockups, and real screenshots of the running app for review and
+before/after. Roadmap, status, milestone and gate summaries, architecture approaches and findings go
+to the terminal. The building blocks "Roadmap", "Gate dashboard", "Mermaid diagram" and
+"Architecture comparison" are gone; "Before/After" now compares views, and "Real screen" (annotated
+screenshot) is new. The URL rule is widened: while a companion server runs, every message ends with
+its URL — not only messages that mention a screen.
+
 ## v2.7.1 — 2026-09-29
 
 **dev** — the Visual Companion URL now travels with every mention. In practice the link from the

@@ -64,7 +64,7 @@ Heading uses `entire codebase` instead of `N files` when full-codebase mode was 
 
 **4. Post-check summary** — after step 5k, show a summary of what ran:
 
-- **≥ 3 findings across all checks:** Start Visual Companion server automatically (no user prompt). Render a findings dashboard — findings grouped by category (critical / notice), tools that ran, what was fixed. Same structure as the existing Quality Gate Summary dashboard in the skill (building block "Gate dashboard"); the message ends with the companion URL (`companion.md`, "The URL Travels With Every Mention"). Runs regardless of whether ROADMAP.md exists.
+- **≥ 3 findings across all checks:** a findings table in the terminal — grouped by category (critical / notice), tools that ran, what was fixed. No companion screen: findings are not user interface (`companion.md`, ground rule). Runs regardless of whether ROADMAP.md exists.
 - **< 3 findings:** Terminal-only — do not echo STATE.md content again. Show two-line confirmation:
 
 ```

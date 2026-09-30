@@ -8,7 +8,7 @@ Execution) stays in `SKILL.md`; the gate is in `gate.md`.
 **Triggered by:** `/dev status` or "Show full status"
 
 1. **Read STATE.md** — show Blockers & Risks (if any) and Session Continuity at the top.
-2. **Show full roadmap — Show screen** (procedure in `companion.md`). Content: building block "Roadmap" (`companion-screens.md`) — all milestones, all phases with status icons, spec/plan links, blockers in red at the top. Additionally a short terminal form:
+2. **Show full roadmap** — in the terminal only (the companion is for the user interface): all milestones, all phases with status icons, spec/plan links, blockers at the top:
    ```
    ### Blockers
    - Windows Dashboard: placeholder only
@@ -49,7 +49,7 @@ All phases `[x]` or `[—]`:
    - If dead code is found: show findings, fix automatically where safe (unused imports, unreferenced functions), ask for confirmation on larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
 5. **Update STATE.md** (Progress table, Current Position to next milestone).
-6. **Show summary — Show screen** (procedure in `companion.md`). Content: building blocks "Roadmap" + "Gate dashboard" (`companion-screens.md`) — completed phases with Gate summary highlights (critical findings/fixes), next steps, milestone name + goal prominently at the top.
+6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After").
 7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause.
 
 ---
@@ -125,7 +125,7 @@ Key integration points:
 2. Update ROADMAP.md: `[—]` + `<!-- skipped: <reason> -->`
 3. **Update STATE.md**: Current Position, Progress table, Last activity.
 4. Commit.
-5. **Show screen** — updated roadmap (building block "Roadmap" in `companion-screens.md`), with the skipped phase marked with the `[—]` icon and the reason.
+5. **Show the updated roadmap in the terminal**, with the skipped phase marked `[—]` and the reason.
 6. Return to Session Start.
 
 ---
@@ -139,7 +139,7 @@ AskUserQuestion: Add phase (Recommended) or Add milestone.
 **Phase:** Which milestone → name → type → position (end or after specific phase) → extra skills → Edit ROADMAP.md → commit.
 **Milestone:** Name/goal → phases → append to ROADMAP.md → commit.
 
-After the commit: **Show screen** — updated roadmap (building block "Roadmap" in `companion-screens.md`), with the new phase/milestone highlighted with a "new" badge.
+After the commit: show the updated roadmap in the terminal, the new phase/milestone marked "new".
 
 Warn if adding to a completed milestone.
 
@@ -151,7 +151,7 @@ Warn if adding to a completed milestone.
 
 Only `[ ]` phases can move. `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
 
-After the commit: **Show screen** — updated roadmap (building block "Roadmap" in `companion-screens.md`), with the moved phase shown in its new position with a "moved" badge.
+After the commit: show the updated roadmap in the terminal, the moved phase marked "moved".
 
 ---
 
