@@ -2,6 +2,14 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.8.1 — 2026-10-01
+
+**dev** — two ways the companion link went dead in practice: the server stops itself after four idle
+hours, and a restart starts with an empty screen directory, so the page loads blank although the
+server runs. Now: alive check before every message carrying the URL (not only before writing a
+screen), and after a restart the current screen is copied into the new directory and checked to
+render before the link is shared.
+
 ## v2.8 — 2026-09-30
 
 **dev** — the Visual Companion shows only the user interface. In practice screens had turned into

@@ -80,6 +80,13 @@ receives the URL and follows the same rule.
 - **Current** means from the latest start or restart: after a restart, take the `url` from the new
   return value, not from memory. If the alive check fails and the server cannot be restarted, say so
   instead of repeating a dead link.
+- **Alive check before every message that carries the URL**, not only before writing a screen: the
+  server stops itself after its idle timeout (`idle_timeout_ms`, 4 h), and a dead link in every
+  message is worse than none. If it stopped: restart with the same `--project-dir`.
+- **A restart creates a new, empty `screen_dir`.** The page then stays blank although the server
+  runs. After every restart, copy the current screen (and the images it references) from the old
+  session's `content/` into the new `screen_dir` before sharing the URL, and verify it renders
+  (headless Chrome `--dump-dom`, look for a heading of the screen).
 - Where the host has a convention for links (e.g. "URLs last"), the URL line is the last line of
   the message.
 
