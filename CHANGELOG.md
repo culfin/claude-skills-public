@@ -2,6 +2,13 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.8.3 — 2026-10-01
+
+**dev** — gate evidence works in monorepos. `check-evidence.py` excluded only a root-level
+`STATE.md`/`ROADMAP.md` from the state id; a project that keeps them next to its app (e.g.
+`apps/web/`) changed its own id with every checkmark, so every item showed as stale right after it
+was written. The bookkeeping files are now excluded wherever they live (`:(glob)**/STATE.md`).
+
 ## v2.8.2 — 2026-10-01
 
 **dev** — the companion URL no longer ends every message. v2.8 widened the rule to "every message

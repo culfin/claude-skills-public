@@ -81,6 +81,17 @@ class EvidenceTests(unittest.TestCase):
         (self.root / "ROADMAP.md").write_text("- [x] Phase 3\n")
         self.assertEqual(i, self.sid())
 
+    def test_bookkeeping_files_in_a_subdirectory_do_not_change_the_state(self):
+        # Monorepo: the app keeps STATE.md/ROADMAP.md next to its own code, not at the root.
+        (self.root / "apps" / "web").mkdir(parents=True)
+        (self.root / "apps" / "web" / "STATE.md").write_text("# State\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "add app state")
+        i = self.sid()
+        (self.root / "apps" / "web" / "STATE.md").write_text("# State\n\n- [x] Bug hunt\n")
+        (self.root / "apps" / "web" / "ROADMAP.md").write_text("- [!] Phase 3\n")
+        self.assertEqual(i, self.sid())
+
     def test_state_id_leaves_the_index_alone(self):
         before = git(self.root, "status", "--porcelain")
         self.sid()

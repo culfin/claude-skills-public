@@ -42,7 +42,10 @@ def state_id(root):
                                         capture_output=True, text=True).stdout.strip()
         run("read-tree", "HEAD")
         run("add", "-A")
-        run("rm", "--cached", "-q", "--ignore-unmatch", "--", *BOOKKEEPING)
+        # Bookkeeping files count wherever they live: monorepos keep STATE.md/ROADMAP.md next to
+        # the app (e.g. apps/web/), not at the root.
+        run("rm", "--cached", "-q", "--ignore-unmatch", "--",
+            *(f":(glob)**/{name}" for name in BOOKKEEPING))
         return run("write-tree")[:ID_LEN]
 
 
