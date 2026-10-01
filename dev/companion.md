@@ -65,12 +65,15 @@ $DEV_DIR/scripts/companion.sh --project-dir <project-root>
 - **Alive check** before every HTML write: `<state_dir>/server-info` exists **and** `<state_dir>/server-stopped` is absent; otherwise restart with the **same** `--project-dir` (same port — the open browser tab reconnects by itself, no new URL needed)
 - **Protocol details** (how a screen is written/updated) see superpowers `brainstorming/visual-companion.md` — that guide, versioned with superpowers, is authoritative; `/dev` only keeps its trigger table; look and building blocks are in `companion-screens.md`
 
-### The URL Travels With Every Mention
+### The URL Travels With Every New Screen
 
 The link from the first start scrolls away within minutes; the user must never have to search
-for it. So: **as long as a companion server is running in the session, every message to the user
-ends with its current `url` on its own line** — verbatim, including `?key=<TOKEN>`. Not only
-messages that show or mention a screen: every message, until the server is stopped.
+for it when there is something to look at. So: **a message ends with the companion's current
+`url` on its own line whenever it points the user at something new on a screen** — a newly
+written or updated screen, or a question that refers to one — verbatim, including `?key=<TOKEN>`.
+Messages without anything new to see (progress reports, status updates, test results) carry **no**
+URL, even while the server runs: a link repeated in every message is noise, and the user stops
+noticing the one that matters. If the user asks for the link, give it.
 
 This also binds every subagent or delegated skill (e.g. brainstorming) that writes a screen — it
 receives the URL and follows the same rule.
@@ -81,8 +84,8 @@ receives the URL and follows the same rule.
   return value, not from memory. If the alive check fails and the server cannot be restarted, say so
   instead of repeating a dead link.
 - **Alive check before every message that carries the URL**, not only before writing a screen: the
-  server stops itself after its idle timeout (`idle_timeout_ms`, 4 h), and a dead link in every
-  message is worse than none. If it stopped: restart with the same `--project-dir`.
+  server stops itself after its idle timeout (`idle_timeout_ms`, 4 h), and a dead link is worse
+  than none. If it stopped: restart with the same `--project-dir`.
 - **A restart creates a new, empty `screen_dir`.** The page then stays blank although the server
   runs. After every restart, copy the current screen (and the images it references) from the old
   session's `content/` into the new `screen_dir` before sharing the URL, and verify it renders

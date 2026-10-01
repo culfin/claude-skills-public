@@ -32,8 +32,8 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    > confirmed — do not reflect it back again. The Visual Companion is already running (URL below).
    > Do not offer it; use it directly for every question with a UI/UX side — and only for those
    > (no plans, approaches or architecture diagrams on screens); building blocks are in
-   > `companion-screens.md` of the `/dev` skill. While the server runs, every message ends with this
-   > URL on its own line, verbatim. Copy the list
+   > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or
+   > asks about one, ends with this URL on its own line, verbatim; status messages carry none. Copy the list
    > into the spec as the section "Decisions from the interview".
 
 ## ADRs

@@ -2,6 +2,14 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.8.2 — 2026-10-01
+
+**dev** — the companion URL no longer ends every message. v2.8 widened the rule to "every message
+while the server runs"; in a long session that put the same link under every progress report and
+test result, and the one message that actually had something new to look at no longer stood out.
+Now the URL ends a message only when it points the user at a new or updated screen (or asks about
+one); status messages carry none. Alive check and restore-after-restart from v2.8.1 stay.
+
 ## v2.8.1 — 2026-10-01
 
 **dev** — two ways the companion link went dead in practice: the server stops itself after four idle
