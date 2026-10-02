@@ -75,7 +75,9 @@ Checked: <sweep: N probes, M candidates, K confirmed; lenses covered>
 
 Outside scope: <optional, one line each>
 
-Result: <N critical, M notes> | no findings
+Result: <N critical, M notes> | no findings | skipped: <reason>
 ```
 
-The `Result:` line is what the gate copies into the checklist as evidence.
+The `Result:` line is what the gate copies into the checklist as evidence. `skipped: <reason>`
+(an analyzer whose tool or source is missing) is never a pass: the checkbox stays open with the
+reason.

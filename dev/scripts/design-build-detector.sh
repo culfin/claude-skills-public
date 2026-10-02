@@ -23,6 +23,9 @@ bin_dir="$dir/bin"
 out="$bin_dir/impeccable-engine"
 stamp="$out.commit"
 
+if ! command -v git >/dev/null 2>&1; then
+  echo "skipped: git not found"; exit 3
+fi
 if [ ! -f "$src/Cargo.toml" ] || ! git -C "$src" rev-parse --git-dir >/dev/null 2>&1; then
   echo "skipped: no impeccable checkout at $src"; exit 3
 fi
@@ -45,6 +48,8 @@ echo "building impeccable-engine from $head (first build fetches crates and take
 built="$target/release/impeccable"
 [ -x "$built" ] || { echo "build finished but $built is missing" >&2; exit 1; }
 tmp="$out.tmp.$$"
-cp "$built" "$tmp" && chmod +x "$tmp" && mv -f "$tmp" "$out"
+cp "$built" "$tmp" || exit 1
+chmod +x "$tmp" || exit 1
+mv -f "$tmp" "$out" || exit 1
 echo "$head" > "$stamp"
 echo "built: $out ($("$out" engine-probe 2>/dev/null || echo 'probe failed'))"

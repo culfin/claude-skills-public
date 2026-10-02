@@ -11,8 +11,10 @@
 # Exit: 0 scan completed (findings or none; read the output)
 #       3 first line "skipped: <reason>" — engine missing, no files, URL given, or the scan failed.
 #         A skip is never a pass.
-# If the engine was built from an older checkout commit, the first line is
-# "note: engine built from <old>, checkout at <new>" and the scan still runs.
+# Paths that do not exist (deleted/renamed files) are dropped with "note: <N> missing path(s) ignored".
+# If the engine was built from an older checkout commit, a "note: engine built from <old>,
+# checkout at <new>" line precedes the findings and the scan still runs. On exit 3 the
+# "skipped:" line is always first; notes follow it.
 set -uo pipefail
 export IMPECCABLE_NO_TELEMETRY=1 DO_NOT_TRACK=1
 
@@ -33,16 +35,24 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ "${#files[@]}" -gt 0 ] || { echo "skipped: no files to scan"; exit 3; }
+# Deleted or renamed files in a changed-files list are not scan failures: drop them, say so.
+existing=(); missing=0
+for f in ${files[@]+"${files[@]}"}; do
+  if [ -e "$f" ]; then existing+=("$f"); else missing=$((missing + 1)); fi
+done
+[ "${#existing[@]}" -gt 0 ] || { echo "skipped: no files to scan"; exit 3; }
 
+# Notes are buffered: on every exit-3 path the "skipped:" line must come first.
+notes=""
 stamp="$engine.commit"
 if [ -f "$stamp" ] && git -C "$dir/impeccable" rev-parse --git-dir >/dev/null 2>&1; then
   built=$(tr -d '[:space:]' < "$stamp"); head=$(git -C "$dir/impeccable" rev-parse HEAD)
-  [ "$built" = "$head" ] || echo "note: engine built from $built, checkout at $head"
+  [ "$built" = "$head" ] || notes+="note: engine built from $built, checkout at $head"$'\n'
 fi
+[ "$missing" = 0 ] || notes+="note: $missing missing path(s) ignored"$'\n'
 
-out=$("$engine" detect ${opts[@]+"${opts[@]}"} "${files[@]}" 2>&1); rc=$?
+out=$("$engine" detect ${opts[@]+"${opts[@]}"} "${existing[@]}" 2>&1); rc=$?
 case "$rc" in
-  0|2) printf '%s\n' "$out"; exit 0 ;;
-  *) echo "skipped: detector failed (exit $rc)"; printf '%s\n' "$out" | head -20; exit 3 ;;
+  0|2) printf '%s' "$notes"; printf '%s\n' "$out"; exit 0 ;;
+  *) echo "skipped: detector failed (exit $rc)"; printf '%s' "$notes"; printf '%s\n' "$out" | head -20; exit 3 ;;
 esac

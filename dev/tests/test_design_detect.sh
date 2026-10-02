@@ -22,25 +22,40 @@ echo "args:$* tele:$IMPECCABLE_NO_TELEMETRY dnt:$DO_NOT_TRACK"
 exit "${FAKE_RC:-2}"
 EOF
 chmod +x "$d/bin/impeccable-engine"
+w="$tmp/w"; mkdir -p "$w"; touch "$w/a.tsx" "$w/b.css"
 
 # 2. Findings (engine exit 2) -> exit 0, findings on stdout, telemetry off, detect verb used
 echo "$head" > "$d/bin/impeccable-engine.commit"
-out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh a.tsx b.css); rc=$?
-[ "$rc" = 0 ] && echo "$out" | grep -q '^args:detect .*a.tsx b.css tele:1 dnt:1' && check ok 2 || check no "2 rc=$rc out=$out"
+out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx" "$w/b.css"); rc=$?
+[ "$rc" = 0 ] && echo "$out" | grep -q '^args:detect .*a.tsx .*b.css tele:1 dnt:1' && check ok 2 || check no "2 rc=$rc out=$out"
 echo "$out" | grep -q '^note:' && check no "2b unexpected note: $out" || check ok 2b
 
 # 3. Clean scan (engine exit 0) -> exit 0
-out=$(FAKE_RC=0 DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh a.tsx); rc=$?
+out=$(FAKE_RC=0 DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx"); rc=$?
 [ "$rc" = 0 ] && check ok 3 || check no "3 rc=$rc out=$out"
 
 # 4. Engine failure (exit 1) -> exit 3 + skipped
-out=$(FAKE_RC=1 DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh a.tsx); rc=$?
+out=$(FAKE_RC=1 DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx"); rc=$?
 [ "$rc" = 3 ] && echo "$out" | grep -q '^skipped:' && check ok 4 || check no "4 rc=$rc out=$out"
 
 # 5. Stale engine -> still runs, first line is the note
 echo 0000000 > "$d/bin/impeccable-engine.commit"
-out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh a.tsx); rc=$?
+out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx"); rc=$?
 [ "$rc" = 0 ] && echo "$out" | head -1 | grep -q "^note: engine built from 0000000, checkout at $head" && check ok 5 || check no "5 rc=$rc out=$out"
+
+# 5b. Stale engine AND scan failure -> "skipped:" is still the first line, note follows
+out=$(FAKE_RC=1 DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx"); rc=$?
+[ "$rc" = 3 ] && echo "$out" | head -1 | grep -q '^skipped:' && echo "$out" | grep -q '^note: engine built from' && check ok 5b || check no "5b rc=$rc out=$out"
+
+# 5c. One existing and one missing (deleted) file -> scans the existing one, notes the missing one
+echo "$head" > "$d/bin/impeccable-engine.commit"
+out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/a.tsx" "$w/deleted.tsx"); rc=$?
+[ "$rc" = 0 ] && echo "$out" | grep -q '^note: 1 missing path(s) ignored' && echo "$out" | grep -q '^args:detect .*a.tsx tele' \
+  && ! echo "$out" | grep -q 'deleted.tsx' && check ok 5c || check no "5c rc=$rc out=$out"
+
+# 5d. Only missing files -> exit 3 + skipped
+out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh "$w/gone.tsx"); rc=$?
+[ "$rc" = 3 ] && echo "$out" | head -1 | grep -q '^skipped: no files to scan' && check ok 5d || check no "5d rc=$rc out=$out"
 
 # 6. No files -> exit 3 + skipped
 out=$(DEV_DESIGN_DIR="$d" bash dev/scripts/design-detect.sh); rc=$?
@@ -51,6 +66,7 @@ out=$(DEV_DESIGN_DIR=/nonexistent bash dev/scripts/design-build-detector.sh); rc
 [ "$rc" = 3 ] && echo "$out" | grep -q '^skipped:' && check ok 7 || check no "7 rc=$rc out=$out"
 
 # 8. Build script: no cargo -> exit 3 + skipped
+echo 0000000 > "$d/bin/impeccable-engine.commit"
 out=$(PATH=/usr/bin:/bin DEV_DESIGN_DIR="$d" bash dev/scripts/design-build-detector.sh); rc=$?
 [ "$rc" = 3 ] && echo "$out" | grep -q '^skipped:.*cargo' && check ok 8 || check no "8 rc=$rc out=$out"
 
