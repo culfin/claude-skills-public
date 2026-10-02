@@ -7,7 +7,7 @@ If ROADMAP.md exists: AskUserQuestion — Overwrite (Recommended) or Cancel.
 ### Interactive flow using AskUserQuestion:
 
 **1. Project goal** — free text via Other
-**2. Phase types** — multiSelect: UI, Landing (landing pages, marketing — bold design), Backend, Adapter, Refactor + Other
+**2. Phase types** — multiSelect from the built-in types in `gate.md`: UI, Landing (landing pages, marketing — bold design), Backend, Auth, Security, Refactor, Data, Migration, Docs + Other
 **3. Milestone count** — adaptive single-select based on project scope:
   - Small (1-3 phases): 1, 2 (Recommended), 3 + Other
   - Medium (4-6 phases): 3, 4 (Recommended), 5 + Other

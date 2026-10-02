@@ -3,22 +3,6 @@
 Read this file on gate entry (`[~]` → `[!]`), when resuming a `[!]` phase, and from `dev-check.md`.
 The gate is **mandatory**: it cannot be skipped and not configured away via ROADMAP.md.
 
-## Subagent Model Choice
-
-`/dev` dispatches many parallel Agent subagents. **Always specify a model explicitly when dispatching** — an omitted model inherits the most expensive session model (lesson from superpowers 6.x SDD). Choose the cheapest tier that can handle the task:
-
-| Role | Tier |
-|-------|------|
-| Read-only analysis in Step 5c: Bug hunt, Performance review, Tech-Stack Review | **cheap tier** |
-| Security review (phase or full scope), Spec checker (5c-v) | **standard/capable tier** |
-| Milestone-end & pre-release full scans (Bug hunt full, Performance review full, Security review full, Dead-code scan full) | **capable tier** |
-
-Only the **dispatch model choice** is affected — which checks run and their triggers remain unchanged.
-
----
-
----
-
 ## Project Commands per Stack
 
 Gate steps 5e–5g run the project's own commands. **Run only what the project configures** — a missing linter or type checker is recorded as "not configured", not as a failure; everything that does run must be green.
@@ -57,7 +41,7 @@ A `Makefile`, `justfile` or CI workflow that defines these steps wins over the t
 | `@type:` | Special behavior in the Quality Gate |
 |----------|------------------------------|
 | `ui` | Tech-Stack Review shadcn/next-best-practices conditionally active. Accessibility review now triggers on changed UI files for any phase type (see `tech-stack-triggers.md`), not only here. |
-| `landing` | taste pre-flight checks (`$DEV_DESIGN_DIR/taste/skills/taste-skill/SKILL.md`, via subagent per `design/INDEX.md` row "4a landing") run as notes, not blockers; Accessibility review always active |
+| `landing` | taste pre-flight checks (`$DEV_DESIGN_DIR/taste/skills/taste-skill/SKILL.md`, read by a subagent per `design/INDEX.md` row "4a landing" that returns only the pre-flight checks) run as notes, not blockers; Accessibility review always active |
 | `backend` | Security review always active (even without auth files); pg:design-postgres-tables conditionally active |
 | `auth` | Security review always active (full scope, not phase scope) |
 | `security` | Security review always active (full scope); Spec checker: acceptance criteria without a test are always critical |
@@ -82,9 +66,11 @@ Phases can control the gate mode via a `@gate:` annotation:
 - `@type: security`, `@type: auth` — security checks are always mandatory for these types
 - `@type: backend` with DB migrations — Security review stays active
 - `@type: refactor` — Similar-bugs scan stays active in full-codebase mode, even with `@gate: fast`. Refactoring moves code — that is exactly the case where similar bug patterns can show up elsewhere. Similar-bugs scan is the only CONDITIONAL check that runs for refactor phases despite `@gate: fast`.
+- `@type: migration` — always the full gate
 - If changed files match auth/API/migration patterns — Security review stays active regardless of `@gate:`
+- Unknown `@gate:` value — warn, fall back to `full`
 
-On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: Similar-bugs scan stays active — @type:refactor"`), then continue with the override.
+On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: Similar-bugs scan stays active — @type:refactor"` / `"Security review active despite @gate:fast — security-relevant files changed"`), then continue with the override.
 
 ---
 
@@ -171,7 +157,7 @@ These steps run regardless of `@skills:` configuration — they are hardcoded in
 - **Warnings** (style, minor improvements): note them but proceed — `/simplify` already handled code quality.
 - After completion: check off `[ ] Change review` in STATE.md Gate Checklist.
 
-**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see "Subagent Model Choice" above: bug hunt/performance/Tech-Stack → cheap tier, Security review → standard/capable). Wait for all, at most **15 minutes** each. A subagent still running after 15 minutes is cancelled and
+**5c. Parallel Analysis Block** — dispatch the following as **parallel Agent subagents** (all read-only). **Set the model explicitly** (see `models.md`: bug hunt/performance/Tech-Stack → cheap tier, Security review → standard/capable). Wait for all, at most **15 minutes** each. A subagent still running after 15 minutes is cancelled and
 **started once more** — as a fresh subagent, if useful with the scope split in two. Still no report →
 its checkbox stays open with "timeout", the phase stays `[!]`, and you say so. Meanwhile the rest of the
 gate may go on (5d–5g do not wait for it), but the phase cannot be completed without that report.

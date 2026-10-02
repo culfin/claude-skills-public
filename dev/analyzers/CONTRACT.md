@@ -21,7 +21,7 @@ Give the subagent, in this order:
 requirement, never your reasoning — otherwise it returns your conclusions instead of a review.
 Ask for refutation: *"Find what is wrong with this change"*, not *"check this change"*.
 
-Set the model explicitly (see "Subagent Model Choice" in `gate.md`).
+Set the model explicitly (see `models.md`).
 
 ## How the analyzer works: sweep, then judge
 

@@ -44,6 +44,15 @@ drifted from their source — the companion wrapper was described as picking the
 (it picks the active one), and the trigger summary in `SKILL.md` listed reviews the matrix no
 longer matched — and now defer to it. A test keeps every `dev/*.md` in the file table.
 
+What changes in behaviour: implementers now get the `4c` design rows (animation, web on a phone,
+Apple design) when a task meets their trigger, and landing phases read `ux-writing.md` for copy.
+Four stack skills that were detected but never called now have triggers of their own —
+`swift-concurrency-pro` (Swift concurrency code changed), `swift-testing-pro` and `rust-testing`
+(test files changed) in the gate's tech-stack review, `svelte:svelte-code-writer` while
+implementing Svelte work. The subagent model table moved from `gate.md` to `models.md`, since
+milestone end, pre-release review and `/dev ui` needed only that table, not the whole gate; and
+the `@gate: fast` conflict rules and the list of gate checks now live only in `gate.md`.
+
 ## v2.8.3 — 2026-10-01
 
 **dev** — gate evidence works in monorepos. `check-evidence.py` excluded only a root-level

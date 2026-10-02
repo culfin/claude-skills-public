@@ -55,16 +55,19 @@ the current step needs.
 
 | File | Holds | Read when |
 |---|---|---|
-| `gate.md` | Quality gate 5a–5k, checklist, phase types, `@gate:`, project commands per stack, subagent models | Gate entry, resuming `[!]`, `/dev check` |
+| `gate.md` | Quality gate 5a–5k, checklist, phase types, `@gate:`, project commands per stack | Gate entry, resuming `[!]`, `/dev check` |
 | `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | The router points there; Milestone End (step 7); build/tests fail without obvious cause (Debug Flow) |
+| `models.md` | Which model tier each subagent gets | Before dispatching subagents |
 | `state.md` | What STATE.md holds and when each part changes | Before writing STATE.md |
 | `companion.md` | Visual Companion: when browser vs terminal, mandatory triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
-| `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per explicit `/dev` run, before its first tool call (not for the automatic one-line status) |
+| `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per session, at the first explicit `/dev` run (not for the automatic one-line status) |
 | `superpowers.md` | Which superpowers install is active, static check, update path (prepares only) | Session start before the first phase step; before any plugin update |
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
 | `tech-stack-triggers.md` | Which tech, design and security sources fire when | Steps 4a, 4c and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
+| `design/INDEX.md` | Which design guideline or source loads on which trigger | Only via `tech-stack-triggers.md`, `ui-review.md`, companion building block "UI decision" — then only the matching rows |
+| `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate 5b–5d, Milestone End, Pre-Release Review, `/dev ui`) |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 
 **Visual Companion in one sentence:** it shows only the user interface of the product (mockups, states, real screenshots — never roadmaps, plans, architecture or findings), is used without asking wherever this skill says **"Show screen"** (procedure in `companion.md`), and every message that points the user at a new or updated screen ends with its current URL (status messages without anything new to see carry none).
@@ -73,7 +76,7 @@ the current step needs.
 
 ## Tech-Stack-Aware Skills
 
-Detect the project's tech stack once per session and auto-invoke matching skills at the right points in the lifecycle. Detection runs during Session Start by checking config files and dependencies.
+Detect the project's tech stack once per session and auto-invoke matching skills at the right points in the lifecycle. Detection runs once per session at the first explicit `/dev` run (not for the automatic one-line status), by checking config files and dependencies.
 
 ### Detection
 
@@ -316,7 +319,7 @@ are `[x]`.
 
 Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis skills run in parallel. Skills needing final code state run after analysis completes.
 
-**Note:** `/simplify`, Change review, Bug hunt, Performance review, Security review, Similar-bugs scan, Spec checker, Accessibility review, build verification, unit tests, and E2E tests have already run in step 5. Do not run them again as post-skills even if listed in `@skills:post[]`.
+**Note:** every check on the Gate Checklist (`gate.md`) has already run in step 5. Do not run any of them again as post-skills even if listed in `@skills:post[]`.
 
 **The Gate commit has already happened** — post-skills run on the gate-verified code state.
 
@@ -371,11 +374,7 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 | All phases done in MS | Auto-trigger Milestone End. |
 | All milestones done | "Roadmap complete!" Offer add/review. |
 | `@skills` parse error | Warn, use defaults. |
-| `@gate: fast` + `@type: security/auth` | Warn: "`@gate: fast` ignored — @type requires full gate". Continue with `full`. |
-| `@gate: fast` + `@type: refactor` | Warn: "`@gate: fast`: Similar-bugs scan stays active — @type:refactor". Only this one check remains, the rest as with `fast`. |
-| `@gate: fast` + `@type: migration` | Warn: "`@gate: fast` ignored — @type:migration always requires full gate". Continue with `full`. |
-| `@gate: fast` + auth/API files changed | Warn: "Security review active despite @gate:fast — security-relevant files changed." |
-| `@gate:` unknown value | Warn, fall back to `full`. |
+| `@gate:` conflicts with `@type:` or changed files, or unknown value | Warn and apply the override — rules in `gate.md`, "`@gate:` Annotation". |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |

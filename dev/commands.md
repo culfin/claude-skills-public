@@ -39,7 +39,7 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 All phases `[x]` or `[—]`:
 
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
-2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see "Subagent Model Choice" in `gate.md`), wait for all to complete:
+2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — deep analysis of the entire milestone scope through all 7 lenses.
    - **Performance review** (full mode) — comprehensive performance anti-pattern scan across the milestone's changes.
    - **Security review** (full mode) — complete security scan of the entire milestone scope. Even if every phase already had conditional security audits, full mode uncovers cross-cutting attack surfaces (interplay of several components, cumulative risks).
@@ -161,7 +161,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 **Triggered by:** `/dev review`
 
-1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see "Subagent Model Choice" in `gate.md`):
+1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see `models.md`):
    - **Bug hunt** (full mode) — entire codebase, 7 lenses.
    - **Performance review** (full mode) — entire codebase.
    - **Security review** (full mode) — entire codebase. Critical — must be green before release.

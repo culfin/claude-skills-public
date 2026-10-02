@@ -16,6 +16,7 @@ on the automatic one-line status.
 
 **During Execution (step 4c):**
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
+- Svelte tasks and `svelte` in `$TECH_STACKS` → the implementer uses `svelte:svelte-code-writer` for that task
 
 **During Quality Gate — Parallel Analysis Block (step 5c):**
 
@@ -30,8 +31,11 @@ on the automatic one-line status.
 | Files hit by the motion probes (`transition`, `animation`, `@keyframes`, `motion.`, `animate(`, `withSpring`, …) | A motion sweep probe hits in the changed files | Motion review (`analyzers/motion.md`) | Judges each animation against Emil Kowalski's standards read from `$DEV_DESIGN_DIR`; standards missing → checkbox `skipped: <reason>` |
 | `src/db/migrations/**`, SQL files, schema changes | `postgres` in `$TECH_STACKS` | `pg:design-postgres-tables` | Check indexing, constraints, type choices |
 | `**/*.swift` | `ios` in `$TECH_STACKS` | `swiftui-pro` | Check modern APIs, performance patterns |
+| `**/*.swift` using `async`/`await`, `actor`, `Task`, `Sendable` | `ios` in `$TECH_STACKS` | `swift-concurrency-pro` | Check isolation, data races, structured concurrency |
+| Swift test files (`*Tests.swift`, test targets) | `ios` in `$TECH_STACKS` | `swift-testing-pro` | Check Swift Testing usage, assertions, parameterised tests |
 | `**/*.cs`, `**/*.xaml` | `winui` in `$TECH_STACKS` | `winui-pro` | Check MVVM, threading, WinUI patterns |
 | `**/*.rs` | `rust` in `$TECH_STACKS` | `rust-best-practices` | Check ownership/borrowing, error handling (thiserror/anyhow), idiomatic APIs, Clippy findings |
+| Rust tests (`tests/**/*.rs`, files with `#[cfg(test)]`) | `rust` in `$TECH_STACKS` | `rust-testing` | Check test structure, async tests, coverage of the change |
 | `src-tauri/**` (Tauri commands/IPC) | `tauri` in `$TECH_STACKS` | `tauri-v2` | Check command signatures, IPC boundaries, capabilities/permissions |
 | `**/*.svelte`, `src/lib/**` | `svelte` in `$TECH_STACKS` | `svelte:svelte-core-bestpractices` | Check runes state ($state/$derived/$effect), reactivity, event handling, Bits UI integration; if needed, Svelte MCP `svelte-autofixer` |
 

@@ -10,8 +10,8 @@ what the host actually offers.
   the answer — silence is not approval. `Agent` = a subagent; if the host cannot run them in
   parallel, run the analyzers one after another — an analysis by the implementing agent itself is
   not a substitute for an independent one. `Skill` = however the host loads another skill.
-- **Models:** set a model per subagent only where the host supports it (see "Subagent Model
-  Choice" in `gate.md`); otherwise the subagent inherits the current model.
+- **Models:** set a model per subagent only where the host supports it (see
+  `models.md`); otherwise the subagent inherits the current model.
 - **Visual Companion:** needs the superpowers brainstorm companion. `scripts/companion.sh` finds it
   via `DEV_COMPANION_SCRIPTS_DIR` or `DEV_SUPERPOWERS_ROOT` (set one of them on hosts other than
   Claude Code), else the active install recorded in Claude Code's `installed_plugins.json`. Not found → the screen step is blocked; say so.
