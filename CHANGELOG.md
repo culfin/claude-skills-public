@@ -24,7 +24,7 @@ Two limits are written down (O12): the skills assume WordPress 7.0+, so a rule i
 the project's version before it is applied; and no command is run against a live site on a
 skill's say-so — a search-replace recipe is context for a plan, not something to execute.
 
-`dev/stack/INDEX.md` grows past its 80-line budget (now 95) and `dev/sources.md` to 137: eight
+`dev/stack/INDEX.md` grows past its 80-line budget (now 95) and `dev/sources.md` to 140: eight
 more rows and two overrides are content, not prose, and the index is still read in one pass.
 
 The index parser now also rejects `$HOME/…` and quoted `"$DEV_STACK_DIR"/…` spellings instead
