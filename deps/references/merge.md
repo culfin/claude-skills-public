@@ -303,6 +303,10 @@ Code-Vorschlag: {what we could adopt, where, effort}
 
 5. **Record** ALL findings for the report. The report is what the user reviews to decide on code improvements.
 
+6. **What's new (minor/major jumps of listed technologies):** if the package is in the table of
+   `references/whats-new.md` and the jump crosses a minor or major version, follow that file once
+   the wave's analyses are done — report only, `skipped: <reason>` when the notes are unreachable.
+
 ### b) Squash-merge via GitHub API
 
 ```bash

@@ -37,6 +37,7 @@ Automates the Dependabot PR lifecycle: analyze, merge, test, promote.
 3. If `audit` → load `references/security-alerts.md`. Scan security alerts, fix transitive vulns via overrides, validate, commit. (This is the read-and-fix counterpart to `check`'s read-only alert scan.)
 4. If `merge` with `--limit N` → pass limit to merge process (see merge.md "Batch size control")
 5. If no subcommand → show status (see below)
+5a. `check` or `merge` lifts a technology listed in `references/whats-new.md` across a **minor or major** version → after the impact analysis, follow that file: a subagent reads the release notes for the skipped range and reports what is new, what affects this project (with code locations) and what is deprecated. Report only; no network → `skipped: <reason>`.
 6. Load the corresponding reference file, plus the pattern files for the ecosystems in play (see "Learned Patterns" below)
 7. Follow its instructions step by step
 
