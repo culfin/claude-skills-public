@@ -681,7 +681,7 @@ class RealContractTests(unittest.TestCase):
         for name in ('sources.md', 'updates.md', 'scripts/check-source-update.py'):
             text = (DEV / name).read_text()
             if name.endswith('.md'):
-                self.assertLessEqual(len(text.splitlines()), 130 if name == 'sources.md' else 120, name)
+                self.assertLessEqual(len(text.splitlines()), 137 if name == 'sources.md' else 120, name)
             self.assertNotIn('/Users/', text)
             self.assertNotIn('/home/', text)
             self.assertNotIn('.ts.net', text)

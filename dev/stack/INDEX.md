@@ -79,10 +79,11 @@ no script a source ships is run and no vendor CLI or API is called on its instru
 (`sources.md`, O8–O12). `postgres` runs in addition to `pg:design-postgres-tables`, as one
 Tech-Stack Review item per stack id. Next.js fallback and details: `tech-stack-triggers.md`.
 
-**Runtime check (`next` row).** The one row that acts instead of reviewing: whoever verifies the
-task reads the file and runs its loop against the project's own `next dev`. Only with Next.js
-≥ 16.3 on Turbopack **and** `agent-browser` already on `PATH` — otherwise `skipped: <reason>`;
-`/dev` never installs or upgrades either, and the skill's feedback reporting is not used. It
+**Runtime check (`next` row).** The one row that acts: whoever verifies the task reads the file
+and runs its loop against the project's own `next dev`. Only with Next.js ≥ 16.3 on Turbopack
+**and** `agent-browser` already on `PATH` in at least the minimum version the skill file states
+(check `agent-browser --version` first) — otherwise `skipped: <reason>`. `/dev` never installs
+or upgrades either; the CLI's built-in help may be read as tool docs (`sources.md`, O11). It
 complements the bundled docs and the E2E step (5g), it replaces neither.
 
 **WordPress rows.** The rows above route, not the skills' triage scripts or router. Before

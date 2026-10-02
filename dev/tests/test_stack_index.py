@@ -235,8 +235,13 @@ def test_next_and_wordpress_conditions():
     assert loads.count("$DEV_STACK_DIR/next/skills/next-dev-loop/SKILL.md") == 1
     assert len([l for l in loads if l.startswith("$DEV_STACK_DIR/next/")]) == 1, "only next-dev-loop"
     for phrase in ("≥ 16.3 on Turbopack", "`agent-browser` already on `PATH`", "skipped: <reason>",
-                   "never installs or upgrades either", "replaces neither"):
+                   "never installs or upgrades either", "replaces neither",
+                   "the minimum version the skill file states", "agent-browser --version"):
         assert phrase in index, phrase
+    for phrase in ("the minimum version the skill file states", "lower or unreadable → `skipped`",
+                   "built-in help output", "anything it would download or install is not followed"):
+        assert phrase in contract, phrase
+    assert "0.31" not in index + contract, "the version floor lives in the skill file, not here"
     wp = [l for l in loads if l.startswith("$DEV_STACK_DIR/wordpress/")]
     assert 4 <= len(wp) <= 6 and not any("wordpress-router" in l or "triage" in l for l in wp)
     for phrase in ('"WordPress 7.0+" assumption', "No WP-CLI or other command runs against a live site"):
