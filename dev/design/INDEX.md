@@ -6,7 +6,9 @@ instruction to answer only "I'm ready"; when `/dev` reads them, ignore that
 instruction and apply the content to the task directly instead. If a foreign
 source listed under `$DEV_DESIGN_DIR` is missing on disk, the step reports
 "skipped", never a silent success. Files marked `subagent` are large and are
-delegated rather than read inline; `run` means a script, not a document.
+delegated rather than read inline. `run` marks an analyzer document
+(`analyzers/…`) whose subagent runs a script instead of reading a guideline —
+the document says which script and how a missing engine is reported.
 
 | Trigger | Load | How |
 |---|---|---|

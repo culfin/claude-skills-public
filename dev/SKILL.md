@@ -90,9 +90,12 @@ Detect the project's tech stack once per session and auto-invoke matching skills
 | `Podfile` / `.xcodeproj` / `Package.swift` | **iOS/macOS** | `swiftui-pro`, `swift-concurrency-pro`, `swift-testing-pro` |
 | `*.csproj` with WinUI/WindowsAppSDK | **WinUI** | `winui-pro` |
 | `Cargo.toml` or `src-tauri/` directory | **Rust / Tauri** | `rust-best-practices`, `rust-testing`, `tauri-v2` |
+| `build.gradle*` / `AndroidManifest.xml` | **Android** | — (design rows "platform Android") |
+| `app.json` with `expo`, or `"react-native"` in dependencies | **Expo / React Native** | — (design rows "animation Expo", platform Apple/Android) |
+| `astro.config.*`, `vite.config.*`, `index.html` (none of the above web stacks needed) | **Web** | — (design rows "platform web") |
 | `svelte.config.*` or `"svelte"` in dependencies | **Svelte** | `svelte:svelte-core-bestpractices`, `svelte:svelte-code-writer` (official, + Svelte MCP) |
 
-Store detected stacks as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn, postgres]`).
+Store detected stacks as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn, postgres]`). Next.js, shadcn and Svelte also count as **web**, iOS/macOS as **Apple** — that is what the `design/INDEX.md` platform rows match on.
 
 ### Where Tech Skills Auto-Trigger
 
@@ -284,6 +287,7 @@ If pre-skills produced output files (e.g. a handoff file in a dot-directory of t
 - Phase is `[!]` → skip directly to Quality Gate (step 5), read Gate Checklist from STATE.md to find remaining steps
 - Phase is `[~]` with `@plan:` path on disk → skip to execution (4c)
 - Phase is `[~]` with `@spec:` path on disk → skip to planning (4b)
+- STATE.md has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
 - Phase is `[~]` with neither → start from brainstorming (4a); if an approved chat draft exists in STATE.md (small phase), continue from there instead of clarifying again
 
 **4a. Clarification and brainstorming:**

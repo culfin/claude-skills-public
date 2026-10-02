@@ -53,6 +53,30 @@ implementing Svelte work. The subagent model table moved from `gate.md` to `mode
 milestone end, pre-release review and `/dev ui` needed only that table, not the whole gate; and
 the `@gate: fast` conflict rules and the list of gate checks now live only in `gate.md`.
 
+Skill updates are checked before they take effect. `/dev` builds on skills it does not own, and a
+new version of one could quietly change how `/dev` behaves. `dev/sources.md` is now the contract
+per referenced source — what `/dev` reads from it, where `/dev` deliberately overrides it, and the
+invariants that must hold after any update. `dev/scripts/check-source-update.py` compares an old and
+a new tree deterministically (vanished read paths, changed invocation switches, hooks, settings
+writes, pipe-to-shell, install steps, symlinks, licence); it scans every text file, compares the
+matching lines rather than counting them, and validates queue entries. Some finding kinds are
+**hold kinds** (`--hold-kinds`: `missing-read-path`, `new-hook`, `new-settings-json`,
+`new-pipe-to-shell`, `new-install-step`, `license-changed`, `symlink`, `scan-incomplete`): they
+hold an update for the user whatever a review agent concludes, because a review can be talked
+into approving its own subject. Held updates wait in a queue; the new `/dev updates`
+(`dev/updates.md`) shows each with its verdict (`fits` / `unclear` / `conflict`) and reasons and
+applies, rejects or defers only on an explicit answer — for a `conflict`, Apply is never the
+recommended option. The automatic session-start line gains a suffix, `N skill updates waiting —
+/dev updates`, by counting the queue files without reading them. The watcher that fills the queue
+is external and optional; the applier it provides is `dev-updates-apply --apply <source> <new>`.
+
+A skipped check now has a way out of the gate. The rule used to say a check whose optional source
+is missing "stays open", which left the phase unable to complete. Now the item is ticked with the
+evidence `skipped: <reason>`, `check-evidence.py` accepts that as closed (only for checks with an
+optional source — a mandatory check cannot be skipped) and prints it as skipped, and the gate
+summary lists every one under "Skipped checks": visible, never counted as "no findings", not
+blocking.
+
 ## v2.8.3 — 2026-10-01
 
 **dev** — gate evidence works in monorepos. `check-evidence.py` excluded only a root-level

@@ -16,6 +16,8 @@ language you write in, and each can be installed on its own.
 | | `/dev check` | Runs the quality gate on changes made outside a phase | fixes findings, one check commit |
 | | `/dev status` · `init` · `add` · `skip` · `reorder` · `pause` | Roadmap overview and maintenance | `ROADMAP.md`, `STATE.md` |
 | | `/dev debug` · `/dev review` | Systematic debugging; full pre-release review | code and tests where a fix is needed |
+| | `/dev ui [scope]` | Screenshots and design analyses of one part of the running UI; reworks only the findings you approve | `UI-REVIEW.md`; code only after approval, then one check commit |
+| | `/dev updates` | Lets you decide on held-back updates of the skills `/dev` builds on (apply, reject, adapt `/dev` first, later) | nothing without your answer; then the queue files and, on Apply, the one source you approved |
 | [**deps**](deps/SKILL.md) | `/deps` · `/deps check` | Status; impact analysis of all update PRs and security alerts | nothing |
 | | `/deps merge` | Merges eligible Dependabot PRs, updates they missed and understood major migrations, runs the tests, writes a report — and opens a promote PR | dev branch (merges, lockfile, migrations), `.deps/last-report.md`, a PR to production |
 | | `/deps audit` | Closes vulnerabilities via compatible updates or overrides | manifests, lockfile, commits on the dev branch |
@@ -93,6 +95,18 @@ return at once while the checkout is unchanged). Run it again after updating the
 
 impeccable can install hooks and phone home; neither is used here. If you run it yourself outside
 `/dev`, set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` first.
+
+### Skill updates (optional, external)
+
+`/dev` builds on skills it does not own; `dev/sources.md` is the contract a new version of one of
+them is checked against. The **update watcher** that does this checking on a schedule is external
+and optional — it is not part of this repository. Without one, nothing is ever queued and
+`/dev updates` simply reports that no skill updates are waiting. If you run your own, it writes
+held-back updates to `${DEV_UPDATES_DIR:-~/.claude/dev-updates}/pending/` (format in
+`dev/updates.md`, pre-check by `dev/scripts/check-source-update.py`) and provides the applier: an
+executable named `dev-updates-apply` that accepts `dev-updates-apply --apply <source> <new>` and
+activates exactly that version of that source. `/dev updates` finds it via
+`DEV_UPDATES_APPLIER_PATH` or on `PATH` and runs nothing else.
 
 ---
 

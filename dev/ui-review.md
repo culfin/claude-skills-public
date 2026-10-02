@@ -6,7 +6,7 @@ Standalone mode like `/dev check`: reviews one part of the running product, writ
 ## Precondition
 
 - Phase `[~]`/`[!]` in ROADMAP.md: the rework belongs to it. Run steps 1–4 (read-only), record the
-  approved IDs in STATE.md's Current Position (the active phase's entry, `state.md`), stop with
+  approved IDs in STATE.md under `## UI review — approved findings` (`state.md`), stop with
   "Phase N is active — the rework is part of it; continue with `/dev next`". No steps 5–6.
 - All phases `[x]`/`[—]`, or no ROADMAP.md: proceed. Uncommitted changes at the start: name them —
   `/dev check` in step 6 snapshots them too; ask whether to commit or set them aside first.
@@ -61,7 +61,7 @@ whole codebase), requirement "the view serves its primary task for its primary u
 - **taste** (kind `landing` only) — reads the taste file itself and returns findings as notes.
 
 Wait for all (15 minutes, retry once, as in gate step 5c). Missing source under `$DEV_DESIGN_DIR`,
-unbuilt detector or missing screenshot → `skipped: <reason>` in `UI-REVIEW.md`, never "no findings".
+unbuilt detector, no screenshot → `skipped: <reason>` in `UI-REVIEW.md` and step 6, never "no findings".
 
 ## 4. Findings, `UI-REVIEW.md`, decision
 
@@ -81,12 +81,12 @@ Kind: ui | landing · Platform: web · Screenshots: desktop/mobile × light/dark
 
 | Analysis | Result |
 |---|---|
-| accessibility | 2 critical, 3 notes |
+| accessibility | 0 critical, 3 notes |
 | motion | skipped: animation standards not found |
 
 | ID | Severity | Where | Finding | Evidence | Acceptance criterion | Status |
 |---|---|---|---|---|---|---|
-| UI-1 | critical | src/Cart.tsx:42 | Remove button is 16×16 px | screenshot cart-mobile-light, marker 1; `className="h-4 w-4"` | Target ≥ 24×24 CSS px at 390 px width | open |
+| UI-1 | major | src/Cart.tsx:42 | Remove button is 16×16 px | screenshot cart-mobile-light, marker 1; `className="h-4 w-4"` | Target ≥ 24×24 CSS px at 390 px width | open |
 
 Outside scope: <noticed outside `$UI_SCOPE`, one line each — listed, not offered for rework>
 ```

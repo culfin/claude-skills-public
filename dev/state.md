@@ -22,6 +22,7 @@ STATE.md is the project's persistent state file. It tracks progress, requirement
 | Phase completes (`[!]` → `[x]`) | Current Position, Progress table, Last activity, **remove Quality Gate Checklist section** |
 | Phase skipped (`[ ]` → `[—]`) | Current Position, Progress table, Last activity |
 | Milestone completes | Progress table, Next milestone in Current Position |
+| `/dev ui` approval while a phase is `[~]`/`[!]` | **Create or extend `## UI review — approved findings`** (below) |
 | Key decision made | Add to Constraints or a Decisions section |
 | Blocker discovered | Add to Blockers & Risks |
 | Blocker resolved | Remove from Blockers & Risks |
@@ -35,6 +36,27 @@ STATE.md is the project's persistent state file. It tracks progress, requirement
 - **Blockers & Risks**: APPEND new, REMOVE resolved
 - **Session Continuity**: OVERWRITE on every session pause/end
 - **Constraints / Core Value**: IMMUTABLE after init (unless user explicitly changes)
+
+### UI review — approved findings
+
+`/dev ui` run during an active phase only analyses and asks (`ui-review.md`); the approved rework
+belongs to that phase. So the approval is not lost, it is stored in its own section — not in
+Current Position, which is overwritten on every phase transition:
+
+```markdown
+## UI review — approved findings
+<!-- from /dev ui <scope>, YYYY-MM-DD; details and acceptance criteria in UI-REVIEW.md -->
+- UI-1
+- UI-4
+```
+
+- **Written by** `/dev ui`: APPEND the approved IDs (a later run adds to the list, never replaces it).
+- **Read by** the active phase on resume (`SKILL.md`, Resume logic): each ID is fixed to its
+  acceptance criterion in `UI-REVIEW.md` as part of the phase — in 4c, or before the gate continues
+  if the phase is already `[!]` (the rework is a code change, so touched gate checks reopen).
+- **Cleared:** remove an ID once its status in `UI-REVIEW.md` is `fixed` or `not fixed: <reason>`;
+  remove the section when it is empty. A phase does not become `[x]` while the section still lists
+  an ID — it is gone, with the gate checklist, by phase completion at the latest.
 
 ### STATE.md is NOT for
 
