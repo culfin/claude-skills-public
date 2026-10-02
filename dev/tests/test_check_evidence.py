@@ -120,6 +120,47 @@ class EvidenceTests(unittest.TestCase):
         self.state([f"- [x] Bug hunt — ok @{self.sid()}"])
         self.assertEqual(self.run_check(), [])
 
+    def test_skipped_optional_check_is_closed_and_reported_as_skipped(self):
+        i = self.sid()
+        self.state([f"- [x] Bug hunt — 0 critical @{i}",
+                    "- [x] Design detector — skipped: engine not built",
+                    f"- [x] Motion review — skipped: animation standards not found @{i}",
+                    "- [x] Tech-Stack Review: shadcn — skipped: skill not installed"])
+        self.assertEqual(self.run_check(), [])
+        self.assertEqual(ce.skipped(self.root / "STATE.md"),
+                         [("Design detector", "engine not built"),
+                          ("Motion review", "animation standards not found"),
+                          ("Tech-Stack Review: shadcn", "skill not installed")])
+
+    def test_skipped_item_survives_a_later_code_change(self):
+        self.state(["- [x] Design detector — skipped: engine not built"])
+        (self.root / "a.txt").write_text("three\n")
+        self.assertEqual(self.run_check(), [])
+
+    def test_mandatory_check_cannot_be_skipped(self):
+        self.state(["- [x] Typecheck + lint + tests — skipped: took too long"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("not skippable", problems[0])
+        self.assertEqual(ce.skipped(self.root / "STATE.md"), [])
+
+    def test_skip_without_reason_is_reported(self):
+        self.state(["- [x] Design detector — skipped:"])
+        self.assertIn("no reason", self.run_check()[0])
+
+    def test_open_skipped_item_still_blocks(self):
+        self.state(["- [ ] Design detector — skipped: engine not built"])
+        self.assertIn("open", self.run_check()[0])
+
+    def test_cli_prints_skipped_not_passed(self):
+        self.state([f"- [x] Bug hunt — 0 critical @{self.sid()}",
+                    "- [x] Design detector — skipped: engine not built"])
+        run = subprocess.run(["python3", str(HERE.parent / "scripts" / "check-evidence.py"), "check", "STATE.md"],
+                             cwd=self.root, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("skipped: Design detector — engine not built", run.stdout)
+        self.assertIn("1 skipped, not passed", run.stdout)
+
     def test_missing_gate_section_is_reported(self):
         (self.root / "STATE.md").write_text("# State\n\nno gate here\n")
         self.assertIn("no gate checklist", self.run_check()[0])

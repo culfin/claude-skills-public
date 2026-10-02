@@ -2,7 +2,9 @@
 
 Every file in `analyzers/` is an instruction for **one read-only subagent**. The gate (`gate.md`)
 dispatches it; `/dev check`, milestone end and the pre-release review use the same files with a
-wider scope. No analyzer is a slash command, and none needs anything installed.
+wider scope. No analyzer is a slash command, and none needs anything installed — except the design
+detector and motion, which read optional sources under `$DEV_DESIGN_DIR` and report
+`skipped: <reason>` when those are missing.
 
 ## How the gate dispatches an analyzer
 
@@ -79,5 +81,6 @@ Result: <N critical, M notes> | no findings | skipped: <reason>
 ```
 
 The `Result:` line is what the gate copies into the checklist as evidence. `skipped: <reason>`
-(an analyzer whose tool or source is missing) is never a pass: the checkbox stays open with the
-reason.
+(an analyzer whose optional tool or source is missing) is never a pass and never "no findings":
+the gate ticks the item with exactly that text as evidence (`- [x] <check> — skipped: <reason>`),
+which does not block the phase, and lists it under "Skipped checks" in the gate summary.

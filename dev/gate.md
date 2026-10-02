@@ -67,10 +67,11 @@ Phases can control the gate mode via a `@gate:` annotation:
 - `@type: backend` with DB migrations — Security review stays active
 - `@type: refactor` — Similar-bugs scan stays active in full-codebase mode, even with `@gate: fast`. Refactoring moves code — that is exactly the case where similar bug patterns can show up elsewhere. Similar-bugs scan is the only CONDITIONAL check that runs for refactor phases despite `@gate: fast`.
 - `@type: migration` — always the full gate
+- `@type: landing` — Accessibility review stays active (always on for landing pages); Taste pre-flight stays on the checklist
 - If changed files match auth/API/migration patterns — Security review stays active regardless of `@gate:`
 - Unknown `@gate:` value — warn, fall back to `full`
 
-On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: Similar-bugs scan stays active — @type:refactor"` / `"Security review active despite @gate:fast — security-relevant files changed"`), then continue with the override.
+On conflict: warn (`"@gate: fast ignored — @type:auth requires full gate"` / `"@gate: fast: Accessibility review stays active — @type:landing"` / `"@gate: fast: Similar-bugs scan stays active — @type:refactor"` / `"Security review active despite @gate:fast — security-relevant files changed"`), then continue with the override.
 
 ---
 
@@ -97,8 +98,9 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
 - [ ] Accessibility review  <!-- UI files changed -->
-- [ ] Design detector  <!-- web UI files changed; "skipped: <reason>" if the engine is not built -->
-- [ ] Motion review  <!-- motion sweep probes hit; "skipped: <reason>" if the standards are missing -->
+- [ ] Design detector  <!-- web UI files changed; engine not built → `[x] … — skipped: <reason>` -->
+- [ ] Motion review  <!-- motion sweep probes hit; standards missing → `[x] … — skipped: <reason>` -->
+- [ ] Taste pre-flight  <!-- @type: landing only; notes, not blockers; taste source missing → `[x] … — skipped: <reason>` -->
 - [ ] Security review                           <!-- auth/api/migration changed OR @type: backend/auth/security/data -->
 - [ ] Similar-bugs scan                       <!-- dropped with @gate: fast -->
 
@@ -127,6 +129,14 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
   unchanged if exactly that content is committed).
   No evidence → the checkmark stays open. "Looks right", "should pass" and "I already checked
   that earlier" are not evidence.
+- **A skipped check is closed visibly, never passed.** When the optional source or tool a check
+  needs is missing (design sources under `$DEV_DESIGN_DIR`, an unbuilt detector, a tech skill that
+  is not installed), tick the item with the evidence text `skipped: <reason>` and no `@…` value:
+  `- [x] Design detector — skipped: engine not built`. It does not block the phase, it is never
+  counted as "no findings", and every such item is listed under "Skipped checks" in the gate
+  summary (5i). Only Design detector, Motion review, Taste pre-flight and Tech-Stack Review items
+  can be skipped this way; `check-evidence.py` rejects `skipped:` on any other item and prints
+  the accepted ones as `skipped: <item> — <reason>`.
 - **Evidence belongs to one state of the code.** Any code change after a check — a fix from 5c,
   a simplification, a rebase — reopens every checkmark whose scope it touches; rerun those checks on
   the new state. A result from before the change is history, not evidence. The same holds without a
@@ -172,7 +182,7 @@ reviewing its own change. Record which substitute ran and why it covers the same
   supposed to meet — not the reasoning for why the solution is correct. If you pass along your
   conclusions, you get their confirmation back instead of a review.
 
-**Scope and analyzers:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Each analysis below is one subagent that receives `analyzers/CONTRACT.md` plus its analyzer file — how to dispatch it, what to hand over and the output format are in the contract. The `Result:` line of each report is the evidence for its checkmark. Nothing needs to be installed. Older ROADMAPs may still name the former third-party skills under `@skills:` (`bug-prospector`, `security-audit`, `performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`, also with a leading `/`): treat each as the matching analyzer, not as a missing skill.
+**Scope and analyzers:** The phase's changed files also include new, untracked files (`git ls-files --others --exclude-standard`). Each analysis below is one subagent that receives `analyzers/CONTRACT.md` plus its analyzer file — how to dispatch it, what to hand over and the output format are in the contract. The `Result:` line of each report is the evidence for its checkmark. Nothing needs to be installed — with one exception: Design detector, Motion review and Taste pre-flight read optional design sources under `$DEV_DESIGN_DIR`; when one is missing, the item is ticked as `skipped: <reason>` (see the checklist rules) and listed in the gate summary. Older ROADMAPs may still name the former third-party skills under `@skills:` (`bug-prospector`, `security-audit`, `performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`, also with a leading `/`): treat each as the matching analyzer, not as a missing skill.
 
   **5c-i. Bug hunt (phase scope)** (`analyzers/bugs.md`) — analyzes the files changed in this phase through 7 lenses (assumptions, state machines, boundary conditions, data lifecycle, error paths, time-dependent behavior, platform divergence). **Scope:** Only the changed files and their immediate callers/dependencies — NOT the entire codebase.
 
@@ -228,13 +238,14 @@ Summary: Determine testability by tech stack, detect existing infrastructure (Pl
 - After completion: check off `[ ] E2E Tests` in STATE.md Gate Checklist.
 
 
-**5i. Gate summary** — write a compact 3-line summary of the gate into STATE.md as its own section **below** the phase completion info. Format:
+**5i. Gate summary** — write a compact summary of the gate into STATE.md as its own section **below** the phase completion info. Format:
 
 ```markdown
 ### Gate summary — Phase N: <Name>
 - Found: <N critical + M notes> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
+- Skipped checks: <none | check — reason, one per skipped checklist item>
 - Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```
 

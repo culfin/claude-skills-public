@@ -72,3 +72,23 @@ def test_skill_md_loads_on_demand():
     for f in DEV.glob("*.md"):
         if f.name != "SKILL.md":
             assert f.name in listed, f"not in 'Files of This Skill': {f.name}"
+
+def test_skipped_check_rule_is_the_same_everywhere():
+    """A check whose optional source is missing is ticked as `skipped: <reason>`, listed in the
+    summary, never a pass and never left open — gate, contract, triggers, /dev ui and the script agree."""
+    gate = (DEV / "gate.md").read_text()
+    assert "- [x] Design detector — skipped: engine not built" in gate
+    assert "- Skipped checks:" in gate
+    assert "- [ ] Taste pre-flight" in gate
+    for name in ("gate.md", "analyzers/CONTRACT.md", "tech-stack-triggers.md", "ui-review.md"):
+        text = (DEV / name).read_text()
+        assert "skipped: <reason>" in text, name
+        assert "stays open" not in text.split("skipped: <reason>", 1)[1][:200], name
+        assert not re.search(r"skipped: <reason>`?;? it is never ticked", text), name
+    assert "Skipped checks" in (DEV / "analyzers/CONTRACT.md").read_text()
+    assert "Skipped checks" in (DEV / "tech-stack-triggers.md").read_text()
+    assert 'never "no findings"' in (DEV / "ui-review.md").read_text()
+    script = (DEV / "scripts/check-evidence.py").read_text()
+    for check in ("design detector", "motion review", "taste pre-flight", "tech-stack review"):
+        assert f'"{check}"' in script, check
+        assert check in gate.lower(), check

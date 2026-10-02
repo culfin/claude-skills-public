@@ -58,6 +58,7 @@ Steps 5c run as parallel Agent subagents (15-minute timeout). Any step failure s
 - Found: <N critical + M notices> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green verified | no gaps>
+- Skipped checks: <none | check — reason>
 ```
 
 Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. Same-day duplicates get ` #2`, ` #3` suffix. Check summaries are permanent — never removed.
