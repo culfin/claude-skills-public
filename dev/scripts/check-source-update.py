@@ -13,6 +13,12 @@ Prints {"source", "deterministic": "ok|findings", "findings": [{"kind", "detail"
 Validates one update-queue entry (updates.md) and prints {"file", "valid", "errors", "argv"};
 "argv" is the only command /dev updates may run for it (null = do not offer Apply).
 
+       check-source-update.py --list-sources [--contract sources.md]
+Prints one line per source: id<TAB>kind<TAB>location. No rows is an error, never an empty list.
+
+       check-source-update.py --hold-kinds
+Prints the finding kinds that always hold an update for the user's decision, one per line.
+
 Exit 0 whenever the check ran (findings or not, valid or not), 2 on a usage error.
 """
 import argparse
@@ -41,6 +47,9 @@ PATTERNS = {
 }
 APPLIER = 'skills-update-waechter.sh'
 QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
+# Findings that hold an update whatever the review agent says (sources.md, "Deterministic check").
+HOLD_KINDS = ('missing-read-path', 'new-hook', 'new-settings-json', 'new-pipe-to-shell',
+              'new-install-step', 'license-changed')
 SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no leading '-', no '/', no space
 VERDICTS = {'passt', 'unklar', 'widerspruch'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
@@ -240,6 +249,14 @@ def check(source, old, new, contract):
     return {'source': source, 'deterministic': 'findings' if findings else 'ok', 'findings': findings}
 
 
+def list_sources(contract):
+    """(id, kind, location) per contract row; raises UsageError when there is none."""
+    rows = [(c[0], c[1], c[2].strip('`')) for c in _rows(contract)]
+    if not rows or not all(all(r) for r in rows):
+        raise UsageError(f'no usable source rows in {contract}')
+    return rows
+
+
 def _row_kind(source, contract):
     for cells in _rows(contract):
         if cells[0] == source:
@@ -292,14 +309,24 @@ def main(argv=None):
     parser.add_argument('--old')
     parser.add_argument('--new')
     parser.add_argument('--validate-entry', metavar='FILE')
+    parser.add_argument('--list-sources', action='store_true')
+    parser.add_argument('--hold-kinds', action='store_true')
     parser.add_argument('--contract', default=str(DEV / 'sources.md'))
     args = parser.parse_args(argv)
     try:
+        modes = [bool(args.validate_entry), args.list_sources, args.hold_kinds,
+                 bool(args.source or args.old or args.new)]
+        if sum(modes) > 1:
+            raise UsageError('use one of --source/--old/--new, --validate-entry, --list-sources, --hold-kinds')
+        if args.hold_kinds:
+            print('\n'.join(HOLD_KINDS))
+            return 0
         if not Path(args.contract).is_file():
             raise UsageError(f'contract not found: {args.contract}')
+        if args.list_sources:
+            print('\n'.join('\t'.join(row) for row in list_sources(args.contract)))
+            return 0
         if args.validate_entry:
-            if args.source or args.old or args.new:
-                raise UsageError('--validate-entry cannot be combined with --source/--old/--new')
             result = validate_entry(args.validate_entry, args.contract)
         else:
             for label in ('source', 'old', 'new'):

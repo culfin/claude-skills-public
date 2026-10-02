@@ -292,6 +292,57 @@ class QueueEntryTests(unittest.TestCase):
         self.assertTrue(json.loads(run.stdout)['valid'])
 
 
+class ListingTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.contract = Path(self.temp.name) / 'sources.md'
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_cli(self, *args):
+        return subprocess.run([sys.executable, str(SCRIPT), *args], capture_output=True, text=True)
+
+    def test_list_sources(self):
+        self.contract.write_text(CONTRACT)
+        run = self.run_cli('--list-sources', '--contract', str(self.contract))
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(run.stdout, 'demo\tgit\t~/demo\n')
+
+    def test_list_sources_real_contract(self):
+        run = self.run_cli('--list-sources')
+        self.assertEqual(run.returncode, 0, run.stderr)
+        lines = [l.split('\t') for l in run.stdout.splitlines()]
+        self.assertEqual([l[0] for l in lines], m.source_ids(DEV / 'sources.md'))
+        self.assertTrue(all(len(l) == 3 and all(l) and '`' not in l[2] for l in lines))
+        self.assertIn(['emil', 'git', '$DEV_DESIGN_DIR/emil'], lines)
+
+    def test_list_sources_never_empty_success(self):
+        self.contract.write_text('# Sources\n\nno table here\n')
+        empty = self.run_cli('--list-sources', '--contract', str(self.contract))
+        self.assertEqual(empty.returncode, 2)
+        self.assertEqual(empty.stdout, '')
+        self.assertIn('error:', empty.stderr)
+        missing = self.run_cli('--list-sources', '--contract', str(self.contract) + '.nope')
+        self.assertEqual(missing.returncode, 2)
+        self.assertEqual(missing.stdout, '')
+
+    def test_hold_kinds(self):
+        run = self.run_cli('--hold-kinds')
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(set(run.stdout.split()), {'new-hook', 'new-pipe-to-shell', 'new-install-step',
+                                                   'new-settings-json', 'license-changed', 'missing-read-path'})
+        self.assertEqual(set(run.stdout.split()), set(m.HOLD_KINDS))
+        text = (DEV / 'sources.md').read_text()
+        for kind in m.HOLD_KINDS:
+            self.assertIn(f'`{kind}`', text)
+        self.assertIn('always', text.split('## Deterministic check')[1])
+
+    def test_modes_do_not_combine(self):
+        run = self.run_cli('--hold-kinds', '--list-sources')
+        self.assertEqual(run.returncode, 2)
+
+
 class RealContractTests(unittest.TestCase):
     def test_every_source_has_reads(self):
         contract = DEV / 'sources.md'
