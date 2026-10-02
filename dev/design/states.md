@@ -66,11 +66,10 @@ Prevent first, then detect, then explain, then help recover.
 - **Detect:** handle network failures, timeouts, expired sessions, and missing
   permissions explicitly; never let them surface as a blank region or an
   endless spinner. Every request has a timeout.
-- **Explain:** write the message with the pattern in `ux-writing.md`
-  (what happened, why, what to do). No raw codes or stack traces in the UI; a
-  short reference ID for support is fine.
-- **Recover:** keep the person's input and position; offer retry for transient
-  failures (automatic retry with backoff for background requests, manual retry
+- **Explain:** follow the pattern in `ux-writing.md#error-messages`. No raw
+  codes or stack traces in the UI; a short reference ID for support is fine.
+- **Recover:** keep the person's input and position; when a failure is likely
+  temporary, make trying again easy (automatic retry with backoff for background requests, manual retry
   for user actions); offer an alternative path when retry cannot help.
 
 ### Where errors appear
@@ -82,7 +81,7 @@ Prevent first, then detect, then explain, then help recover.
 | A region or widget | inline message in that region with retry; rest stays usable |
 | The whole page | full-page state with retry and a way back |
 | Background or network | non-blocking banner or toast with retry; not auto-dismissed if action is needed |
-| Permission | explain which access is missing and how to get it |
+| Permission | name the missing access and who can grant it |
 
 Severity is visible and consistent: error, warning, info, success each have a
 distinct colour plus an icon or word, never colour alone.

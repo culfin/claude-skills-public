@@ -9,8 +9,8 @@ wording of error messages lives in `ux-writing.md#error-messages`.
 
 - Every field costs completions. Before adding one, ask whether the answer is
   needed now, can be derived, or can be asked later.
-- Pre-fill what is known (account data, last used value, locale) and default to
-  the most common answer. Binary choices get a sensible default, not a blank.
+- Pre-fill what is known (account data, last used value, locale). Where one
+  answer dominates, preselect it; a yes/no question should not start empty.
 - High-stakes submissions (payment, legal, irreversible) get a review step.
 
 ## Layout
@@ -65,8 +65,8 @@ On the web, choose `type` and `inputmode` for the right mobile keyboard and set
 - Be tolerant on input: trim spaces, accept common separators, normalise case
   where it does not matter. Reject only what is really invalid.
 - Server errors are mapped back to the affected field where possible. When
-  several fields fail, show a summary at the top that receives focus and links
-  to each field.
+  several fields fail, show a summary at the top that receives focus; each
+  entry jumps to its field.
 - Never clear what the person typed after an error, including on server
   failures and timeouts. Passwords are the only acceptable exception.
 - Success marks only where correctness is not obvious (availability, strength).
@@ -83,8 +83,8 @@ visible explanation next to the button.
 
 ## Multi-step forms
 
-- Show where the person is and how much is left (named steps, not only
-  "step 2 of 5").
+- Show where the person is and how much is left: a row of named steps
+  ("Address, Payment, Review") rather than a bare counter.
 - Each step is a coherent unit; validate per step before moving on.
 - Back never discards data. Long flows save progress automatically or offer
   "save and continue later".
@@ -102,7 +102,7 @@ visible explanation next to the button.
 
 ## Checklist
 
-- [ ] Every field has a persistent visible label; no placeholder-only labels
+- [ ] Each field keeps a visible label while typing; no placeholder-only labels
 - [ ] Format hints and limits are shown next to the field before input
 - [ ] Optional (or required) fields are marked visibly and programmatically
 - [ ] Single-column layout; groups have headings or `fieldset`/`legend`

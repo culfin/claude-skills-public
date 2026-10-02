@@ -38,8 +38,7 @@ before the person has any context for them.
   Offer single sign-on or passkeys when an account is needed.
 - Ask for profile details, preferences, billing, and invitations later, at the
   point where they matter.
-- Pre-configure sensible defaults so the product works without a settings
-  visit.
+- Ship with presets good enough that nobody has to open settings to start.
 - Request system permissions (notifications, location, camera) in context,
   right before the feature that needs them, with one sentence explaining why.
   Never batch them at launch.
@@ -66,8 +65,9 @@ before the person has any context for them.
 - Drop-off per step of setup.
 - Retention after one and four weeks as the downstream signal.
 
-Instrument these when the flow ships, not afterwards. Re-test the flow
-whenever the core product changes; onboarding breaks silently.
+Instrument these when the flow ships, not afterwards. Every larger product
+change is also an onboarding change: walk through the first run again,
+because nobody else on the team still sees it.
 
 ## Checklist
 

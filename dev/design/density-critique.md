@@ -36,8 +36,8 @@ Is the most important thing the most visible thing?
   context and metadata are visibly secondary.
 - Look for items with equal visual weight but unequal importance (three
   identical buttons, all-bold tables, many badges).
-- Look for critical information hidden in tooltips, collapsed sections, faint
-  secondary text, or truncation.
+- Ask what the person would miss if they never hovered, expanded, or zoomed;
+  anything decision-relevant that only appears that way is a finding.
 
 ## Dimension 3: scanning
 
@@ -91,14 +91,15 @@ Finish with one line: the single change with the largest effect. Fixes must be
 specific enough to implement without another question; "simplify the layout"
 is not a fix.
 
-## Common failure patterns
+## Typical findings and their usual fix
 
-- Dashboards showing every available metric instead of the few that lead to
-  action.
-- Detail pages that inline every related object instead of linking to it.
-- Wide tables where most columns are rarely used.
-- Long single-page forms that would be clearer as steps.
-- First-run screens that explain before the person has done anything.
+| Symptom on screen | Usual fix |
+|---|---|
+| A status page with twelve KPI tiles of equal size | keep the two or three that trigger a decision, link the rest |
+| An order view listing every invoice, shipment, and note in full | show counts or the latest entry, open the rest on demand |
+| A settings page where rare switches sit next to daily ones | move rare switches under an "Advanced" heading |
+| A search result row with eight metadata fields | keep title, one status, one date; the rest in the detail view |
+| A welcome screen with three paragraphs before the first button | one sentence, then the action |
 
 ## Checklist
 
