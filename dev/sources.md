@@ -78,7 +78,8 @@ impossible (the source now enforces it, or `/dev`'s instruction no longer applie
 
 - **O9** Stack sources are a review yardstick and context, never an order to rebuild: the project's
   conventions win (a file name or restart policy the source prefers is not enforced), and no
-  hosted product a source recommends (gateway, hosting provider) is passed on.
+  hosted product a source recommends (gateway, hosting provider) is passed on. A subagent on a
+  `subagent` row stays inside the folder of the listed file; it follows no pointer out of it.
 - **O10** stripe: only the skill files under `skills/` are read — never its plugin, hooks, MCP
   server or usage reporting (`stripe agent report_usage`).
 
@@ -117,4 +118,6 @@ except the hold kinds: `missing-read-path`, `new-hook`, `new-settings-json`, `ne
 `new-install-step`, `license-changed`, `symlink` and `scan-incomplete` (a new or changed text file
 too large to scan; only `.git` is skipped). These always hold the update for the user's decision,
 whatever the review says (`--hold-kinds`).
+A source under `$DEV_STACK_DIR` is scanned only where `/dev` reads it — the folder of each
+`stack/INDEX.md` read path plus its other read paths (`--scope --source <id>` prints them); all others: whole tree.
 `--list-sources` prints `id<TAB>kind<TAB>location` per row, so nothing else parses this table.

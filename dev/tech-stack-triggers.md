@@ -21,12 +21,10 @@ its own item and fallback ("Next.js" below) — its index row is the same source
 - If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" below
-- Any other stack in `$TECH_STACKS` → the rule "Stack sources" above (rows marked `4a`)
 
 **During Execution (step 4c):**
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
 - Svelte tasks and `svelte` in `$TECH_STACKS` → the implementer uses `svelte:svelte-code-writer` for that task
-- Tasks that meet a `stack/INDEX.md` row marked `4c` → the rule "Stack sources" above
 
 **During Quality Gate — Parallel Analysis Block (step 5c):**
 

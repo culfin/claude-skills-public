@@ -5,7 +5,9 @@ Compares an old and a new tree of one source and reports what a reviewer must lo
 read paths that vanished, changed invocation switches in front matter, new or changed hooks
 (JSON entries, YAML/front-matter declarations), settings writes, pipe-to-shell and install steps in
 any text file, network calls in scripts, new or retargeted symlinks, a changed licence, and read
-files that more than doubled. Read-only: no network, no writes.
+files that more than doubled. Read-only: no network, no writes. A source under $DEV_STACK_DIR is
+scanned only where /dev reads it: the folders of its stack/INDEX.md read paths and its other
+read paths; every other source is scanned as a whole tree.
 
 Usage: check-source-update.py --source <id> --old <dir> --new <dir> [--contract sources.md]
 Prints {"source", "deterministic": "ok|findings", "findings": [{"kind", "detail"}]} as JSON.
@@ -18,6 +20,11 @@ Validates one update-queue entry (updates.md) and prints {"file", "valid", "erro
 Prints one line per source: id<TAB>kind<TAB>location. No rows is an error, never an empty list.
 A location may start with $DEV_DESIGN_DIR (default ~/.claude/dev-design) or $DEV_STACK_DIR
 (default ~/.claude/dev-stack); it is printed as written, the caller expands it.
+
+       check-source-update.py --scope --source <id> [--contract sources.md]
+Prints the scanned repo-relative paths of a scoped source (its read folders and single read files
+such as the licence), one per line, so a caller can limit its own diff to them. Prints nothing
+for a source that is scanned as a whole tree.
 
        check-source-update.py --hold-kinds
 Prints the finding kinds that always hold an update for the user's decision, one per line.
@@ -125,6 +132,35 @@ def read_paths(source, contract):
     raise UsageError(f'unknown source {source!r} in {contract}')
 
 
+def scan_scope(source, contract):
+    """None = scan the whole tree. For a source located under $DEV_STACK_DIR: (folders, files) —
+    the folder of every read path taken from stack/INDEX.md (the skill folder, recursively) plus
+    the other read paths as single files. Nothing else in such a checkout is read or executed."""
+    for cells in _rows(contract):
+        if cells[0] != source:
+            continue
+        if not cells[2].strip('`').startswith(INDEXES['stack/INDEX.md'] + '/'):
+            return None
+        folders, files = set(), set()
+        for token in re.findall(r'`([^`]+)`', cells[3]):
+            if token == 'stack/INDEX.md':
+                folders.update(Path(p).parent.as_posix() for p in _index_paths(source, contract, token))
+            elif token not in INDEXES and token != 'scripts/check-superpowers.py':
+                files.add(token)
+        return folders, files
+    raise UsageError(f'unknown source {source!r} in {contract}')
+
+
+def _in_scope(rel, scope, link=False):
+    if scope is None:
+        return True
+    folders, files = scope
+    if rel in files or any(f == '.' or rel == f or rel.startswith(f + '/') for f in folders):
+        return True
+    # a symlinked ancestor of a scoped folder or file redirects everything read below it
+    return link and any(t.startswith(rel + '/') for t in folders | files)
+
+
 def _walk(root):
     """(regular files, symlinks) under root as {rel: path}; symlinks are never followed."""
     files, links = {}, {}
@@ -208,14 +244,17 @@ def _hook_entries(data):
     return entries
 
 
-def _scan(root):
+def _scan(root, scope=None):
     """Matching lines per (kind, file), hook entries per JSON file, text files too large to scan,
     and symlinks with their targets. Every file is scanned, whatever its extension; only binary
-    files that are neither scripts nor text by extension are left out."""
+    files that are neither scripts nor text by extension are left out. With a scope (scan_scope)
+    only files and links inside it are looked at."""
     counts, hooks, oversize = {}, {}, {}
     files, links = _walk(root)
-    targets = {rel: os.readlink(path) for rel, path in links.items()}
+    targets = {rel: os.readlink(path) for rel, path in links.items() if _in_scope(rel, scope, link=True)}
     for rel, path in files.items():
+        if not _in_scope(rel, scope):
+            continue
         script, is_json = _is_script(rel, path), rel.endswith('.json')
         # A NUL byte must not hide a script or a text file: sh still runs it, an agent still reads it.
         if _is_binary(path) and not (script or Path(rel).suffix.lower() in TEXT_EXT):
@@ -280,7 +319,8 @@ def check(source, old, new, contract):
         if so and sn > 2 * so:
             findings.append({'kind': 'size-jump', 'detail': f'{rel}: {so} -> {sn} bytes ({sn / so:.1f}x)'})
 
-    (before, hooks_old, _, links_old), (after, hooks_new, oversize, links_new) = _scan(old), _scan(new)
+    scope = scan_scope(source, contract)
+    (before, hooks_old, _, links_old), (after, hooks_new, oversize, links_new) = _scan(old, scope), _scan(new, scope)
     for rel, target in sorted(links_new.items()):
         if links_old.get(rel) != target:
             was = f'was -> {links_old[rel]}' if rel in links_old else 'new'
@@ -372,13 +412,15 @@ def main(argv=None):
     parser.add_argument('--validate-entry', metavar='FILE')
     parser.add_argument('--list-sources', action='store_true')
     parser.add_argument('--hold-kinds', action='store_true')
+    parser.add_argument('--scope', action='store_true')
     parser.add_argument('--contract', default=str(DEV / 'sources.md'))
     args = parser.parse_args(argv)
     try:
         modes = [bool(args.validate_entry), args.list_sources, args.hold_kinds,
                  bool(args.source or args.old or args.new)]
-        if sum(modes) > 1:
-            raise UsageError('use one of --source/--old/--new, --validate-entry, --list-sources, --hold-kinds')
+        if sum(modes) > 1 or (args.scope and (sum(modes[:3]) or args.old or args.new)):
+            raise UsageError('use one of --source/--old/--new, --scope --source, --validate-entry, '
+                             '--list-sources, --hold-kinds')
         if args.hold_kinds:
             print('\n'.join(HOLD_KINDS))
             return 0
@@ -386,6 +428,13 @@ def main(argv=None):
             raise UsageError(f'contract not found: {args.contract}')
         if args.list_sources:
             print('\n'.join('\t'.join(row) for row in list_sources(args.contract)))
+            return 0
+        if args.scope:
+            if not args.source:
+                raise UsageError('--scope needs --source')
+            scope = scan_scope(args.source, args.contract)
+            if scope:
+                print('\n'.join(sorted(scope[0]) + sorted(scope[1])))
             return 0
         if args.validate_entry:
             result = validate_entry(args.validate_entry, args.contract)

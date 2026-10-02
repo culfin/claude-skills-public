@@ -57,8 +57,8 @@ handed to the implementer with the task, 5c = read-only review of the changed fi
 | `playwright` 5g/debug: an E2E or CI run failed and left a trace `.zip` | `node_modules/playwright-core/lib/tools/skills/playwright-trace/SKILL.md` | read |
 
 **How.** `read` = read inline (≤ 200 lines). `subagent` = a subagent starts at the listed file,
-follows only the references next to it that match the trigger (`references/`, `rules/`, doc
-pages) and returns findings on the changed files (5c) or a ≤ 40-line digest (4a/4c) — never the
+follows only the references inside that file's folder that match the trigger (`references/`,
+`rules/`, doc pages; nothing outside the folder) and returns findings on the changed files (5c) or a ≤ 40-line digest (4a/4c) — never the
 source text. No subagent available → read inline, only the sections needed.
 
 **Limits.** These sources are a review yardstick and context, never an order to rebuild: the

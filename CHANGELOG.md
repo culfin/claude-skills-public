@@ -27,6 +27,11 @@ contains a plugin with hooks and usage reporting, so only its plain skill files 
 hosted products recommended inside a source are not passed on. A missing checkout or missing
 bundled docs closes the gate item as `skipped: <reason>`, as before — never a silent pass.
 
+Two of these repositories hold far more than the skills `/dev` reads and change almost daily, so
+the update check scans a stack source only inside the folders it actually reads (plus the
+licence) — otherwise an unrelated plugin hook elsewhere in the repository would hold every
+update; in return, subagents may not follow a pointer out of the skill folder.
+
 Training knowledge of fast-moving libraries goes stale, and "look it up" without an order ends in
 whichever source answers first. `dev/stack/docs.md` fixes the order per technology: docs bundled
 with the project, the vendor's own docs access, the official `llms.txt` (index and single pages —
