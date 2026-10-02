@@ -67,6 +67,7 @@ the current step needs.
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
 | `tech-stack-triggers.md` | Which tech, design and security sources fire when | Steps 4a, 4c and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
+| `stack/INDEX.md`, `stack/docs.md` | Stack detection; which stack source or bundled docs load on which trigger; live-docs source per technology | Detection once per session (section 1); otherwise only via `tech-stack-triggers.md` — then only the matching rows |
 | `design/INDEX.md` | Which design guideline or source loads on which trigger | Only via `tech-stack-triggers.md`, `ui-review.md`, companion building block "UI decision" — then only the matching rows |
 | `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate 5b–5d, Milestone End, Pre-Release Review, `/dev ui`) |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
@@ -82,26 +83,13 @@ Detect the project's tech stack once per session and auto-invoke matching skills
 
 ### Detection
 
-| Indicator | Tech Stack | Skills |
-|-----------|-----------|--------|
-| `next.config.*` or `"next"` in dependencies | **Next.js** | the project's bundled Next.js docs (`tech-stack-triggers.md`, "Next.js") |
-| `components.json` (shadcn config) | **shadcn/ui** | `shadcn` |
-| PostgreSQL connection (`.env` with `DATABASE_URL`, `pg` in deps, migrations dir) | **PostgreSQL** | `pg:design-postgres-tables` |
-| `Podfile` / `.xcodeproj` / `Package.swift` | **iOS/macOS** | `swiftui-pro`, `swift-concurrency-pro`, `swift-testing-pro` |
-| `*.csproj` with WinUI/WindowsAppSDK | **WinUI** | `winui-pro` |
-| `Cargo.toml` or `src-tauri/` directory | **Rust / Tauri** | `rust-best-practices`, `rust-testing`, `tauri-v2` |
-| `build.gradle*` / `AndroidManifest.xml` | **Android** | — (design rows "platform Android") |
-| `app.json` with `expo`, or `"react-native"` in dependencies | **Expo / React Native** | — (design rows "animation Expo", platform Apple/Android) |
-| `astro.config.*`, `vite.config.*`, `index.html` (none of the above web stacks needed) | **Web** | — (design rows "platform web") |
-| `svelte.config.*` or `"svelte"` in dependencies | **Svelte** | `svelte:svelte-core-bestpractices`, `svelte:svelte-code-writer` (official, + Svelte MCP) |
-
-Store detected stacks as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn, postgres]`). Next.js, shadcn and Svelte also count as **web**, iOS/macOS as **Apple** — that is what the `design/INDEX.md` platform rows match on.
+**→ Read section 1 of `stack/INDEX.md`** (indicator → stack id) and check the project root against it. Store the ids as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn, postgres, docker]`). `nextjs`, `shadcn` and `svelte` also count as **web**, `ios` as **Apple** — that is what the `design/INDEX.md` platform rows match on.
 
 ### Where Tech Skills Auto-Trigger
 
 **→ Read `tech-stack-triggers.md` in this skill directory for both trigger matrices.**
 
-Summary: Tech skills and design sources kick in at three points — during **brainstorming (4a)**
+Summary: Tech skills, stack sources and design sources kick in at three points — during **brainstorming (4a)**
 and **execution (4c)**, depending on `@type:`, the task and `$TECH_STACKS`, and in **gate step 5c**
 as read-only reviews, triggered by the files the phase actually changed (*Tech-Stack Review* and
 *Security Review* matrices; the list of skills and analyzers lives only there). Critical findings →

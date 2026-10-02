@@ -58,7 +58,7 @@ row in `sources.md` with the same `kind`, and that `apply` is exactly the argv a
    ```
    Read the matching row and the cited overrides/invariants in `sources.md` so you can explain
    each reason in a sentence. Check a reason against the new files yourself where it is cheap.
-   Read paths that `sources.md` lists via `design/INDEX.md` belong to `/dev`: the index lives in
+   Read paths that `sources.md` lists via `design/INDEX.md` or `stack/INDEX.md` belong to `/dev`: the index lives in
    this skill, not in the source tree — do not expect an `INDEX.md` inside the candidate.
 4. **Ask** — `AskUserQuestion`, one question per update, up to four independent updates per call;
    more → next call. Options, recommendation first with "(Recommended)":

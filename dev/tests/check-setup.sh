@@ -5,6 +5,7 @@
 # points somewhere else, no skill installed at all, a broken stop hook, or /dev without superpowers.
 # A missing design source ($DEV_DESIGN_DIR, see README, "Design sources") is also optional — it is
 # reported as "info", never as an error; the design steps that use it are skipped.
+# The same holds for the stack sources ($DEV_STACK_DIR, see README, "Stack sources").
 # Codex installs are not checked here.
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; f=0; installed=0
@@ -43,6 +44,18 @@ for d in emil taste impeccable; do
     else info "design source $d: present but not a git checkout — design steps will be skipped"; fi
   else
     info "design source $d: missing — design steps will be skipped"
+  fi
+done
+
+DEV_STACK_DIR="${DEV_STACK_DIR:-$HOME/.claude/dev-stack}"
+for d in docker gha better-auth postgres stripe fastify; do
+  dir="$DEV_STACK_DIR/$d"
+  if [ -d "$dir" ]; then
+    commit="$(git -C "$dir" rev-parse --short HEAD 2>/dev/null)"
+    if [ -n "$commit" ]; then ok "stack source $d: $commit"
+    else info "stack source $d: present but not a git checkout — not watched for updates"; fi
+  else
+    info "stack source $d: missing — its reviews are ticked as skipped"
   fi
 done
 

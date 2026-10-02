@@ -232,6 +232,29 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn('error:', run.stderr)
 
+    def test_stack_index_reference_is_resolved_under_dev_stack_dir(self):
+        base = self.contract.parent
+        self.contract.write_text(CONTRACT.replace('`SKILL.md`, `skills/a/SKILL.md`', '`stack/INDEX.md`, `LICENSE`'))
+        (base / 'stack').mkdir()
+        (base / 'stack/INDEX.md').write_text(
+            '| Trigger | Load | How |\n|---|---|---|\n'
+            '| `demo` 5c: x | `$DEV_STACK_DIR/demo/skills/a/SKILL.md` | read |\n'
+            '| `other` 5c: x | `$DEV_STACK_DIR/other/skills/b/SKILL.md` | read |\n'
+            '| `demo` 4a: x | `$DEV_DESIGN_DIR/demo/skills/c/SKILL.md` | read |\n'
+            '| `demo` 4a: y | `node_modules/demo/docs/index.md` | subagent |\n')
+        self.assertEqual(m.read_paths('demo', self.contract), ['skills/a/SKILL.md', 'LICENSE'])
+        self.assertEqual(self.kinds(), [])
+        (self.new / 'skills/a/SKILL.md').unlink()
+        self.assertEqual(self.kinds(), ['missing-read-path'])
+
+    def test_missing_stack_index_next_to_contract_is_usage_error(self):
+        self.contract.write_text(CONTRACT.replace('`SKILL.md`, `skills/a/SKILL.md`', '`stack/INDEX.md`'))
+        run = subprocess.run([sys.executable, str(SCRIPT), '--source', 'demo', '--old', str(self.old),
+                              '--new', str(self.new), '--contract', str(self.contract)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 2)
+        self.assertIn('error:', run.stderr)
+
     def test_risky_script_in_formerly_skipped_dirs(self):
         for folder in ('dist', 'node_modules/pkg', 'target', '.build', '__pycache__'):
             with self.subTest(folder=folder):
@@ -404,6 +427,12 @@ class ListingTests(unittest.TestCase):
         self.assertEqual([l[0] for l in lines], m.source_ids(DEV / 'sources.md'))
         self.assertTrue(all(len(l) == 3 and all(l) and '`' not in l[2] for l in lines))
         self.assertIn(['emil', 'git', '$DEV_DESIGN_DIR/emil'], lines)
+        for source in ('docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify'):
+            self.assertIn([source, 'git', f'$DEV_STACK_DIR/{source}'], lines)
+        roots = {l[2].split('/')[0] for l in lines if l[2].startswith('$')}
+        self.assertEqual(roots, {'$DEV_DESIGN_DIR', '$DEV_STACK_DIR'})  # all a caller has to expand
+        self.assertEqual(set(m.INDEXES.values()), roots)
+        self.assertIn('$DEV_STACK_DIR', m.__doc__)
 
     def test_list_sources_never_empty_success(self):
         self.contract.write_text('# Sources\n\nno table here\n')
@@ -453,7 +482,8 @@ class RealContractTests(unittest.TestCase):
         ids = m.source_ids(contract)
         for expected in ['superpowers', 'emil', 'taste', 'impeccable', 'pg', 'svelte', 'shadcn',
                          'swiftui-pro', 'swift-concurrency-pro', 'swift-testing-pro',
-                         'rust-best-practices', 'rust-testing', 'tauri-v2', 'winui-pro']:
+                         'rust-best-practices', 'rust-testing', 'tauri-v2', 'winui-pro',
+                         'docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify']:
             self.assertIn(expected, ids)
             self.assertTrue(m.read_paths(expected, contract), expected)
         self.assertNotIn('vibepolish', ids)
@@ -464,6 +494,21 @@ class RealContractTests(unittest.TestCase):
         self.assertIn('skills/review-animations/STANDARDS.md', reads)
         self.assertIn('skills/prototype/SKILL.md', reads)
         self.assertIn('skills/taste-skill/SKILL.md', m.read_paths('taste', DEV / 'sources.md'))
+
+    def test_stack_reads_come_from_index(self):
+        contract = DEV / 'sources.md'
+        expected = {
+            'docker': ['skills/docker-compose-patterns/SKILL.md', 'skills/docker-build-strategies/SKILL.md',
+                       'skills/docker-destructive-guardrails/SKILL.md', 'LICENSE'],
+            'gha': ['skills/gha-security-review/SKILL.md', 'LICENSE'],
+            'better-auth': ['better-auth/best-practices/SKILL.md', 'security/SKILL.md'],
+            'postgres': ['skills/postgres-best-practices/SKILL.md', 'LICENSE'],
+            'stripe': ['skills/stripe-best-practices/SKILL.md', 'skills/upgrade-stripe/SKILL.md', 'LICENSE'],
+            'fastify': ['skills/fastify/SKILL.md', 'LICENSE'],
+        }
+        for source, reads in expected.items():
+            self.assertEqual(m.read_paths(source, contract), reads, source)
+        self.assertFalse(any(p.startswith('providers/') for p in m.read_paths('stripe', contract)))
 
     def test_superpowers_reads_come_from_capability_check(self):
         reads = m.read_paths('superpowers', DEV / 'sources.md')

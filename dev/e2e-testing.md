@@ -52,3 +52,5 @@ record in STATE.md which flows are unverified and why.
   *with a known pre-existing failure*, named as such — never "all green". Flaky without proof is not
   pre-existing. None of this excuses a failing required CI run.
 - After fixes: rerun the failing tests on the new candidate.
+- A failed Playwright run (local or CI artifact) that left a trace `.zip` → `stack/INDEX.md`, row
+  `playwright`, before guessing from the error text; the skill missing → say so and read the report instead.

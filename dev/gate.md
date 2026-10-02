@@ -97,6 +97,7 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - [ ] Tech-Stack Review: Next.js docs          <!-- src/app/**, src/pages/**, next.config.* changed -->
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
+- [ ] Tech-Stack Review: <stack id>            <!-- one per stack whose `stack/INDEX.md` 5c row matches the changed files; checkout or bundled docs missing → `[x] … — skipped: <reason>` -->
 - [ ] Accessibility review  <!-- UI files changed -->
 - [ ] Design detector  <!-- web UI files changed; engine not built → `[x] … — skipped: <reason>` -->
 - [ ] Motion review  <!-- motion sweep probes hit; standards missing → `[x] … — skipped: <reason>` -->
@@ -130,8 +131,8 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
   No evidence → the checkmark stays open. "Looks right", "should pass" and "I already checked
   that earlier" are not evidence.
 - **A skipped check is closed visibly, never passed.** When the optional source or tool a check
-  needs is missing (design sources under `$DEV_DESIGN_DIR`, an unbuilt detector, a tech skill that
-  is not installed), tick the item with the evidence text `skipped: <reason>` and no `@…` value:
+  needs is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under `$DEV_STACK_DIR`
+  or bundled docs, an unbuilt detector, a tech skill that is not installed), tick the item with the evidence text `skipped: <reason>` and no `@…` value:
   `- [x] Design detector — skipped: engine not built`. It does not block the phase, it is never
   counted as "no findings", and every such item is listed under "Skipped checks" in the gate
   summary (5i). Only Design detector, Motion review, Taste pre-flight and Tech-Stack Review items
@@ -188,7 +189,7 @@ reviewing its own change. Record which substitute ran and why it covers the same
 
   **5c-ii. Performance review (phase scope)** (`analyzers/performance.md`) — scans changed files for performance anti-patterns (memory leaks, unnecessary re-renders, N+1 queries, hot-path bloat, missing indexes on new queries, unoptimized data fetching). **Scope:** Only changed files and immediate context.
 
-  **5c-iii. Tech-Stack Review (conditional)** — triggered based on `$TECH_STACKS` and changed files. Trigger matrix: `tech-stack-triggers.md`. Skip silently if no relevant files were changed.
+  **5c-iii. Tech-Stack Review (conditional)** — triggered based on `$TECH_STACKS` and changed files. Trigger matrix: `tech-stack-triggers.md`, which also brings in the matching `stack/INDEX.md` rows. Skip silently if no relevant files were changed.
 
   **5c-iv. Security review (conditional)** (`analyzers/security.md`) — triggered when changed files touch security-sensitive areas. Trigger matrix: `tech-stack-triggers.md`. Skip if no security-sensitive files were changed.
 

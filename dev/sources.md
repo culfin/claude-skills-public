@@ -13,10 +13,12 @@ every skill or plugin `/dev` does not reference — those update without this ch
 
 ## Sources
 
-`reads` lists paths relative to the source root. Two entries are references instead of copies,
+`reads` lists paths relative to the source root. Three entries are references instead of copies,
 resolved by the checker: `design/INDEX.md` = every row of that file under `$DEV_DESIGN_DIR/<id>/`;
-`scripts/check-superpowers.py` = its `required_paths()`. Both references belong to `/dev` (they
-live in this skill), not to the source tree — a reviewer must not expect them inside a candidate. Kinds: `plugin` (Claude Code plugin cache,
+`stack/INDEX.md` = every row of that file under `$DEV_STACK_DIR/<id>/` (default
+`~/.claude/dev-stack`); `scripts/check-superpowers.py` = its `required_paths()`. The references
+belong to `/dev` (they live in this skill), not to the source tree — a reviewer must not expect
+them inside a candidate. Kinds: `plugin` (Claude Code plugin cache,
 `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`), `git` (checkout, fast-forward),
 `agents-skill` (`~/.agents/skills/<id>`, installed by the `skills` CLI), `local` (a copy without an
 upstream — nothing to watch until it gets one).
@@ -27,6 +29,12 @@ upstream — nothing to watch until it gets one).
 | emil | git | `$DEV_DESIGN_DIR/emil` | `design/INDEX.md`, `LICENSE` | O4 |
 | taste | git | `$DEV_DESIGN_DIR/taste` | `design/INDEX.md`, `LICENSE` | O5 |
 | impeccable | git | `$DEV_DESIGN_DIR/impeccable` | `design/INDEX.md`, `.claude/skills/impeccable/reference/audit.md`, `.claude/skills/impeccable/reference/polish.md`, `Cargo.toml`, `Cargo.lock`, `LICENSE` | O6, O7 |
+| docker | git | `$DEV_STACK_DIR/docker` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
+| gha | git | `$DEV_STACK_DIR/gha` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
+| better-auth | git | `$DEV_STACK_DIR/better-auth` | `stack/INDEX.md` | O8, O9 |
+| postgres | git | `$DEV_STACK_DIR/postgres` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
+| stripe | git | `$DEV_STACK_DIR/stripe` | `stack/INDEX.md`, `LICENSE` | O8, O9, O10 |
+| fastify | git | `$DEV_STACK_DIR/fastify` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
 | pg | plugin | `pg@aiguide` | `skills/design-postgres-tables/SKILL.md` | O8 |
 | svelte | plugin | `svelte@svelte` | `skills/svelte-core-bestpractices/SKILL.md`, `skills/svelte-code-writer/SKILL.md` | O8 |
 | shadcn | agents-skill | `~/.agents/skills/shadcn` | `SKILL.md` | O8 |
@@ -40,8 +48,10 @@ upstream — nothing to watch until it gets one).
 
 Where each is used: superpowers — `SKILL.md` steps 4a–4d, `companion.md`, `superpowers.md`;
 design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
-`commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`. A new use of a source
-adds its paths here in the same commit.
+`commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources
+(`$DEV_STACK_DIR`) — `stack/INDEX.md` via `tech-stack-triggers.md` (4a, 4c, 5c). Docs a project's
+own packages bundle (`node_modules/…`) are not sources here: they change with the project's
+dependencies. A new use of a source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
 
@@ -63,8 +73,14 @@ impossible (the source now enforces it, or `/dev`'s instruction no longer applie
   `npx impeccable`, the `context` step its `SKILL.md` and `polish.md` order, `install` or
   `hooks on`, and never a downloaded binary (`commands.md`, Pre-Release Review).
 - **O7** impeccable telemetry is off: `IMPECCABLE_NO_TELEMETRY=1`, `DO_NOT_TRACK=1`.
-- **O8** Stack skills run as read-only reviews in gate step 5c and as context in 4a/4c; their own
+- **O8** Stack skills and sources run as read-only reviews in gate step 5c and as context in 4a/4c; their own
   "fix it now" or install instructions do not apply there.
+
+- **O9** Stack sources are a review yardstick and context, never an order to rebuild: the project's
+  conventions win (a file name or restart policy the source prefers is not enforced), and no
+  hosted product a source recommends (gateway, hosting provider) is passed on.
+- **O10** stripe: only the skill files under `skills/` are read — never its plugin, hooks, MCP
+  server or usage reporting (`stripe agent report_usage`).
 
 ## Invariants — must hold after every update
 

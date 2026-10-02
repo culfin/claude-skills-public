@@ -2,6 +2,46 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.10.0 — 2026-10-02
+
+**dev** — stack knowledge beyond the handful of installed skills. For Docker, GitHub Actions,
+better-auth, Postgres, Stripe and Fastify the best material is the vendor's or maintainer's own
+skill repository, but installing six more skills would put six more descriptions into every
+session and let them self-trigger. They are therefore handled like the design sources: optional
+git checkouts under `$DEV_STACK_DIR`, read file by file through the new `dev/stack/INDEX.md` when
+a trigger matches, and tracked in `dev/sources.md` so an upstream change passes the update check
+before it takes effect. Where a package ships its own docs or skills (Next.js, AI SDK, Fastify,
+Playwright's trace skill) the index points into the project's `node_modules` instead — those
+match the installed version by construction and need no checkout.
+
+The stack detection table moved from `SKILL.md` into that index. It was needed once per session
+but sat in context for all of it, and every new stack would have grown the one file that is
+always loaded; `SKILL.md` is shorter now although eight stacks were added. Steps 4a, 4c and 5c
+are wired by one generic rule in `tech-stack-triggers.md` rather than a row per stack in three
+files, so adding a stack is an index row and a contract row.
+
+Three limits are written into the contract because the sources would otherwise overreach
+(O9, O10): they are a review yardstick, not an order to rebuild — a project that names its
+compose file differently or sets its own restart policy is not "wrong"; Stripe's repository also
+contains a plugin with hooks and usage reporting, so only its plain skill files are read; and
+hosted products recommended inside a source are not passed on. A missing checkout or missing
+bundled docs closes the gate item as `skipped: <reason>`, as before — never a silent pass.
+
+Training knowledge of fast-moving libraries goes stale, and "look it up" without an order ends in
+whichever source answers first. `dev/stack/docs.md` fixes the order per technology: docs bundled
+with the project, the vendor's own docs access, the official `llms.txt` (index and single pages —
+the full dumps run to megabytes), then Context7 pinned to the project's version.
+
+Deferred: a Next.js dev-loop skill (its repository is too large for a checkout and it needs a
+globally installed browser tool) and WordPress (its bundled scripts have not been read yet).
+
+**deps** — a "What's new" report for minor and major jumps of the listed technologies
+(`references/whats-new.md`). The impact analysis answers "is this safe to merge"; nobody was
+answering "what did we just gain, and what was deprecated under us". A subagent reads the release
+notes for the skipped range and reports with code locations. Report only — automatic rewrites
+after a version jump are exactly the changes nobody reviews — and `skipped` when the notes cannot
+be fetched, rather than a summary from memory.
+
 ## v2.9.1 — 2026-10-02
 
 **dev** — Next.js knowledge now comes from the docs bundled with the project's own `next`

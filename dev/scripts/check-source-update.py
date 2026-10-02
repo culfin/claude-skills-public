@@ -16,6 +16,8 @@ Validates one update-queue entry (updates.md) and prints {"file", "valid", "erro
 
        check-source-update.py --list-sources [--contract sources.md]
 Prints one line per source: id<TAB>kind<TAB>location. No rows is an error, never an empty list.
+A location may start with $DEV_DESIGN_DIR (default ~/.claude/dev-design) or $DEV_STACK_DIR
+(default ~/.claude/dev-stack); it is printed as written, the caller expands it.
 
        check-source-update.py --hold-kinds
 Prints the finding kinds that always hold an update for the user's decision, one per line.
@@ -82,9 +84,14 @@ def source_ids(contract):
     return [cells[0] for cells in _rows(contract)]
 
 
-def _index_paths(source, contract):
-    index = Path(contract).parent / 'design/INDEX.md'
-    prefix = f'$DEV_DESIGN_DIR/{source}/'
+# Reference in the `reads` column -> the variable its rows are rooted in. The index lives in /dev;
+# every row of it under `$VAR/<id>/` is a read path of source <id>.
+INDEXES = {'design/INDEX.md': '$DEV_DESIGN_DIR', 'stack/INDEX.md': '$DEV_STACK_DIR'}
+
+
+def _index_paths(source, contract, reference='design/INDEX.md'):
+    index = Path(contract).parent / reference
+    prefix = f'{INDEXES[reference]}/{source}/'
     paths = []
     for line in index.read_text().splitlines():
         for token in re.findall(r'`([^`]+)`', line):
@@ -108,8 +115,8 @@ def read_paths(source, contract):
             continue
         paths = []
         for token in re.findall(r'`([^`]+)`', cells[3]):
-            if token == 'design/INDEX.md':
-                paths += _index_paths(source, contract)
+            if token in INDEXES:
+                paths += _index_paths(source, contract, token)
             elif token == 'scripts/check-superpowers.py':
                 paths += _superpowers_paths(contract)
             else:

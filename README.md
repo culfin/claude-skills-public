@@ -96,6 +96,39 @@ return at once while the checkout is unchanged). Run it again after updating the
 impeccable can install hooks and phone home; neither is used here. If you run it yourself outside
 `/dev`, set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` first.
 
+### Stack sources (optional)
+
+For some technologies `/dev` can read the vendor's or maintainer's own skill repository as context
+(steps 4a, 4c) and as a read-only review of the files a phase changed (gate step 5c). Clone the
+ones your projects use under `$DEV_STACK_DIR` (default `~/.claude/dev-stack`), one directory per id:
+
+```bash
+mkdir -p ~/.claude/dev-stack && cd ~/.claude/dev-stack
+git clone --depth 1 https://github.com/docker/skills.git docker
+git clone --depth 1 https://github.com/getsentry/skills.git gha
+git clone --depth 1 https://github.com/better-auth/skills.git better-auth
+git clone --depth 1 https://github.com/neondatabase/postgres-skills.git postgres
+git clone --depth 1 https://github.com/stripe/ai.git stripe
+git clone --depth 1 https://github.com/mcollina/skills.git fastify
+```
+
+As with the design sources: **do not install them as skills or plugins.** `/dev` reads single
+files from the checkout when a trigger in `dev/stack/INDEX.md` matches (a compose file changed, a
+workflow changed, …) and nothing otherwise. They are a yardstick, not an authority — your
+project's conventions win, and install steps, hooks, MCP servers, usage reporting and
+hosted-product recommendations inside them are ignored. A checkout that is missing costs nothing:
+its review is ticked `skipped: <reason>` and listed in the gate summary; `dev/tests/check-setup.sh`
+reports the status.
+
+Nothing to set up for Next.js, the AI SDK, Fastify and Playwright traces — their docs or skills
+ship inside the project's own `node_modules`, matching the installed version. For current API
+facts `/dev` follows a fixed order per technology (`dev/stack/docs.md`): bundled docs, the
+vendor's docs access if the host has one, the official `llms.txt`, then Context7.
+
+`/deps` adds a "What's new" section to its report when an update lifts one of these technologies
+across a minor or major version (`deps/references/whats-new.md`): what is new, what affects the
+project, what is deprecated. It reports; it does not rewrite code.
+
 ### Skill updates (optional, external)
 
 `/dev` builds on skills it does not own; `dev/sources.md` is the contract a new version of one of

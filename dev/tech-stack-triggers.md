@@ -2,8 +2,16 @@
 
 Moved out of `SKILL.md` because these matrices are needed in only three places:
 during brainstorming (4a), during execution (4c) and on gate entry (5c). The **detection** itself (which stack
-is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs once per explicit `/dev` run, never
-on the automatic one-line status.
+is present → `$TECH_STACKS`) is section 1 of `stack/INDEX.md`; it runs once per session at the first
+explicit `/dev` run, never on the automatic one-line status.
+
+**Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, consult section 2
+of `stack/INDEX.md` and load only the rows whose trigger matches: step 4a → as context before
+designing; step 4c → handed to the implementer with the task that meets the trigger; step 5c → as a
+read-only review of the changed files (one "Tech-Stack Review: <stack id>" item per id). `subagent`
+rows come back as findings or a ≤ 40-line digest. Current API facts → `stack/docs.md`, one row.
+The matrices below list what the index does not cover (skills, design, analyzers); Next.js keeps
+its own item and fallback ("Next.js" below) — its index row is the same source, not a second review.
 
 ## Where Tech Skills Auto-Trigger
 
@@ -13,10 +21,12 @@ on the automatic one-line status.
 - If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" below
+- Any other stack in `$TECH_STACKS` → the rule "Stack sources" above (rows marked `4a`)
 
 **During Execution (step 4c):**
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
 - Svelte tasks and `svelte` in `$TECH_STACKS` → the implementer uses `svelte:svelte-code-writer` for that task
+- Tasks that meet a `stack/INDEX.md` row marked `4c` → the rule "Stack sources" above
 
 **During Quality Gate — Parallel Analysis Block (step 5c):**
 
@@ -37,6 +47,7 @@ on the automatic one-line status.
 | `**/*.rs` | `rust` in `$TECH_STACKS` | `rust-best-practices` | Check ownership/borrowing, error handling (thiserror/anyhow), idiomatic APIs, Clippy findings |
 | Rust tests (`tests/**/*.rs`, files with `#[cfg(test)]`) | `rust` in `$TECH_STACKS` | `rust-testing` | Check test structure, async tests, coverage of the change |
 | `src-tauri/**` (Tauri commands/IPC) | `tauri` in `$TECH_STACKS` | `tauri-v2` | Check command signatures, IPC boundaries, capabilities/permissions |
+| Files matching a `stack/INDEX.md` row marked `5c` | that row's stack id in `$TECH_STACKS` | the row's file (checkout under `$DEV_STACK_DIR` or bundled docs) | Check the changed files against it; differences from project conventions are notices at most; source missing → item ticked as `skipped: <reason>` |
 | `**/*.svelte`, `src/lib/**` | `svelte` in `$TECH_STACKS` | `svelte:svelte-core-bestpractices` | Check runes state ($state/$derived/$effect), reactivity, event handling, Bits UI integration; if needed, Svelte MCP `svelte-autofixer` |
 
 **Security Review** — auto-triggered when changed files touch security-sensitive areas:
@@ -68,6 +79,6 @@ upstream, so it is a fallback only and not a tracked source.
 - Only trigger when relevant files were actually changed — not blindly on every phase.
 - Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → fix **before 5d**, not later: Similar-bugs scan (5d) searches for the patterns of the fixes just made. If it runs on unfixed code, it finds nothing.
 - Notices (could be better, alternative API available) → note them, continue.
-- A tech skill (shadcn, swiftui-pro, …) that is not installed → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
+- A tech skill (shadcn, swiftui-pro, …) that is not installed, a stack checkout missing under `$DEV_STACK_DIR` or bundled docs that are absent → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
 - Exception: Design detector and Motion review rely on the optional design sources under `$DEV_DESIGN_DIR` (README, "Design sources"). Missing sources or an unbuilt engine → the item is ticked with the evidence `skipped: <reason>` and listed under "Skipped checks" in the gate summary (`gate.md`, checklist rules) — visible, never counted as "no findings", not blocking.
 - **Parallelization:** Tech-Stack Review, Security Review, Bug hunt, Performance review are all read-only — they can run as parallel Agent subagents (step 5c).
