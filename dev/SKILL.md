@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, or /dev ui. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
+description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
 ---
 
 ## Language
@@ -37,6 +37,7 @@ Manages a project's ROADMAP.md and sequences superpowers cycles for each phase. 
 | `/dev pause` | Pause Session | `commands.md` |
 | `/dev check` | Standalone Quality Gate | `dev-check.md` → `gate.md` |
 | `/dev ui [scope]` | UI review and rework | `ui-review.md` |
+| `/dev updates` | Decide on held-back skill updates | `updates.md` → `sources.md` |
 
 ## When NOT to Use
 
@@ -69,6 +70,7 @@ the current step needs.
 | `design/INDEX.md` | Which design guideline or source loads on which trigger | Only via `tech-stack-triggers.md`, `ui-review.md`, companion building block "UI decision" — then only the matching rows |
 | `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate 5b–5d, Milestone End, Pre-Release Review, `/dev ui`) |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
+| `sources.md`, `updates.md` | Contract per referenced skill (reads, overrides, invariants); `/dev updates` and its queue | `/dev updates`; when adding a use of a foreign skill |
 
 **Visual Companion in one sentence:** it shows only the user interface of the product (mockups, states, real screenshots — never roadmaps, plans, architecture or findings), is used without asking wherever this skill says **"Show screen"** (procedure in `companion.md`), and every message that points the user at a new or updated screen ends with its current URL (status messages without anything new to see carry none).
 
@@ -112,7 +114,9 @@ fix **before 5d**.
 and the user has not typed `/dev` or asked to work on the roadmap: read ROADMAP.md (and STATE.md if
 present) and print a single line —
 `Roadmap: <milestone> — next: Phase N <name> [<state>]. Continue with /dev.` — then turn to what
-the user actually asked. No companion, no `AskUserQuestion`, no stack detection, no file writes.
+the user actually asked. If `${DEV_UPDATES_DIR:-$HOME/.claude/dev-updates}/pending/*.json` exist
+(count the files, read none), insert `, N skill updates waiting — /dev updates` before the final
+period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 ```dot
@@ -147,6 +151,7 @@ digraph session_start {
    Tech Stack: [nextjs, shadcn, postgres]
    Pre-skills: [<from ROADMAP>]  Post-skills: [requesting-code-review]
    Blockers: <from STATE.md, if any>
+   Updates: N skill updates waiting — /dev updates   (only if pending/ has files; count only)
    ```
    Show `@gate:` only if not `full`. Show `$TECH_STACKS` only on first session start or if changed.
    With 1 remaining phase or a plain entry without milestone context: terminal only.

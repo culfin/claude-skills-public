@@ -7,10 +7,14 @@ from pathlib import Path
 REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development', 'executing-plans',
             'requesting-code-review', 'verification-before-completion', 'using-git-worktrees')
 
+def required_paths():
+    """Files /dev needs from the plugin root (also the read paths in sources.md)."""
+    return ([f'skills/{name}/SKILL.md' for name in REQUIRED]
+            + ['skills/brainstorming/scripts/start-server.sh', 'skills/brainstorming/scripts/stop-server.sh'])
+
 def inspect(root):
     root = Path(root).resolve()
-    required = [f'skills/{name}/SKILL.md' for name in REQUIRED]
-    required += ['skills/brainstorming/scripts/start-server.sh', 'skills/brainstorming/scripts/stop-server.sh']
+    required = required_paths()
     missing = [name for name in required if not (root / name).is_file()]
     versions = {}
     errors = []
