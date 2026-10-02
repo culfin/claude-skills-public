@@ -2,6 +2,40 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.9.0 — 2026-10-02
+
+**dev** — design sources are no longer installed as skills. A skill sits in context for the
+whole session and its description can self-trigger; design guidance is read once, only when a
+UI change is actually in scope, so it now lives under `dev/design/`, reachable only through
+`dev/design/INDEX.md` (loaded on demand, like a skill's own `SKILL.md` but never resident). The
+platform and UX-pattern content that used to come from six small installed skills is rewritten
+in our own words (forms, states, onboarding, writing, density, three platform checklists),
+deduplicated and with contradictions resolved — notably target size: 24×24 CSS px minimum
+(WCAG 2.2 SC 2.5.8 AA) is the finding, 44×44 on touch is a note, not a second rule to satisfy.
+`ui-ux-pro-max` was evaluated and rejected (ADR in the private repo): a sample run produced the
+generic look the other sources warn against, its sub-skills need third-party image APIs with
+their own keys, and its licence is mixed.
+
+Accessibility had a trigger gap: it only ran for `@type: ui` phases, so a UI file changed inside
+any other phase type skipped it silently. It now triggers off the changed files themselves, in
+any phase, and is listed on the gate checklist so a skip shows up instead of passing quietly.
+
+Two new analyzers follow the same on-demand, skip-if-missing pattern: `design-detector` runs
+impeccable's engine, but only a copy built from source on demand by
+`dev/scripts/design-build-detector.sh` (`cargo --locked`, telemetry and install hooks off) —
+never a downloaded binary; `motion` reads Emil Kowalski's animation standards at run time
+instead of paraphrasing them into a static rule file that drifts.
+
+Phases gain a `landing` type alongside the existing restrained `ui`: `landing` asks a subagent
+for a bold pass using taste v2 in full, where `ui` stays close to Emil's narrower defaults —
+previously every UI phase got the same restrained treatment regardless of whether the screen was
+a dashboard or a marketing page. Pre-release work also picks up design polish explicitly:
+vibepolish's launch audit, impeccable's audit/polish pair, and the native platform checklists are
+now part of what a release pass runs. New `/dev ui` mode analyses and reworks a single existing
+UI surface without going through a full roadmap phase. Across all of this, a missing design
+source (no local checkout, no built engine, no network) is always reported as "skipped" in the
+output — never a silent pass.
+
 ## v2.8.3 — 2026-10-01
 
 **dev** — gate evidence works in monorepos. `check-evidence.py` excluded only a root-level
