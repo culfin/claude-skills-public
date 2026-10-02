@@ -66,6 +66,30 @@ Each skill reads its own `runtime.md`, which maps tool names to what the host of
 extras — the `/dev` stop hook (Claude Code only) and opening the Visual Companion from another
 device — are in [SETUP.md](SETUP.md).
 
+### Design sources (optional)
+
+`/dev`'s design steps can draw on three third-party skill repositories, if present:
+[emilkowalski/skills](https://github.com/emilkowalski/skills),
+[leonxlnx/taste-skill](https://github.com/leonxlnx/taste-skill) and
+[pbakaus/impeccable](https://github.com/pbakaus/impeccable). Clone them under `$DEV_DESIGN_DIR`
+(default `~/.claude/dev-design`), one directory per name:
+
+```bash
+mkdir -p ~/.claude/dev-design
+git clone https://github.com/emilkowalski/skills.git ~/.claude/dev-design/emil
+git clone https://github.com/leonxlnx/taste-skill.git ~/.claude/dev-design/taste
+git clone https://github.com/pbakaus/impeccable.git ~/.claude/dev-design/impeccable
+```
+
+**Do not link these into `~/.claude/skills` or `~/.agents/skills`.** Every installed skill's
+description is loaded into every session's context, and a broad description can trigger on
+unrelated requests; `/dev` reads these checkouts directly from `$DEV_DESIGN_DIR` instead. Any
+source that is missing is simply skipped — `dev/tests/check-setup.sh` reports its status but never
+fails on it.
+
+impeccable can install hooks and phone home; neither is used here. If you run it yourself outside
+`/dev`, set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` first.
+
 ---
 
 ## Quick start

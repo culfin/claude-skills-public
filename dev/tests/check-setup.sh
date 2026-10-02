@@ -3,6 +3,8 @@
 # Exit 0 = what is installed is set up correctly. A skill that is not linked is reported as
 # "not installed", not as an error — installing only some skills is valid. Errors are: a link that
 # points somewhere else, no skill installed at all, a broken stop hook, or /dev without superpowers.
+# A missing design source ($DEV_DESIGN_DIR, see README, "Design sources") is also optional — it is
+# reported as "info", never as an error; the design steps that use it are skipped.
 # Codex installs are not checked here.
 set -u
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"; f=0; installed=0
@@ -31,4 +33,17 @@ if [ "$(readlink "$HOME/.claude/skills/dev" 2>/dev/null)" = "$REPO/dev" ]; then
     ok "superpowers companion found (active install)"
   else fail "/dev needs the superpowers plugin (Visual Companion not found)"; fi
 fi
+
+DEV_DESIGN_DIR="${DEV_DESIGN_DIR:-$HOME/.claude/dev-design}"
+for d in emil taste impeccable; do
+  dir="$DEV_DESIGN_DIR/$d"
+  if [ -d "$dir" ]; then
+    commit="$(git -C "$dir" rev-parse --short HEAD 2>/dev/null)"
+    if [ -n "$commit" ]; then ok "design source $d: $commit"
+    else info "design source $d: present but not a git checkout — design steps will be skipped"; fi
+  else
+    info "design source $d: missing — design steps will be skipped"
+  fi
+done
+
 exit $f
