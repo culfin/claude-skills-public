@@ -2,6 +2,35 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.11.0 — 2026-10-02
+
+**dev** — the two stack sources v2.10 deferred. `next` (Next.js's own `next-dev-loop` skill)
+closes a gap the gate does not: types, lint and build can all be green while the page is broken
+at runtime, and the E2E step only covers what has a spec. The loop asks the running dev server
+and a real browser. Its repository is far too large to clone, so the checkout is a sparse,
+blob-filtered clone of the `skills` folder only, and the update check was verified on such a
+tree. It is the one source that acts rather than reviews, which is why it gets its own override
+(O11): it needs Next.js 16.3+ on Turbopack and an `agent-browser` the user installed — `/dev`
+installs neither and reports `skipped` instead; the skill's own "install it and continue" would
+have been a global install nobody approved.
+
+`wordpress` (WordPress/agent-skills) was held back until its bundled scripts were read. They
+turned out to be harmless — file-system scans that print JSON, and two that call read-only WP-CLI
+subcommands — but they are still not run: `/dev` detects WordPress itself and routes by trigger,
+so the upstream router and triage skill (which point at sibling skills) are not needed. Six
+skills are indexed: plugin development, REST API, performance, WP-CLI/ops, block themes and
+block development — what a team maintaining a few sites with custom plugins and themes touches.
+Two limits are written down (O12): the skills assume WordPress 7.0+, so a rule is checked against
+the project's version before it is applied; and no command is run against a live site on a
+skill's say-so — a search-replace recipe is context for a plan, not something to execute.
+
+`dev/stack/INDEX.md` grows past its 80-line budget (now 95) and `dev/sources.md` to 130: eight
+more rows and two overrides are content, not prose, and the index is still read in one pass.
+
+The index parser now also rejects `$HOME/…` and quoted `"$DEV_STACK_DIR"/…` spellings instead
+of dropping such a row silently, and the tests that depend on local checkouts report `skipped`
+with the missing sources rather than passing without having checked anything.
+
 ## v2.10.0 — 2026-10-02
 
 **dev** — stack knowledge beyond the handful of installed skills. For Docker, GitHub Actions,

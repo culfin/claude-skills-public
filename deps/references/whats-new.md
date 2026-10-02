@@ -60,6 +60,7 @@ decides whether the update is safe to merge, this one tells the user what the sk
 | Fastify | `fastify` | https://github.com/fastify/fastify/releases |
 | Kotlin / KMP / Ktor | Kotlin plugin, `io.ktor:*` | https://kotlinlang.org/docs/releases.html · https://ktor.io/docs/releases.html |
 | Swift / SwiftUI | toolchain, Xcode | https://www.swift.org/blog/ · https://developer.apple.com/documentation/updates/swiftui |
+| WordPress | `roots/wordpress`, `johnpbloch/wordpress` (Composer-managed core only) | https://wordpress.org/documentation/wordpress-version/ · https://make.wordpress.org/core/tag/dev-notes/ |
 | pnpm | `packageManager` pin | https://github.com/pnpm/pnpm/releases |
 
 A technology not listed gets no "What's new" section — its changelog is already read in the

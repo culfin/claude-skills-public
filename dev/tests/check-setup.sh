@@ -48,7 +48,7 @@ for d in emil taste impeccable; do
 done
 
 DEV_STACK_DIR="${DEV_STACK_DIR:-$HOME/.claude/dev-stack}"
-for d in docker gha better-auth postgres stripe fastify; do
+for d in docker gha better-auth postgres stripe fastify next wordpress; do
   dir="$DEV_STACK_DIR/$d"
   if [ -d "$dir" ]; then
     commit="$(git -C "$dir" rev-parse --short HEAD 2>/dev/null)"

@@ -116,7 +116,7 @@ def _safe_rel(rel, where):
 def _index_paths(source, contract, reference='design/INDEX.md'):
     """Read paths of `source` listed in an index. Every mention of the source's root in the raw
     text must be a backticked `$VAR/<id>/<path>` token — another spelling (no backticks, ${VAR},
-    the home default) would be dropped silently and is a usage error instead."""
+    "$VAR"/…, the home default with ~ or $HOME) would be dropped silently and is a usage error instead."""
     index = Path(contract).parent / reference
     var = INDEXES[reference]
     prefix = f'{var}/{source}/'
@@ -125,8 +125,9 @@ def _index_paths(source, contract, reference='design/INDEX.md'):
     for token in re.findall(r'`([^`]+)`', text):
         if token.startswith(prefix):
             paths.append(_safe_rel(token[len(prefix):].split('#')[0], reference))
-    spellings = (re.escape(var), r'\$\{' + var[1:] + r'\}', re.escape(HOME_DEFAULTS[var]))
-    raw = re.findall(r'(?:' + '|'.join(spellings) + r')/' + re.escape(source) + r'/[^\s`|)]*', text)
+    home = r'(?:~|\$HOME|\$\{HOME\})' + re.escape(HOME_DEFAULTS[var][1:])
+    spellings = (re.escape(var), r'\$\{' + var[1:] + r'\}', home)
+    raw = re.findall(r'(?:' + '|'.join(spellings) + r')"?/' + re.escape(source) + r'/[^\s`|)]*', text)
     if len(raw) != len(paths) or any(not r.startswith(prefix) for r in raw):
         raise UsageError(f'{reference}: {len(raw)} mention(s) of {prefix}… but {len(paths)} backticked '
                          f'`{prefix}<path>` token(s) — write every path exactly that way')

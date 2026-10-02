@@ -110,6 +110,10 @@ git clone --depth 1 https://github.com/better-auth/skills.git better-auth
 git clone --depth 1 https://github.com/neondatabase/postgres-skills.git postgres
 git clone --depth 1 https://github.com/stripe/ai.git stripe
 git clone --depth 1 https://github.com/mcollina/skills.git fastify
+git clone --depth 1 https://github.com/WordPress/agent-skills.git wordpress
+# vercel/next.js is huge — fetch only its skills folder:
+git clone --depth 1 --filter=blob:none --sparse https://github.com/vercel/next.js.git next
+git -C next sparse-checkout set skills
 ```
 
 As with the design sources: **do not install them as skills or plugins.** `/dev` reads single
@@ -120,7 +124,13 @@ hosted-product recommendations inside them are ignored. A checkout that is missi
 its review is ticked `skipped: <reason>` and listed in the gate summary; `dev/tests/check-setup.sh`
 reports the status.
 
-Nothing to set up for Next.js, the AI SDK, Fastify and Playwright traces — their docs or skills
+Two of them need a word. `next` is the one source that acts instead of reviewing: its dev loop
+checks a change in the running app, and only if the project runs Next.js 16.3+ on Turbopack and
+you have installed `agent-browser` yourself — `/dev` never installs it. `wordpress` (GPL; read
+in place, never copied into this repository) ships helper scripts and WP-CLI recipes; `/dev`
+runs none of them and never runs a command against a live site because a skill says so.
+
+Nothing more to set up for Next.js docs, the AI SDK, Fastify and Playwright traces — their docs or skills
 ship inside the project's own `node_modules`, matching the installed version. For current API
 facts `/dev` follows a fixed order per technology (`dev/stack/docs.md`): bundled docs, the
 vendor's docs access if the host has one, the official `llms.txt`, then Context7.

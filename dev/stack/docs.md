@@ -41,6 +41,7 @@ resolve; otherwise resolve the id by name.
 | Fastify | `node_modules/fastify/docs/` | — | https://fastify.dev/llms.txt | by name |
 | Kotlin / KMP / Ktor | — | — | https://kotlinlang.org/llms.txt, https://ktor.io/docs/llms.txt | by name |
 | Swift / SwiftUI | — | — | — | by name |
+| WordPress | — | — | https://wordpress.org/llms.txt, https://developer.wordpress.org/ | by name |
 | pnpm | `pnpm help <command>` | — | — | `/pnpm/pnpm.io` |
 
 Official access is used for reading docs only: no vendor MCP server or plugin is installed for

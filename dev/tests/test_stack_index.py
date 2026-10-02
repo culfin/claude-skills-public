@@ -1,10 +1,12 @@
 import importlib.util, os, re, pathlib
+import pytest
 
 DEV = pathlib.Path(__file__).resolve().parents[1]
 STACK = DEV / "stack"
 INDEX = STACK / "INDEX.md"
 CHECKOUTS = pathlib.Path(os.environ.get("DEV_STACK_DIR", os.path.expanduser("~/.claude/dev-stack")))
-GIT_SOURCES = {"docker", "gha", "better-auth", "postgres", "stripe", "fastify"}
+GIT_SOURCES = {"docker", "gha", "better-auth", "postgres", "stripe", "fastify", "next", "wordpress"}
+SOURCE_STACK = {"next": "nextjs"}  # source id -> stack id where they differ
 DOC_TECHNOLOGIES = ["Next.js", "React", "Tailwind", "shadcn", "Base UI", "Radix", "PostgreSQL",
                     "better-auth", "Zod", "Vitest", "Playwright", "Docker", "GitHub Actions", "Tauri",
                     "Rust", "Svelte", "next-intl", "TanStack", "Biome", "TypeScript", "Stripe", "Sentry",
@@ -66,7 +68,8 @@ def test_trigger_rows_well_formed():
         assert match.group(1) in stack_ids(), f"unknown stack id in trigger: {trigger}"
         if load.startswith("$DEV_STACK_DIR/"):
             source = load.split("/")[1]
-            assert source == match.group(1), f"row of stack {match.group(1)} loads from source {source}"
+            assert SOURCE_STACK.get(source, source) == match.group(1), \
+                f"row of stack {match.group(1)} loads from source {source}"
             assert source in GIT_SOURCES, load
 
 
@@ -86,11 +89,21 @@ def test_index_paths_exist():
 
 
 def test_read_rows_stay_within_the_inline_limit():
-    for trigger, load, how in triggers():
-        if how == "read" and load.startswith("$DEV_STACK_DIR/"):
-            path = CHECKOUTS / load.removeprefix("$DEV_STACK_DIR/")
-            if path.is_file():
-                assert len(path.read_text().splitlines()) <= 200, f"{load}: switch the row to subagent"
+    rows = [load for _, load, how in triggers() if how == "read" and load.startswith("$DEV_STACK_DIR/")]
+    absent = [load for load in rows if not (CHECKOUTS / load.removeprefix("$DEV_STACK_DIR/")).is_file()]
+    for load in rows:
+        path = CHECKOUTS / load.removeprefix("$DEV_STACK_DIR/")
+        if path.is_file():
+            assert len(path.read_text().splitlines()) <= 200, f"{load}: switch the row to subagent"
+    if absent:
+        pytest.skip(f"{len(absent)} of {len(rows)} read rows not measured — no checkout under "
+                    f"$DEV_STACK_DIR for: {', '.join(sorted(absent))}")
+
+
+def test_checkout_paths_are_verified_or_skipped_with_a_reason():
+    missing = sorted(s for s in GIT_SOURCES if not (CHECKOUTS / s).is_dir())
+    if missing:
+        pytest.skip(f"index paths not verified against a checkout for: {', '.join(missing)}")
 
 
 def test_index_and_checker_agree_on_every_path():
@@ -101,8 +114,9 @@ def test_index_and_checker_agree_on_every_path():
     written = set()
     for f in DEV.rglob("*.md"):
         text = f.read_text()
-        assert "${DEV_STACK_DIR}" not in text, f.name
-        assert not re.search(r"~/\.claude/dev-stack/\w", text), f"{f.name}: write $DEV_STACK_DIR/<id>/…"
+        assert "${DEV_STACK_DIR}" not in text and '$DEV_STACK_DIR"' not in text, f.name
+        assert not re.search(r"(~|\$HOME|\$\{HOME\})/\.claude/dev-stack/\w", text), \
+            f"{f.name}: write $DEV_STACK_DIR/<id>/…"
         for hit in re.findall(r"\$DEV_STACK_DIR/([^\s`|)]+)", text):
             if "<" in hit or "/" not in hit.rstrip("/"):
                 continue  # placeholder (<id>) or a bare source root (contract location)
@@ -179,7 +193,7 @@ def test_docs_table_covers_every_technology_in_fixed_order():
 
 
 def test_budgets():
-    assert len(INDEX.read_text().splitlines()) <= 80
+    assert len(INDEX.read_text().splitlines()) <= 95
     assert len((STACK / "docs.md").read_text().splitlines()) <= 60
     skill = (DEV / "SKILL.md").read_text()
     assert len(skill.splitlines()) < 392, "moving the detection table out must make SKILL.md shorter"
@@ -210,8 +224,28 @@ def test_wired_into_all_three_steps_by_one_rule():
     for step in ("4a", "4c", "5c"):
         assert step in rule, step
     assert "stack/INDEX.md" in rule and "stack/docs.md" in rule
-    for stack in GIT_SOURCES - {"postgres"}:
+    for stack in GIT_SOURCES - {"postgres", "next"}:  # `next` is also the package name
         assert f"`{stack}`" not in triggers_md, f"{stack}: rows belong in stack/INDEX.md, not in three files"
+
+
+def test_next_and_wordpress_conditions():
+    index = " ".join(INDEX.read_text().split())
+    contract = " ".join((DEV / "sources.md").read_text().split())
+    loads = [load for _, load, _ in triggers()]
+    assert loads.count("$DEV_STACK_DIR/next/skills/next-dev-loop/SKILL.md") == 1
+    assert len([l for l in loads if l.startswith("$DEV_STACK_DIR/next/")]) == 1, "only next-dev-loop"
+    for phrase in ("≥ 16.3 on Turbopack", "`agent-browser` already on `PATH`", "skipped: <reason>",
+                   "never installs or upgrades either", "replaces neither"):
+        assert phrase in index, phrase
+    wp = [l for l in loads if l.startswith("$DEV_STACK_DIR/wordpress/")]
+    assert 4 <= len(wp) <= 6 and not any("wordpress-router" in l or "triage" in l for l in wp)
+    for phrase in ('"WordPress 7.0+" assumption', "No WP-CLI or other command runs against a live site"):
+        assert phrase in index, phrase
+    for phrase in ("**O11**", "**O12**", "never installs or upgrades either",
+                   "no WP-CLI or other command is run on a live site on a source's instruction",
+                   "checked against the project's version"):
+        assert phrase in contract, phrase
+    assert "`wordpress`" in {r[1] for r in detection()}
 
 
 def test_overrides_in_contract():
