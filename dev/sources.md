@@ -85,11 +85,11 @@ impossible (the source now enforces it, or `/dev`'s instruction no longer applie
 - **O10** stripe: only the skill files under `skills/` are read — never its plugin, hooks, MCP
   server or usage reporting (`stripe agent report_usage`).
 - **O11** next: the dev loop may do exactly two things — HTTP requests to `/_next/mcp` of the
-  project's own dev server, and the `agent-browser` CLI against that server's URL only; no other
-  source acts. `agent-browser` must already be on `PATH` in at least the minimum version the skill
+  project's own dev server, and the `agent-browser` CLI, driving only that server's URL (its
+  `--version`, built-in help and session commands included); no other stack source acts. `agent-browser` must already be on `PATH` in at least the minimum version the skill
   file states (`agent-browser --version` is checked first; lower or unreadable → `skipped`).
-  Headless only: a step that needs an interactive login or persisted login state (`--restore`,
-  `--headed`) yields `skipped`; `/dev` installs nothing, no Next.js upgrade (`next upgrade`) is run
+  Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and never `--headed`;
+  a route that needs a login → `skipped`; `/dev` installs nothing, no Next.js upgrade (`next upgrade`) is run
   and the skill's feedback reporting is not used. The CLI's own built-in help output (e.g. `agent-browser
   skills get core`) may be read as tool documentation; anything it would download or install is not followed.
 - **O12** wordpress: O9 applies unchanged — no WP-CLI on a source's instruction anywhere; the

@@ -246,8 +246,8 @@ def test_next_and_wordpress_conditions():
     assert 4 <= len(wp) <= 6 and not any("wordpress-router" in l or "triage" in l for l in wp)
     for phrase in ('"WordPress 7.0+" assumption', "No WP-CLI on a source's instruction",
                    "never hits production without the user's go-ahead", "may be read, never run",
-                   "except the `next` row, no script a source ships is run",
-                   "Exception, the `next` row: the subagent reads the file, runs its loop and returns the result",
+                   "is called on its instruction except by the `next-dev-loop` row",
+                   "Exception, the `next-dev-loop` row: the subagent reads the file, runs its loop and returns the result",
                    "HTTP to `/_next/mcp`", "headless"):
         assert phrase in index, phrase
     for phrase in ("**O11**", "**O12**", "`/dev` installs nothing",
@@ -257,8 +257,9 @@ def test_next_and_wordpress_conditions():
                    "on a source's instruction. Sole exception: O11.",
                    "(sole exception: the `next` runtime check, O11)",
                    "HTTP requests to `/_next/mcp` of the project's own dev server",
-                   "the `agent-browser` CLI against that server's URL only; no other source acts",
-                   "Headless only", "(`--restore`, `--headed`) yields `skipped`",
+                   "driving only that server's URL", "no other stack source acts",
+                   "Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and never `--headed`",
+                   "a route that needs a login → `skipped`",
                    "no Next.js upgrade (`next upgrade`) is run",
                    "checked against the project's version"):
         assert phrase in contract, phrase
