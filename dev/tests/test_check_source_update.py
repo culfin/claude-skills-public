@@ -452,11 +452,12 @@ class RealContractTests(unittest.TestCase):
         contract = DEV / 'sources.md'
         ids = m.source_ids(contract)
         for expected in ['superpowers', 'emil', 'taste', 'impeccable', 'pg', 'svelte', 'shadcn',
-                         'next-best-practices', 'swiftui-pro', 'swift-concurrency-pro', 'swift-testing-pro',
+                         'swiftui-pro', 'swift-concurrency-pro', 'swift-testing-pro',
                          'rust-best-practices', 'rust-testing', 'tauri-v2', 'winui-pro']:
             self.assertIn(expected, ids)
             self.assertTrue(m.read_paths(expected, contract), expected)
         self.assertNotIn('vibepolish', ids)
+        self.assertNotIn('next-best-practices', ids)  # frozen upstream; bundled docs instead
 
     def test_design_reads_come_from_index(self):
         reads = m.read_paths('emil', DEV / 'sources.md')

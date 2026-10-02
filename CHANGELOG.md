@@ -2,6 +2,15 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.9.1 — 2026-10-02
+
+**dev** — Next.js knowledge now comes from the docs bundled with the project's own `next`
+package (`node_modules/next/dist/docs/`, 16.3+) instead of the `next-best-practices` skill. The
+skill's upstream repository was emptied when the content moved into Next.js itself, so the
+installed copy would have stayed frozen while the update check reported nothing. The bundled docs
+match the version the project runs. The old skill remains a fallback for projects without bundled
+docs and is no longer a tracked source.
+
 ## v2.9.0 — 2026-10-02
 
 **dev** — design sources are no longer installed as skills. A skill sits in context for the

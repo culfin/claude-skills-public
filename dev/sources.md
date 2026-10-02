@@ -29,7 +29,6 @@ upstream — nothing to watch until it gets one).
 | impeccable | git | `$DEV_DESIGN_DIR/impeccable` | `design/INDEX.md`, `.claude/skills/impeccable/reference/audit.md`, `.claude/skills/impeccable/reference/polish.md`, `Cargo.toml`, `Cargo.lock`, `LICENSE` | O6, O7 |
 | pg | plugin | `pg@aiguide` | `skills/design-postgres-tables/SKILL.md` | O8 |
 | svelte | plugin | `svelte@svelte` | `skills/svelte-core-bestpractices/SKILL.md`, `skills/svelte-code-writer/SKILL.md` | O8 |
-| next-best-practices | agents-skill | `~/.agents/skills/next-best-practices` | `SKILL.md` | O8 |
 | shadcn | agents-skill | `~/.agents/skills/shadcn` | `SKILL.md` | O8 |
 | swiftui-pro | agents-skill | `~/.agents/skills/swiftui-pro` | `SKILL.md` | O8 |
 | swift-concurrency-pro | agents-skill | `~/.agents/skills/swift-concurrency-pro` | `SKILL.md` | O8 |

@@ -24,7 +24,6 @@ First, discover what skills are available and what might be missing:
 
 **5b. Analyze gaps** — based on the project's tech stack (from CLAUDE.md, package.json, project.yml, .csproj, etc.), identify what skill categories might be missing. For example:
 - Swift project but no `swiftui-pro`? → suggest installing
-- React project but no `next-best-practices`? → suggest installing
 - No testing skill for the project's test framework? → search for one
 
 **5c. Search for missing skills** — if gaps exist:

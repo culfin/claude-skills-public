@@ -84,7 +84,7 @@ Detect the project's tech stack once per session and auto-invoke matching skills
 
 | Indicator | Tech Stack | Skills |
 |-----------|-----------|--------|
-| `next.config.*` or `"next"` in dependencies | **Next.js** | `next-best-practices` |
+| `next.config.*` or `"next"` in dependencies | **Next.js** | the project's bundled Next.js docs (`tech-stack-triggers.md`, "Next.js") |
 | `components.json` (shadcn config) | **shadcn/ui** | `shadcn` |
 | PostgreSQL connection (`.env` with `DATABASE_URL`, `pg` in deps, migrations dir) | **PostgreSQL** | `pg:design-postgres-tables` |
 | `Podfile` / `.xcodeproj` / `Package.swift` | **iOS/macOS** | `swiftui-pro`, `swift-concurrency-pro`, `swift-testing-pro` |
