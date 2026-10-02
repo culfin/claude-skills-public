@@ -21,7 +21,7 @@ bash <dev-skill>/scripts/design-detect.sh <changed web UI files>
 - **Exit 0:** the scan completed. Every listed finding is a candidate (rule id, file, line or
   selector, snippet). Advisory findings are candidates too, judged like the rest.
 - **Exit 3:** the first line starts with `skipped:` (engine not built, no files, scan failed).
-  Stop here and return `Result: skipped: <reason>` — the gate records the checkbox as
+  Stop here and return `Result: skipped: <reason>` — the gate ticks the checkbox with evidence
   `skipped: <reason>`. A skip is never "no findings" and never counts as a pass.
 - A first line `note: engine built from <old>, checkout at <new>` means the engine is behind the
   checkout. Use the findings, and quote the note in `Checked:` so the gate shows it.

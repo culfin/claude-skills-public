@@ -35,6 +35,8 @@ from pathlib import Path
 DEV = Path(__file__).resolve().parents[1]
 SWITCHES = ('disable-model-invocation', 'user-invocable', 'allowed-tools')
 SCRIPT_EXT = {'.sh', '.bash', '.zsh', '.py', '.js', '.mjs', '.cjs', '.ts', '.ps1', '.rb'}
+# Read as text by a shell, a parser or an agent — scanned even when they contain a NUL byte.
+TEXT_EXT = {'', '.json', '.md', '.mdx', '.txt', '.yaml', '.yml', '.toml', '.cfg', '.ini', '.mk'}
 # Only .git is skipped (candidates come from git archive and have none). No other directory is
 # exempt: a hook under dist/ or node_modules/ is still a hook.
 SKIP_DIRS = {'.git'}
@@ -201,14 +203,16 @@ def _hook_entries(data):
 
 def _scan(root):
     """Matching lines per (kind, file), hook entries per JSON file, text files too large to scan,
-    and symlinks with their targets. Every non-binary file is scanned, whatever its extension."""
+    and symlinks with their targets. Every file is scanned, whatever its extension; only binary
+    files that are neither scripts nor text by extension are left out."""
     counts, hooks, oversize = {}, {}, {}
     files, links = _walk(root)
     targets = {rel: os.readlink(path) for rel, path in links.items()}
     for rel, path in files.items():
-        if _is_binary(path):
-            continue
         script, is_json = _is_script(rel, path), rel.endswith('.json')
+        # A NUL byte must not hide a script or a text file: sh still runs it, an agent still reads it.
+        if _is_binary(path) and not (script or Path(rel).suffix.lower() in TEXT_EXT):
+            continue
         if path.stat().st_size > MAX_BYTES:
             oversize[rel] = path
             continue

@@ -117,7 +117,7 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 
 **Rules for creating the checklist:**
 - Create the checklist immediately on the `[~]` → `[!]` transition
-- Read the phase's `@gate:` annotation — with `fast`: omit all CONDITIONAL entries
+- Read the phase's `@gate:` annotation — with `fast`: omit all CONDITIONAL entries, except those the phase-type table keeps for that type
 - **`@type: docs`**: omit all CONDITIONAL entries + additionally omit `Production Build`, `E2E Tests` and `Spec checker (5c-v)`. Only `/simplify`, Change review, `Typecheck + lint + tests`, `Gate summary`, `Gate commit` remain.
 - Omit conditional entries if the condition is not met — do not mark them `[—]`, just omit them
 - Each step checks off its entry after completion

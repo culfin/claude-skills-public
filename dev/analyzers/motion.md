@@ -17,7 +17,7 @@ $DEV_DESIGN_DIR/emil/skills/review-animations/STANDARDS.md   (default DEV_DESIGN
 ```
 
 If the file is missing, stop and return `Result: skipped: animation standards not found` — the gate
-records the checkbox as `skipped: <reason>`, never as a pass. Cite the standard's values (curves,
+ticks the checkbox with evidence `skipped: <reason>`, never as a pass. Cite the standard's values (curves,
 durations, frequency table) in findings instead of approximating them.
 
 ## Sweep
