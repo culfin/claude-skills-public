@@ -8,12 +8,19 @@ read files that more than doubled. Read-only: no network, no writes.
 
 Usage: check-source-update.py --source <id> --old <dir> --new <dir> [--contract sources.md]
 Prints {"source", "deterministic": "ok|findings", "findings": [{"kind", "detail"}]} as JSON.
-Exit 0 whenever the check ran (findings or not), 2 on a usage error.
+
+       check-source-update.py --validate-entry <queue file> [--contract sources.md]
+Validates one update-queue entry (updates.md) and prints {"file", "valid", "errors", "argv"};
+"argv" is the only command /dev updates may run for it (null = do not offer Apply).
+
+Exit 0 whenever the check ran (findings or not, valid or not), 2 on a usage error.
 """
 import argparse
 import importlib.util
 import json
+import os
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -23,14 +30,20 @@ SCRIPT_EXT = {'.sh', '.bash', '.zsh', '.py', '.js', '.mjs', '.cjs', '.ts', '.ps1
 SKIP_DIRS = {'.git', 'node_modules', 'target', '.build', 'dist', '__pycache__'}
 MAX_BYTES = 1_000_000
 HOOK_EVENTS = r'(PreToolUse|PostToolUse|SessionStart|SessionEnd|UserPromptSubmit|Stop|SubagentStop|PreCompact|Notification)'
-# kind -> (regex, where): "scripts" = script files, "json" = JSON files, "all" = scripts + read files
+# kind -> (regex, where): "scripts" = scripts + JSON; "all" = scripts + JSON + read files.
+# new-hook in a JSON file that parses is decided by _hook_entries; the regex is the fallback.
 PATTERNS = {
-    'new-hook': (re.compile(r'"hooks"\s*:|"' + HOOK_EVENTS + r'"\s*:|\bhooks\s+on\b'), 'all+json'),
+    'new-hook': (re.compile(r'"hooks"\s*:|"' + HOOK_EVENTS + r'"\s*:|\bhooks\s+on\b'), 'all'),
     'new-settings-json': (re.compile(r'settings(\.local)?\.json'), 'all'),
     'new-pipe-to-shell': (re.compile(r'\b(curl|wget|iwr|Invoke-WebRequest)\b[^\n|]*\|\s*(sudo\s+)?(ba|z|da)?sh\b'), 'all'),
     'new-install-step': (re.compile(r'\bnpx\s+[^\n`]*\binstall\b|\bnpm\s+(i|install)\s+(-g|--global)\b|\bplugin\s+install\b'), 'all'),
     'new-network-access': (re.compile(r'\b(curl|wget|Invoke-WebRequest)\b|\bfetch\(\s*[\'"`]https?://|\brequests\.(get|post|put)\(|\burllib\.request\b'), 'scripts'),
 }
+APPLIER = 'skills-update-waechter.sh'
+QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
+VERDICTS = {'passt', 'unklar', 'widerspruch'}
+ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
+                'deterministic_findings': list, 'diff_summary': str, 'created': str, 'apply': list}
 LICENSE_RE = re.compile(r'^(LICEN[CS]E|COPYING)(\.\w+)?$', re.I)
 
 
@@ -127,20 +140,55 @@ def _front_matter(text):
     return data
 
 
-def _pattern_counts(root, reads):
-    counts = {}
+def _hook_entries(data):
+    """Every hook entry in a parsed JSON document as (event, matcher, hook) strings, at any depth."""
+    entries = set()
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == 'hooks' and isinstance(value, dict):
+                    for event, groups in value.items():
+                        for group in groups if isinstance(groups, list) else [groups]:
+                            inner = group.get('hooks') if isinstance(group, dict) else None
+                            matcher = group.get('matcher') if isinstance(group, dict) else None
+                            for hook in inner if isinstance(inner, list) else [group]:
+                                entries.add((str(event), json.dumps(matcher),
+                                             json.dumps(hook, sort_keys=True)))
+                elif key == 'hooks' and value:
+                    entries.add(('<reference>', '', json.dumps(value, sort_keys=True)))
+                else:
+                    walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+    walk(data)
+    return entries
+
+
+def _scan(root, reads):
+    """Pattern counts per (kind, file) and parsed hook entries per JSON file."""
+    counts, hooks = {}, {}
     for rel, path in _files(root):
         script, is_json, is_read = _is_script(rel, path), rel.endswith('.json'), rel in reads
         if not (script or is_json or is_read):
             continue
         text = _text(path)
+        parsed = False
+        if is_json:
+            try:
+                hooks[rel] = _hook_entries(json.loads(text))
+                parsed = True
+            except ValueError:
+                pass
         for kind, (regex, where) in PATTERNS.items():
-            applies = (script if where == 'scripts' else script or is_read or (is_json and where == 'all+json'))
-            if applies:
-                n = len(regex.findall(text))
-                if n:
-                    counts[(kind, rel)] = n
-    return counts
+            if kind == 'new-hook' and parsed:
+                continue
+            if where == 'scripts' and not (script or is_json):
+                continue
+            n = len(regex.findall(text))
+            if n:
+                counts[(kind, rel)] = n
+    return counts, hooks
 
 
 def _licenses(root):
@@ -171,7 +219,13 @@ def check(source, old, new, contract):
         if so and sn > 2 * so:
             findings.append({'kind': 'size-jump', 'detail': f'{rel}: {so} -> {sn} bytes ({sn / so:.1f}x)'})
 
-    before, after = _pattern_counts(old, set(reads)), _pattern_counts(new, set(reads))
+    (before, hooks_old), (after, hooks_new) = _scan(old, set(reads)), _scan(new, set(reads))
+    for rel, entries in sorted(hooks_new.items()):
+        added = sorted(entries - hooks_old.get(rel, set()))
+        if added:
+            event, _, hook = added[0]
+            findings.append({'kind': 'new-hook', 'detail': f'{rel}: {len(added)} new or changed hook '
+                             f'entr{"y" if len(added) == 1 else "ies"}, e.g. {event}: {hook[:120]}'})
     for (kind, rel), n in sorted(after.items()):
         if n > before.get((kind, rel), 0):
             findings.append({'kind': kind, 'detail': f'{rel}: {before.get((kind, rel), 0)} -> {n} match(es)'})
@@ -185,21 +239,73 @@ def check(source, old, new, contract):
     return {'source': source, 'deterministic': 'findings' if findings else 'ok', 'findings': findings}
 
 
+def _row_kind(source, contract):
+    for cells in _rows(contract):
+        if cells[0] == source:
+            return cells[1]
+    return None
+
+
+def validate_entry(path, contract, env=None):
+    """Check one queue entry against updates.md; argv is the only command allowed for Apply."""
+    env = os.environ if env is None else env
+    path, errors = Path(path), []
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        return {'file': path.name, 'valid': False, 'errors': [f'unreadable: {exc}'], 'argv': None}
+    if not isinstance(data, dict):
+        return {'file': path.name, 'valid': False, 'errors': ['not a JSON object'], 'argv': None}
+    for key, typ in ENTRY_FIELDS.items():
+        if not isinstance(data.get(key), typ):
+            errors.append(f'field {key!r} missing or not a {typ.__name__}')
+    for key in sorted(set(data) - set(ENTRY_FIELDS)):
+        errors.append(f'unexpected field {key!r}')
+    source, new, apply = data.get('source'), data.get('new'), data.get('apply')
+    if path.name != f'{source}-{new}.json':
+        errors.append(f'file name {path.name!r} is not "<source>-<new>.json"')
+    row_kind = _row_kind(source, contract)
+    if row_kind is None:
+        errors.append(f'source {source!r} is not in sources.md')
+    elif data.get('kind') != row_kind or row_kind not in QUEUE_KINDS:
+        errors.append(f'kind {data.get("kind")!r} does not match sources.md ({row_kind!r})')
+    if data.get('verdict') not in VERDICTS:
+        errors.append(f'verdict {data.get("verdict")!r} is not one of {sorted(VERDICTS)}')
+    name = env.get('DEV_UPDATES_APPLIER') or APPLIER
+    if apply != [name, '--apply', source, new]:
+        errors.append(f'apply must be exactly ["{name}", "--apply", "<source>", "<new>"], got {apply!r}')
+    argv = None
+    if not errors:
+        located = env.get('DEV_UPDATES_APPLIER_PATH') or shutil.which(name, path=env.get('PATH', ''))
+        if located and os.path.isfile(located) and os.access(located, os.X_OK):
+            argv = [located, '--apply', source, new]
+    return {'file': path.name, 'valid': not errors, 'errors': errors, 'argv': argv}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--source', required=True)
-    parser.add_argument('--old', required=True)
-    parser.add_argument('--new', required=True)
+    parser.add_argument('--source')
+    parser.add_argument('--old')
+    parser.add_argument('--new')
+    parser.add_argument('--validate-entry', metavar='FILE')
     parser.add_argument('--contract', default=str(DEV / 'sources.md'))
     args = parser.parse_args(argv)
     try:
-        for label in ('old', 'new'):
-            if not Path(getattr(args, label)).is_dir():
-                raise UsageError(f'--{label} is not a directory: {getattr(args, label)}')
         if not Path(args.contract).is_file():
             raise UsageError(f'contract not found: {args.contract}')
-        result = check(args.source, args.old, args.new, args.contract)
-    except UsageError as exc:
+        if args.validate_entry:
+            if args.source or args.old or args.new:
+                raise UsageError('--validate-entry cannot be combined with --source/--old/--new')
+            result = validate_entry(args.validate_entry, args.contract)
+        else:
+            for label in ('source', 'old', 'new'):
+                if not getattr(args, label):
+                    raise UsageError(f'--{label} is required')
+            for label in ('old', 'new'):
+                if not Path(getattr(args, label)).is_dir():
+                    raise UsageError(f'--{label} is not a directory: {getattr(args, label)}')
+            result = check(args.source, args.old, args.new, args.contract)
+    except (UsageError, OSError) as exc:
         print(f'error: {exc}', file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2))

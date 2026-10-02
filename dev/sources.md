@@ -86,7 +86,8 @@ An update that would flip one of these is a contradiction (`widerspruch`), whate
 
 `python3 "$DEV_DIR/scripts/check-source-update.py" --source <id> --old <dir> --new <dir>` compares
 two trees of one source. Finding kinds: `missing-read-path`, `frontmatter-switch-changed`
-(`disable-model-invocation`, `user-invocable`, `allowed-tools` in a read file), `new-hook`,
-`new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `new-network-access` (scripts only),
-`license-changed`, `size-jump` (a read file more than doubled). "New" means more matches in that
-file than before. Findings are input for the review against overrides and invariants, not a verdict.
+(`disable-model-invocation`, `user-invocable`, `allowed-tools` in a read file), `new-hook` (in JSON:
+any added or changed hook entry, compared entry by entry), `new-settings-json`, `new-pipe-to-shell`,
+`new-install-step`, `new-network-access` (scripts and JSON), `license-changed`, `size-jump` (a read
+file more than doubled). Otherwise "new" means more matches in that file than before. Findings are
+input for the review against overrides and invariants, not a verdict.
