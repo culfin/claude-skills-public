@@ -97,7 +97,7 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - [ ] Tech-Stack Review: Next.js docs          <!-- src/app/**, src/pages/**, next.config.* changed -->
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
-- [ ] Tech-Stack Review: <stack id>            <!-- one per stack whose `stack/INDEX.md` 5c row matches the changed files; checkout or bundled docs missing → `[x] … — skipped: <reason>` -->
+- [ ] Tech-Stack Review: <stack id>            <!-- one per stack (except `nextjs`, which has its own item above) whose `stack/INDEX.md` 5c row matches the changed files; checkout or bundled docs missing → `[x] … — skipped: <reason>` -->
 - [ ] Accessibility review  <!-- UI files changed -->
 - [ ] Design detector  <!-- web UI files changed; engine not built → `[x] … — skipped: <reason>` -->
 - [ ] Motion review  <!-- motion sweep probes hit; standards missing → `[x] … — skipped: <reason>` -->

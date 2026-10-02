@@ -145,6 +145,8 @@ All must be YES:
 
 **Git Bisect:** Binary search through history. `git bisect start` → `good`/`bad` → ~7 tests for 100 commits.
 
+**Playwright trace:** a failed E2E or CI run left a trace `.zip` → `stack/INDEX.md`, row `playwright` (step label `debug`), before guessing from the error text.
+
 **Comment Out Everything:** Remove all code in suspect area, uncomment piece by piece until bug returns.
 
 ---

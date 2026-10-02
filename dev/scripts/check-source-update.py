@@ -21,10 +21,13 @@ Prints one line per source: id<TAB>kind<TAB>location. No rows is an error, never
 A location may start with $DEV_DESIGN_DIR (default ~/.claude/dev-design) or $DEV_STACK_DIR
 (default ~/.claude/dev-stack); it is printed as written, the caller expands it.
 
-       check-source-update.py --scope --source <id> [--contract sources.md]
-Prints the scanned repo-relative paths of a scoped source (its read folders and single read files
-such as the licence), one per line, so a caller can limit its own diff to them. Prints nothing
-for a source that is scanned as a whole tree.
+       check-source-update.py --scope --source <id> [--old <dir>] [--new <dir>] [--contract sources.md]
+Prints the scanned repo-relative paths of a scoped source, one per line, so a caller can limit its
+own diff to them: the read folders, single read files, and root licence names — always the fixed
+list LICENSE_NAMES, plus the real licence file names of the trees given with --old/--new. Prints
+nothing for a source that is scanned as a whole tree. A caller may treat a candidate that is
+unchanged inside these paths as unchanged — but must NOT skip the check when the candidate has
+a symlink inside them (the check reports every such link, changed or not).
 
        check-source-update.py --hold-kinds
 Prints the finding kinds that always hold an update for the user's decision, one per line.
@@ -96,14 +99,37 @@ def source_ids(contract):
 INDEXES = {'design/INDEX.md': '$DEV_DESIGN_DIR', 'stack/INDEX.md': '$DEV_STACK_DIR'}
 
 
+HOME_DEFAULTS = {'$DEV_DESIGN_DIR': '~/.claude/dev-design', '$DEV_STACK_DIR': '~/.claude/dev-stack'}
+# Root file names --scope always prints for a scoped source (LICENSE_RE matches more; pass
+# --old/--new to get the real names of those trees as well).
+LICENSE_NAMES = ('LICENSE', 'LICENSE.md', 'LICENSE.txt', 'LICENCE', 'LICENCE.md', 'LICENCE.txt',
+                 'COPYING', 'COPYING.md', 'COPYING.txt')
+
+
+def _safe_rel(rel, where):
+    """A read path stays inside the source: no '..', no leading '/', no empty or '.' segment."""
+    if not rel or rel.startswith('/') or any(seg in ('', '.', '..') for seg in rel.split('/')):
+        raise UsageError(f'unsafe read path {rel!r} in {where}')
+    return rel
+
+
 def _index_paths(source, contract, reference='design/INDEX.md'):
+    """Read paths of `source` listed in an index. Every mention of the source's root in the raw
+    text must be a backticked `$VAR/<id>/<path>` token — another spelling (no backticks, ${VAR},
+    the home default) would be dropped silently and is a usage error instead."""
     index = Path(contract).parent / reference
-    prefix = f'{INDEXES[reference]}/{source}/'
+    var = INDEXES[reference]
+    prefix = f'{var}/{source}/'
+    text = index.read_text()
     paths = []
-    for line in index.read_text().splitlines():
-        for token in re.findall(r'`([^`]+)`', line):
-            if token.startswith(prefix):
-                paths.append(token[len(prefix):].split('#')[0])
+    for token in re.findall(r'`([^`]+)`', text):
+        if token.startswith(prefix):
+            paths.append(_safe_rel(token[len(prefix):].split('#')[0], reference))
+    spellings = (re.escape(var), r'\$\{' + var[1:] + r'\}', re.escape(HOME_DEFAULTS[var]))
+    raw = re.findall(r'(?:' + '|'.join(spellings) + r')/' + re.escape(source) + r'/[^\s`|)]*', text)
+    if len(raw) != len(paths) or any(not r.startswith(prefix) for r in raw):
+        raise UsageError(f'{reference}: {len(raw)} mention(s) of {prefix}… but {len(paths)} backticked '
+                         f'`{prefix}<path>` token(s) — write every path exactly that way')
     return paths
 
 
@@ -127,7 +153,7 @@ def read_paths(source, contract):
             elif token == 'scripts/check-superpowers.py':
                 paths += _superpowers_paths(contract)
             else:
-                paths.append(token)
+                paths.append(_safe_rel(token, contract))
         return list(dict.fromkeys(paths))
     raise UsageError(f'unknown source {source!r} in {contract}')
 
@@ -157,8 +183,36 @@ def _in_scope(rel, scope, link=False):
     folders, files = scope
     if rel in files or any(f == '.' or rel == f or rel.startswith(f + '/') for f in folders):
         return True
+    if '/' not in rel and LICENSE_RE.match(rel):
+        return True
     # a symlinked ancestor of a scoped folder or file redirects everything read below it
     return link and any(t.startswith(rel + '/') for t in folders | files)
+
+
+def scope_paths(source, contract, trees=()):
+    """What --scope prints: read folders, single read files, then root licence names (the fixed
+    LICENSE_NAMES plus whatever LICENSE_RE matches at the root of the given trees). [] = whole tree."""
+    scope = scan_scope(source, contract)
+    if scope is None:
+        return []
+    names = list(LICENSE_NAMES)
+    for tree in trees:
+        names += sorted(p.name for p in Path(tree).iterdir() if LICENSE_RE.match(p.name) and not p.is_dir())
+    return list(dict.fromkeys(sorted(scope[0]) + sorted(scope[1]) + names))
+
+
+def _exists_exact(root, rel):
+    """rel exists under root with exactly this spelling (a case-insensitive file system would
+    otherwise accept SKILL.md for skill.md)."""
+    here = Path(root)
+    for seg in rel.split('/'):
+        try:
+            if seg not in os.listdir(here):
+                return False
+        except OSError:
+            return False
+        here = here / seg
+    return True
 
 
 def _walk(root):
@@ -301,8 +355,8 @@ def check(source, old, new, contract):
     findings = []
 
     for rel in reads:
-        if not (new / rel).exists():
-            was = 'existed in the old version' if (old / rel).exists() else 'also missing in the old version'
+        if not _exists_exact(new, rel):
+            was = 'existed in the old version' if _exists_exact(old, rel) else 'also missing in the old version'
             findings.append({'kind': 'missing-read-path', 'detail': f'{rel} ({was})'})
 
     for rel in reads:
@@ -322,7 +376,10 @@ def check(source, old, new, contract):
     scope = scan_scope(source, contract)
     (before, hooks_old, _, links_old), (after, hooks_new, oversize, links_new) = _scan(old, scope), _scan(new, scope)
     for rel, target in sorted(links_new.items()):
-        if links_old.get(rel) != target:
+        if scope is not None:   # a link inside the scope hides changes to its target: always a finding
+            findings.append({'kind': 'symlink', 'detail': f'{rel} -> {target} (inside the scanned scope; '
+                             'its target is not scanned, so every version needs a look)'})
+        elif links_old.get(rel) != target:
             was = f'was -> {links_old[rel]}' if rel in links_old else 'new'
             findings.append({'kind': 'symlink', 'detail': f'{rel} -> {target} ({was}); not followed, not scanned'})
     for rel, path in sorted(oversize.items()):
@@ -418,7 +475,7 @@ def main(argv=None):
     try:
         modes = [bool(args.validate_entry), args.list_sources, args.hold_kinds,
                  bool(args.source or args.old or args.new)]
-        if sum(modes) > 1 or (args.scope and (sum(modes[:3]) or args.old or args.new)):
+        if sum(modes) > 1 or (args.scope and sum(modes[:3])):
             raise UsageError('use one of --source/--old/--new, --scope --source, --validate-entry, '
                              '--list-sources, --hold-kinds')
         if args.hold_kinds:
@@ -432,9 +489,13 @@ def main(argv=None):
         if args.scope:
             if not args.source:
                 raise UsageError('--scope needs --source')
-            scope = scan_scope(args.source, args.contract)
-            if scope:
-                print('\n'.join(sorted(scope[0]) + sorted(scope[1])))
+            trees = [t for t in (args.old, args.new) if t]
+            for tree in trees:
+                if not Path(tree).is_dir():
+                    raise UsageError(f'not a directory: {tree}')
+            lines = scope_paths(args.source, args.contract, trees)
+            if lines:
+                print('\n'.join(lines))
             return 0
         if args.validate_entry:
             result = validate_entry(args.validate_entry, args.contract)

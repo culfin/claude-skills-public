@@ -85,6 +85,62 @@ def test_index_paths_exist():
             assert (DEV / path).exists(), load
 
 
+def test_read_rows_stay_within_the_inline_limit():
+    for trigger, load, how in triggers():
+        if how == "read" and load.startswith("$DEV_STACK_DIR/"):
+            path = CHECKOUTS / load.removeprefix("$DEV_STACK_DIR/")
+            if path.is_file():
+                assert len(path.read_text().splitlines()) <= 200, f"{load}: switch the row to subagent"
+
+
+def test_index_and_checker_agree_on_every_path():
+    """Every $DEV_STACK_DIR/<id>/<path> written anywhere in dev/*.md is a read path of the checker
+    and the other way round; another spelling of the root fails instead of being dropped."""
+    contract = DEV / "sources.md"
+    checker = {f"{s}/{p}" for s in GIT_SOURCES for p in m.read_paths(s, contract) if not m.LICENSE_RE.match(p)}
+    written = set()
+    for f in DEV.rglob("*.md"):
+        text = f.read_text()
+        assert "${DEV_STACK_DIR}" not in text, f.name
+        assert not re.search(r"~/\.claude/dev-stack/\w", text), f"{f.name}: write $DEV_STACK_DIR/<id>/…"
+        for hit in re.findall(r"\$DEV_STACK_DIR/([^\s`|)]+)", text):
+            if "<" in hit or "/" not in hit.rstrip("/"):
+                continue  # placeholder (<id>) or a bare source root (contract location)
+            written.add(hit.split("#")[0])
+    assert written == checker
+    assert written == {load.removeprefix("$DEV_STACK_DIR/") for _, load, _ in triggers()
+                       if load.startswith("$DEV_STACK_DIR/")}
+    for rel in written:
+        assert not rel.startswith("/") and all(s not in ("", ".", "..") for s in rel.split("/")), rel
+
+
+def test_every_read_path_of_a_scoped_source_is_inside_its_scope():
+    contract = DEV / "sources.md"
+    for source in m.source_ids(contract):
+        scope = m.scan_scope(source, contract)
+        assert (scope is not None) == (source in GIT_SOURCES), source
+        if scope is None:
+            continue
+        for rel in m.read_paths(source, contract):
+            assert m._in_scope(rel, scope), f"{source}: {rel} is read but not scanned"
+        emitted = m.scope_paths(source, contract)
+        for rel in m.read_paths(source, contract):
+            assert any(rel == e or rel.startswith(e + "/") for e in emitted), f"{source}: {rel}"
+
+
+def test_containment_wording():
+    index = " ".join(INDEX.read_text().split())
+    contract = " ".join((DEV / "sources.md").read_text().split())
+    assert "In both modes nothing outside the listed file's folder is read" in index
+    assert "no skill or instruction fetched from a URL the source names" in index
+    assert "For `read` and `subagent` rows alike nothing outside the listed file's folder is read" in contract
+    assert "no sibling skill, no skill or instruction fetched from a URL the source names" in contract
+    assert "No script a source ships is executed and no vendor CLI or API call is made" in contract
+    assert "except `nextjs`" in (DEV / "gate.md").read_text()
+    assert "row `playwright`" in (DEV / "debugger.md").read_text()
+    assert "5g = " in index and "debug = " in index
+
+
 def test_every_git_stack_source_has_rows_and_a_contract_entry():
     contract = DEV / "sources.md"
     listed = {row[0]: row for row in m.list_sources(contract)}
