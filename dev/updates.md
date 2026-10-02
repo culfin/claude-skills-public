@@ -3,8 +3,8 @@
 **Triggered by:** `/dev updates`. Works in any directory; needs no ROADMAP.md and no active phase.
 
 The update watcher checks every new version of a source in `sources.md` (deterministic check plus a
-review agent against its overrides and invariants). Verdict `passt` → it applies the update itself
-and logs it. `unklar` or `widerspruch` → it holds the update back, the old version stays active, and
+review agent against its overrides and invariants). Verdict `fits` → it applies the update itself
+and logs it. `unclear` or `conflict` → it holds the update back, the old version stays active, and
 it writes one file to the queue. This command is where the user decides. **It never applies, rejects
 or changes anything without an explicit answer from the user.**
 
@@ -25,12 +25,12 @@ A queue file is one JSON object:
 | `source` | id from `sources.md`; like `new`, only `[A-Za-z0-9][A-Za-z0-9._+-]*` (no leading `-`, no `/` or space) |
 | `kind` | `git`, `plugin` or `agents-skill` |
 | `old`, `new` | active version and the held one (commit, version or folder hash) |
-| `verdict` | `passt`, `unklar` or `widerspruch` |
+| `verdict` | `fits`, `unclear` or `conflict` |
 | `reasons[]` | the review agent's reasons, each naming the override (`O…`) or invariant (`I…`) it concerns |
 | `deterministic_findings[]` | `findings` from `scripts/check-source-update.py` |
 | `diff_summary` | what changed, in a few lines (files, commit range) |
 | `created` | ISO timestamp |
-| `apply` | argv, exactly `["skills-update-waechter.sh", "--apply", "<source>", "<new>"]` — never a shell string |
+| `apply` | argv, exactly `["dev-updates-apply", "--apply", "<source>", "<new>"]` — never a shell string |
 
 The session-start line only **counts** `pending/*.json` (`SKILL.md`, Session Start); everything
 else happens here.
@@ -39,7 +39,7 @@ else happens here.
 --validate-entry <file>` checks the file name (`<source>-<new>.json`), the fields, that `source` is a
 row in `sources.md` with the same `kind`, and that `apply` is exactly the argv above. It prints
 `valid`, `errors` and `argv` — the resolved command, or `null`. The applier's name defaults to
-`skills-update-waechter.sh` (`DEV_UPDATES_APPLIER` overrides it); its location comes from
+`dev-updates-apply` (`DEV_UPDATES_APPLIER` overrides it); its location comes from
 `DEV_UPDATES_APPLIER_PATH` or else `PATH`, never from the queue file.
 
 ## Procedure
@@ -50,7 +50,7 @@ row in `sources.md` with the same `kind`, and that `apply` is exactly the argv a
    `valid: true` but `argv: null` → "applier not found" (set `DEV_UPDATES_APPLIER_PATH`), same options.
 3. **Show** each update in the terminal (never on the companion — this is not user interface):
    ```
-   superpowers  plugin  6.4.1 → 6.5.0  verdict: unklar  (queued 2026-10-02)
+   superpowers  plugin  6.4.1 → 6.5.0  verdict: unclear  (queued 2026-10-02)
    Reasons:   - O1: SDD now runs finishing-a-development-branch by default …
    Findings:  frontmatter-switch-changed skills/…/SKILL.md: allowed-tools …
    Changed:   <diff_summary>
@@ -58,15 +58,25 @@ row in `sources.md` with the same `kind`, and that `apply` is exactly the argv a
    ```
    Read the matching row and the cited overrides/invariants in `sources.md` so you can explain
    each reason in a sentence. Check a reason against the new files yourself where it is cheap.
+   Read paths that `sources.md` lists via `design/INDEX.md` belong to `/dev`: the index lives in
+   this skill, not in the source tree — do not expect an `INDEX.md` inside the candidate.
 4. **Ask** — `AskUserQuestion`, one question per update, up to four independent updates per call;
    more → next call. Options, recommendation first with "(Recommended)":
    - **Apply** — only for a valid entry with `argv`; the description states the command and how to undo it (step 5).
    - **Reject** — keep the old version; this version is not offered again.
    - **Adapt /dev first** — the update is wanted, but `/dev` must change before it fits.
    - **Decide later** — nothing happens, the file stays in `pending/`.
-   Recommend from the reasons: a contradiction with an invariant → Reject or Adapt; an override the
-   update merely touches, or a finding that turns out harmless → Apply, saying why. If
-   `AskUserQuestion` is not available, ask in chat and wait. No answer → no action.
+   Recommend from the verdict first, then the reasons — the verdict is a second brake:
+   - **`conflict`:** Apply is never the recommended option. Recommend Reject or Adapt, tell the
+     user in the question that the review found a conflict with `<I…/O…>` (name it and say what it
+     protects), and put the contradiction reasons into the Apply option's description, so that
+     choosing it means overriding them knowingly.
+   - **`unclear`:** Apply is not recommended either — except when every reason is purely "review
+     could not run" (timeout, agent unavailable) and there are no deterministic findings of a hold
+     kind; then Apply may be recommended, saying that no review took place.
+   - A finding or touched override that turns out harmless is said in the description, not turned
+     into a recommendation against these two rules.
+   If `AskUserQuestion` is not available, ask in chat and wait. No answer → no action.
 5. **Apply** (only after that answer):
    - Validate again, then run exactly the `argv` the script returned, as an argument list (no shell
      string, nothing added) — never anything taken from the file directly or assembled by hand.

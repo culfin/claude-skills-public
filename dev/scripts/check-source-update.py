@@ -2,9 +2,10 @@
 """Deterministic pre-check of a new version of a source /dev references (contract: sources.md).
 
 Compares an old and a new tree of one source and reports what a reviewer must look at:
-read paths that vanished, changed invocation switches in front matter, newly added hooks,
-settings writes, pipe-to-shell, install steps or network calls, a changed licence, and
-read files that more than doubled. Read-only: no network, no writes.
+read paths that vanished, changed invocation switches in front matter, new or changed hooks
+(JSON entries, YAML/front-matter declarations), settings writes, pipe-to-shell and install steps in
+any text file, network calls in scripts, new or retargeted symlinks, a changed licence, and read
+files that more than doubled. Read-only: no network, no writes.
 
 Usage: check-source-update.py --source <id> --old <dir> --new <dir> [--contract sources.md]
 Prints {"source", "deterministic": "ok|findings", "findings": [{"kind", "detail"}]} as JSON.
@@ -39,22 +40,25 @@ SCRIPT_EXT = {'.sh', '.bash', '.zsh', '.py', '.js', '.mjs', '.cjs', '.ts', '.ps1
 SKIP_DIRS = {'.git'}
 MAX_BYTES = 1_000_000  # larger scannable files are not read; if changed -> scan-incomplete
 HOOK_EVENTS = r'(PreToolUse|PostToolUse|SessionStart|SessionEnd|UserPromptSubmit|Stop|SubagentStop|PreCompact|Notification)'
-# kind -> (regex, where): "scripts" = scripts + JSON; "all" = scripts + JSON + read files.
-# new-hook in a JSON file that parses is decided by _hook_entries; the regex is the fallback.
+# kind -> (regex, where): "scripts" = scripts + JSON; "all" = every non-binary text file, whatever
+# its extension (Markdown, YAML, Makefile, ...). Regexes are applied line by line.
+# new-hook in a JSON file that parses is decided by _hook_entries; the regex is the fallback and
+# also catches unquoted YAML / front-matter declarations (`hooks:` or `PreToolUse:` at line start).
 PATTERNS = {
-    'new-hook': (re.compile(r'"hooks"\s*:|"' + HOOK_EVENTS + r'"\s*:|\bhooks\s+on\b'), 'all'),
+    'new-hook': (re.compile(r'"hooks"\s*:|"' + HOOK_EVENTS + r'"\s*:|\bhooks\s+on\b'
+                            r'|^\s*(-\s*)?hooks\s*:|^\s*(-\s*)?' + HOOK_EVENTS + r'\s*:'), 'all'),
     'new-settings-json': (re.compile(r'settings(\.local)?\.json'), 'all'),
     'new-pipe-to-shell': (re.compile(r'\b(curl|wget|iwr|Invoke-WebRequest)\b[^\n|]*\|\s*(sudo\s+)?(ba|z|da)?sh\b'), 'all'),
     'new-install-step': (re.compile(r'\bnpx\s+[^\n`]*\binstall\b|\bnpm\s+(i|install)\s+(-g|--global)\b|\bplugin\s+install\b'), 'all'),
     'new-network-access': (re.compile(r'\b(curl|wget|Invoke-WebRequest)\b|\bfetch\(\s*[\'"`]https?://|\brequests\.(get|post|put)\(|\burllib\.request\b'), 'scripts'),
 }
-APPLIER = 'skills-update-waechter.sh'
+APPLIER = 'dev-updates-apply'
 QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
 # Findings that hold an update whatever the review agent says (sources.md, "Deterministic check").
 HOLD_KINDS = ('missing-read-path', 'new-hook', 'new-settings-json', 'new-pipe-to-shell',
-              'new-install-step', 'license-changed', 'scan-incomplete')
+              'new-install-step', 'license-changed', 'scan-incomplete', 'symlink')
 SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no leading '-', no '/', no space
-VERDICTS = {'passt', 'unklar', 'widerspruch'}
+VERDICTS = {'fits', 'unclear', 'conflict'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
                 'deterministic_findings': list, 'diff_summary': str, 'created': str, 'apply': list}
 LICENSE_RE = re.compile(r'^(LICEN[CS]E|COPYING)(\.\w+)?$', re.I)
@@ -112,11 +116,28 @@ def read_paths(source, contract):
     raise UsageError(f'unknown source {source!r} in {contract}')
 
 
-def _files(root):
-    for p in sorted(root.rglob('*')):
-        rel = p.relative_to(root)
-        if p.is_file() and not SKIP_DIRS.intersection(rel.parts[:-1]):
-            yield rel.as_posix(), p
+def _walk(root):
+    """(regular files, symlinks) under root as {rel: path}; symlinks are never followed."""
+    files, links = {}, {}
+    for base, dirs, names in os.walk(root, followlinks=False):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for name in sorted(dirs + names):
+            p = Path(base) / name
+            rel = p.relative_to(root).as_posix()
+            if p.is_symlink():
+                links[rel] = p
+            elif p.is_file():
+                files[rel] = p
+        dirs[:] = [d for d in dirs if not (Path(base) / d).is_symlink()]
+    return files, links
+
+
+def _is_binary(path):
+    try:
+        with open(path, 'rb') as fh:
+            return b'\0' in fh.read(8192)
+    except OSError:
+        return False
 
 
 def _is_script(rel, path):
@@ -178,13 +199,16 @@ def _hook_entries(data):
     return entries
 
 
-def _scan(root, reads):
-    """Pattern counts per (kind, file), hook entries per JSON file, and files too large to scan."""
+def _scan(root):
+    """Matching lines per (kind, file), hook entries per JSON file, text files too large to scan,
+    and symlinks with their targets. Every non-binary file is scanned, whatever its extension."""
     counts, hooks, oversize = {}, {}, {}
-    for rel, path in _files(root):
-        script, is_json, is_read = _is_script(rel, path), rel.endswith('.json'), rel in reads
-        if not (script or is_json or is_read):
+    files, links = _walk(root)
+    targets = {rel: os.readlink(path) for rel, path in links.items()}
+    for rel, path in files.items():
+        if _is_binary(path):
             continue
+        script, is_json = _is_script(rel, path), rel.endswith('.json')
         if path.stat().st_size > MAX_BYTES:
             oversize[rel] = path
             continue
@@ -201,10 +225,10 @@ def _scan(root, reads):
                 continue
             if where == 'scripts' and not (script or is_json):
                 continue
-            n = len(regex.findall(text))
-            if n:
-                counts[(kind, rel)] = n
-    return counts, hooks, oversize
+            lines = {' '.join(line.split()) for line in text.splitlines() if regex.search(line)}
+            if lines:
+                counts[(kind, rel)] = lines
+    return counts, hooks, oversize, targets
 
 
 def _same_bytes(a, b):
@@ -245,7 +269,11 @@ def check(source, old, new, contract):
         if so and sn > 2 * so:
             findings.append({'kind': 'size-jump', 'detail': f'{rel}: {so} -> {sn} bytes ({sn / so:.1f}x)'})
 
-    (before, hooks_old, _), (after, hooks_new, oversize) = _scan(old, set(reads)), _scan(new, set(reads))
+    (before, hooks_old, _, links_old), (after, hooks_new, oversize, links_new) = _scan(old), _scan(new)
+    for rel, target in sorted(links_new.items()):
+        if links_old.get(rel) != target:
+            was = f'was -> {links_old[rel]}' if rel in links_old else 'new'
+            findings.append({'kind': 'symlink', 'detail': f'{rel} -> {target} ({was}); not followed, not scanned'})
     for rel, path in sorted(oversize.items()):
         if not _same_bytes(old / rel, path):
             findings.append({'kind': 'scan-incomplete', 'detail':
@@ -256,9 +284,11 @@ def check(source, old, new, contract):
             event, _, hook = added[0]
             findings.append({'kind': 'new-hook', 'detail': f'{rel}: {len(added)} new or changed hook '
                              f'entr{"y" if len(added) == 1 else "ies"}, e.g. {event}: {hook[:120]}'})
-    for (kind, rel), n in sorted(after.items()):
-        if n > before.get((kind, rel), 0):
-            findings.append({'kind': kind, 'detail': f'{rel}: {before.get((kind, rel), 0)} -> {n} match(es)'})
+    for (kind, rel), lines in sorted(after.items()):
+        added = sorted(lines - before.get((kind, rel), set()))   # the lines, not their number:
+        if added:                                                # a swapped command is a finding
+            findings.append({'kind': kind, 'detail':
+                             f'{rel}: {len(added)} new or changed matching line(s), e.g. {added[0][:120]}'})
 
     lo, ln = _licenses(old), _licenses(new)
     for name in sorted(set(lo) | set(ln)):
