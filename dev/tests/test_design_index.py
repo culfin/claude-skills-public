@@ -32,11 +32,20 @@ def test_no_local_paths():
 def test_accessibility_trigger_by_files():
     t = (DEV / "tech-stack-triggers.md").read_text()
     row = [l for l in t.splitlines() if "Accessibility review" in l and l.startswith("|")][0]
-    assert "@type: ui" not in row.split("|")[2] or "UI files" in row
+    condition = row.split("|")[2]
+    assert "@type: ui" not in condition
+    assert "UI files" in condition
 
 def test_checklist_has_accessibility():
     assert "- [ ] Accessibility review" in (DEV / "gate.md").read_text()
 
 def test_target_size_rule():
-    a = (DEV / "analyzers/accessibility.md").read_text()
-    assert "24" in a and "44" in a and "2.5.8" in a
+    lines = (DEV / "analyzers/accessibility.md").read_text().splitlines()
+    start = next(i for i, l in enumerate(lines) if re.match(r"\d+\.\s+\*\*Target size", l))
+    end = len(lines)
+    for i in range(start + 1, len(lines)):
+        if re.match(r"\d+\.\s+\*\*", lines[i]) or lines[i].startswith("#"):
+            end = i
+            break
+    paragraph = "\n".join(lines[start:end])
+    assert "24" in paragraph and "44" in paragraph and "2.5.8" in paragraph
