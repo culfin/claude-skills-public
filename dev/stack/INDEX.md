@@ -82,9 +82,8 @@ Tech-Stack Review item per stack id. Next.js fallback and details: `tech-stack-t
 **Runtime check (`next` row).** The one row that acts: whoever verifies the task reads the file
 and runs its loop against the project's own `next dev`. Only with Next.js ≥ 16.3 on Turbopack
 **and** `agent-browser` already on `PATH` in at least the minimum version the skill file states
-(check `agent-browser --version` first) — otherwise `skipped: <reason>`. `/dev` never installs
-or upgrades either; the CLI's built-in help may be read as tool docs (`sources.md`, O11). It
-complements the bundled docs and the E2E step (5g), it replaces neither.
+(check `agent-browser --version` first) — otherwise `skipped: <reason>`; `/dev` never installs
+or upgrades either (`sources.md`, O11). It complements bundled docs and E2E (5g), replaces neither.
 
 **WordPress rows.** The rows above route, not the skills' triage scripts or router. Before
 applying a rule, compare the skills' "WordPress 7.0+" assumption with the project's version
