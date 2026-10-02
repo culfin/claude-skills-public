@@ -6,11 +6,11 @@ Screens follow `companion.md` (UI only; a message ends with the URL only when th
 
 ## Precondition
 
-- ROADMAP.md has a phase with `[~]` or `[!]`: the rework belongs to that phase. Run steps 1–4
-  (analysis is read-only), then record the approved finding IDs in STATE.md under that phase and
-  stop with "Phase N is active — the rework is part of it; continue with `/dev next`". No step 5–6.
+- Phase `[~]`/`[!]` in ROADMAP.md: the rework belongs to it. Run steps 1–4 (read-only), record the
+  approved IDs in STATE.md's Current Position (the active phase's entry, `state.md`), stop with
+  "Phase N is active — the rework is part of it; continue with `/dev next`". No steps 5–6.
 - All phases `[x]`/`[—]`, or no ROADMAP.md: proceed. Uncommitted changes at the start: name them —
-  the `/dev check` in step 6 would include them; ask whether to commit or set them aside first.
+  `/dev check` in step 6 snapshots them too; ask whether to commit or set them aside first.
 
 ## 1. Scope
 
@@ -26,10 +26,8 @@ Screens follow `companion.md` (UI only; a message ends with the URL only when th
 
 ## 2. Screenshots of the running app
 
-Start the app the way the project does (dev server, simulator). Capture every view in scope:
-
-- **Web:** Playwright at desktop 1440×900 and mobile 390×844; light, and dark via
-  `prefers-color-scheme` if the project supports it. **Apple / Android:** simulator screenshots.
+Start the app as the project does and capture every view in scope. **Web:** Playwright at 1440×900
+and 390×844, light, and dark via `prefers-color-scheme` if supported. **Native:** simulator shots.
 
 Save into `screen_dir` as `ui-<view>-<viewport>-<theme>.png` — the "before" set. **Show screen**:
 "Real screen" (markers come in step 4). App not startable → say why; screenshot-based analyses
@@ -50,9 +48,10 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 | animation (motion sweep probes hit) | "5c motion changed" | motion subagent |
 | kind `landing` | "4a landing" (taste, `subagent`) | taste subagent |
 
-Dispatch per `analyzers/CONTRACT.md`, **mode `full`**, scope `$UI_SCOPE`, requirement "the view
-serves its primary task for its primary user", plus `$TECH_STACKS`; set the model explicitly
-("Subagent Model Choice" in `gate.md`, cheap tier is enough except for taste: standard tier):
+Dispatch per `analyzers/CONTRACT.md`, **mode `full` limited to `$UI_SCOPE`** (no diff, not the
+whole codebase), requirement "the view
+serves its primary task for its primary user", `$TECH_STACKS`; model explicitly per "Subagent
+Model Choice" in `gate.md` (cheap tier; taste: standard tier):
 
 - **accessibility** — `analyzers/accessibility.md`, plus the platform file named above.
 - **design-detector** — `analyzers/design-detector.md` (web only; native: `skipped: not web`).
@@ -97,7 +96,8 @@ checkable acceptance criterion → not a finding. Then **Show screen**: "Real sc
 numbered by finding ID; the list stays in the terminal.
 
 **Larger interventions** (layout, navigation, several components): 2–3 variants per INDEX row "4a
-ui: show variants" as building block "UI decision"; the user picks via `AskUserQuestion`, same names.
+ui: show variants" as building block "UI decision"; source missing → say `skipped: prototype source
+not found` and build them with the plain building block. The user picks via `AskUserQuestion`.
 
 **Approval** — `AskUserQuestion`: "All critical and major (Recommended)", "Critical only", "Pick
 by ID", "None — keep the report" (then stop: no code change, no `/dev check`). Nothing changes before.
@@ -113,8 +113,8 @@ per finding: `fixed` or `not fixed: <reason>`.
 1. Retake the same screenshots (same views, viewports, themes) and check each acceptance criterion
    against them; a criterion that does not hold sets the status back to `open`.
 2. **Show screen**: building block "Before/After" per changed view, from the two screenshot sets.
-3. Run `/dev check` (`dev-check.md`): its scope snapshot is the rework's changed files plus
-   `UI-REVIEW.md`. Its check commit closes the run; if commits are not authorized, run the same
-   steps without committing and say which remain open. If it fails, stop as `dev-check.md` says.
+3. `/dev check` (`dev-check.md`) over the rework's files, `UI-REVIEW.md` and any pre-existing changes
+   kept from the start (name those files). Its commit closes the run; commits not authorized → same
+   steps without committing, name the open ones. If it fails, stop as `dev-check.md` says.
 
 End in the terminal: findings fixed / open, skipped analyses, and the gate result.
