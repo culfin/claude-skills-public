@@ -302,7 +302,10 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.stack_contract()
         base = (self.contract.read_text()).replace(', `LICENSE`', '')
         self.contract.write_text(base)   # like a source without a licence today
-        for name in ('LICENSE', 'License.rst', 'COPYING', 'licence.txt', 'LICENSE-MIT'):
+        self.assertTrue(m.LICENSE_RE.match('LICENSE-MIT') and m.LICENSE_RE.match('UNLICENSE'))
+        self.assertFalse(m.LICENSE_RE.match('README.md'))
+        for name in ('LICENSE', 'License.rst', 'COPYING', 'licence.txt', 'LICENSE-MIT', 'LICENSE-APACHE',
+                     'UNLICENSE', 'README.md'):
             with self.subTest(name=name):
                 (self.new / 'LICENSE').unlink(missing_ok=True)
                 (self.old / 'LICENSE').unlink(missing_ok=True)

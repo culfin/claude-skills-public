@@ -75,7 +75,7 @@ SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no 
 VERDICTS = {'fits', 'unclear', 'conflict'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
                 'deterministic_findings': list, 'diff_summary': str, 'created': str, 'apply': list}
-LICENSE_RE = re.compile(r'^(LICEN[CS]E|COPYING)(\.\w+)?$', re.I)
+LICENSE_RE = re.compile(r'^(UN)?(LICEN[CS]E|COPYING)([-._]\w+)*$', re.I)  # also LICENSE-MIT, UNLICENSE
 
 
 class UsageError(Exception):
@@ -172,7 +172,7 @@ def scan_scope(source, contract):
             if token == 'stack/INDEX.md':
                 folders.update(Path(p).parent.as_posix() for p in _index_paths(source, contract, token))
             elif token not in INDEXES and token != 'scripts/check-superpowers.py':
-                files.add(token)
+                files.add(_safe_rel(token, contract))
         return folders, files
     raise UsageError(f'unknown source {source!r} in {contract}')
 
