@@ -257,6 +257,27 @@ class QueueEntryTests(unittest.TestCase):
                 for p in self.dir.iterdir():
                     p.unlink()
 
+    def test_unsafe_source_or_version_is_rejected(self):
+        a = 'skills-update-waechter.sh'
+        cases = {
+            'leading dash in new': ('demo---force.json', 'demo', '--force'),
+            'leading dash in source': ('-x-abc123.json', '-x', 'abc123'),
+            'slash in new': (None, 'demo', 'a/b'),
+            'space in new': ('demo-a b.json', 'demo', 'a b'),
+        }
+        self.contract.write_text(CONTRACT + '| -x | git | `~/x` | `SKILL.md` | none |\n')
+        for label, (name, source, new) in cases.items():
+            with self.subTest(label=label):
+                data = {'source': source, 'new': new, 'apply': [a, '--apply', source, new]}
+                # a slash cannot be in a file name, so that entry sits under an unrelated name
+                p = self.entry(name=name or 'demo-a_b.json', **data)
+                r = self.validate(p)
+                self.assertFalse(r['valid'], label)
+                self.assertIsNone(r['argv'])
+                self.assertTrue(any('charset' in e for e in r['errors']), r['errors'])
+                for f in self.dir.iterdir():
+                    f.unlink()
+
     def test_unparsable_entry(self):
         p = self.dir / 'demo-abc123.json'
         p.write_text('{nope')

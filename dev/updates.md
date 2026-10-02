@@ -22,7 +22,7 @@ A queue file is one JSON object:
 
 | Field | Meaning |
 |---|---|
-| `source` | id from `sources.md` |
+| `source` | id from `sources.md`; like `new`, only `[A-Za-z0-9][A-Za-z0-9._+-]*` (no leading `-`, no `/` or space) |
 | `kind` | `git`, `plugin` or `agents-skill` |
 | `old`, `new` | active version and the held one (commit, version or folder hash) |
 | `verdict` | `passt`, `unklar` or `widerspruch` |

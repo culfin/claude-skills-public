@@ -41,6 +41,7 @@ PATTERNS = {
 }
 APPLIER = 'skills-update-waechter.sh'
 QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
+SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no leading '-', no '/', no space
 VERDICTS = {'passt', 'unklar', 'widerspruch'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
                 'deterministic_findings': list, 'diff_summary': str, 'created': str, 'apply': list}
@@ -262,6 +263,9 @@ def validate_entry(path, contract, env=None):
     for key in sorted(set(data) - set(ENTRY_FIELDS)):
         errors.append(f'unexpected field {key!r}')
     source, new, apply = data.get('source'), data.get('new'), data.get('apply')
+    for key, value in (('source', source), ('new', new)):
+        if isinstance(value, str) and not SAFE_TOKEN.fullmatch(value):
+            errors.append(f'{key} {value!r} is outside the allowed charset [A-Za-z0-9][A-Za-z0-9._+-]*')
     if path.name != f'{source}-{new}.json':
         errors.append(f'file name {path.name!r} is not "<source>-<new>.json"')
     row_kind = _row_kind(source, contract)
