@@ -111,6 +111,8 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
 - [ ] Accessibility review  <!-- UI files changed -->
+- [ ] Design detector  <!-- web UI files changed; "skipped: <reason>" if the engine is not built -->
+- [ ] Motion review  <!-- motion sweep probes hit; "skipped: <reason>" if the standards are missing -->
 - [ ] Security review                           <!-- auth/api/migration changed OR @type: backend/auth/security/data -->
 - [ ] Similar-bugs scan                       <!-- dropped with @gate: fast -->
 

@@ -87,6 +87,10 @@ unrelated requests; `/dev` reads these checkouts directly from `$DEV_DESIGN_DIR`
 source that is missing is simply skipped — `dev/tests/check-setup.sh` reports its status but never
 fails on it.
 
+The gate's design detector runs impeccable's rules from a binary you build from that checkout:
+`dev/scripts/design-build-detector.sh` (needs Rust/cargo; the first build fetches crates, later calls
+return at once while the checkout is unchanged). Run it again after updating the checkout.
+
 impeccable can install hooks and phone home; neither is used here. If you run it yourself outside
 `/dev`, set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` first.
 

@@ -20,6 +20,8 @@ is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs at every session s
 | `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | `next-best-practices` | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
 | `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed (any phase type) | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
+| `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css` | Web UI files changed (any phase type) | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → checkbox `skipped: <reason>`, never a pass |
+| Files hit by the motion probes (`transition`, `animation`, `@keyframes`, `motion.`, `animate(`, `withSpring`, …) | A motion sweep probe hits in the changed files | Motion review (`analyzers/motion.md`) | Judges each animation against Emil Kowalski's standards read from `$DEV_DESIGN_DIR`; standards missing → checkbox `skipped: <reason>` |
 | `src/db/migrations/**`, SQL files, schema changes | `postgres` in `$TECH_STACKS` | `pg:design-postgres-tables` | Check indexing, constraints, type choices |
 | `**/*.swift` | `ios` in `$TECH_STACKS` | `swiftui-pro` | Check modern APIs, performance patterns |
 | `**/*.cs`, `**/*.xaml` | `winui` in `$TECH_STACKS` | `winui-pro` | Check MVVM, threading, WinUI patterns |
@@ -38,7 +40,7 @@ is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs at every session s
 
 **Analyzers:** every analysis above and in gate step 5c is carried out by a subagent with the
 matching file from `analyzers/` (contract in `analyzers/CONTRACT.md`) — bug hunt, security, performance,
-accessibility. They work for every stack; each carries short notes per language (Swift, TS/JS, Rust,
+accessibility, design detector, motion. They work for every stack; each carries short notes per language (Swift, TS/JS, Rust,
 PHP, Python, shell, SQL). A project that wants an extra, stack-specific analysis on top names it via
 `@skills:` in ROADMAP.md; `/dev` does not depend on any.
 
@@ -48,4 +50,5 @@ PHP, Python, shell, SQL). A project that wants an extra, stack-specific analysis
 - Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → fix **before 5d**, not later: Similar-bugs scan (5d) searches for the patterns of the fixes just made. If it runs on unfixed code, it finds nothing.
 - Notices (could be better, alternative API available) → note them, continue.
 - A tech skill (next-best-practices, shadcn, …) that is not installed → warn, skip; it is an extra on top of the analyzers. The analyzers themselves are always there.
+- Exception: Design detector and Motion review rely on the optional design sources under `$DEV_DESIGN_DIR` (README, "Design sources"). Missing sources or an unbuilt engine → the checkbox reads `skipped: <reason>`; it is never ticked as passed.
 - **Parallelization:** Tech-Stack Review, Security Review, Bug hunt, Performance review are all read-only — they can run as parallel Agent subagents (step 5c).
