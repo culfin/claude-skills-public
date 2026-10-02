@@ -167,10 +167,14 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
    - **Security review** (full mode) — entire codebase. Critical — must be green before release.
    - Critical findings from all three: fix before proceeding. Non-critical: note in STATE.md.
 2. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, full mode) — comprehensive scan of the entire codebase. Fix findings, then re-run typecheck + lint (`gate.md`, "Project Commands per Stack").
-3. **Read Gate summaries** — read all `### Gate summary` entries from STATE.md. If there are none (first release or fresh project): output the note "No gate history available — this is the first release", skip this step. If present: show a consolidated quality picture: which findings were found and fixed across all phases? Are there recurring patterns?
-4. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
+3. **Design polish**, by platform (`$TECH_STACKS`):
+   - **Web:** run `vibepolish` in launch-audit mode (findings only, no fixes) over the whole app; then a subagent reads `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` plus only the reference file of the command it runs — `audit` first, `polish` only after the user approves specific findings. Never `install`, never `hooks on`; set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1`.
+   - **Native (Apple/Android):** read the `## Checklist` section of the matching platform file (`design/platform-apple.md` or `design/platform-android.md`) and review the app against it.
+   - Missing source (vibepolish not installed, no `$DEV_DESIGN_DIR/impeccable` checkout) → report `skipped: <reason>`, never a silent pass.
+4. **Read Gate summaries** — read all `### Gate summary` entries from STATE.md. If there are none (first release or fresh project): output the note "No gate history available — this is the first release", skip this step. If present: show a consolidated quality picture: which findings were found and fixed across all phases? Are there recurring patterns?
+5. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause
-5. Final summary after all skills.
+6. Final summary after all skills.
 
 ---
 

@@ -8,6 +8,8 @@ is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs at every session s
 
 **During Brainstorming (step 4a):**
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
+- If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
+- If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include `next-best-practices` context (RSC boundaries, file conventions, data patterns)
 

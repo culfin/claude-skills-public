@@ -30,7 +30,8 @@ Every real screen contains the actual names, values and texts of the current pro
 ### Building block: UI decision
 
 Every question with a UI/UX side. Options as cards with a mockup, recommendation marked, names as in
-`AskUserQuestion`.
+`AskUserQuestion`. In an `@type: ui` phase, generate the option variants per `design/INDEX.md`'s
+"4a ui: show variants" row (Emil Kowalski's prototype approach) instead of inventing layouts ad hoc.
 
 ```html
 <h2>Where does the PDF export live?</h2>
