@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, or /dev check. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
+description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, or /dev ui. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
 ---
 
 ## Language
@@ -36,6 +36,7 @@ Manages a project's ROADMAP.md and sequences superpowers cycles for each phase. 
 | `/dev debug` | Debug Flow | `commands.md` → `debugger.md` |
 | `/dev pause` | Pause Session | `commands.md` |
 | `/dev check` | Standalone Quality Gate | `dev-check.md` → `gate.md` |
+| `/dev ui [scope]` | UI review and rework | `ui-review.md` |
 
 ## When NOT to Use
 
@@ -64,6 +65,7 @@ the current step needs.
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
 | `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
+| `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 
 **Visual Companion in one sentence:** it shows only the user interface of the product (mockups, states, real screenshots — never roadmaps, plans, architecture or findings), is used without asking wherever this skill says **"Show screen"** (procedure in `companion.md`), and every message that points the user at a new or updated screen ends with its current URL (status messages without anything new to see carry none).
 
@@ -377,5 +379,6 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |
+| `/dev ui` with active phase `[~]`/`[!]` | Analyse and get approval only; the rework belongs to that phase (`ui-review.md`). |
 
 **Principle:** Never block for recoverable errors. Warn and continue. Only stop for missing ROADMAP.md or broken YAML.

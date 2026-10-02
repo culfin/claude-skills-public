@@ -49,3 +49,11 @@ def test_target_size_rule():
             break
     paragraph = "\n".join(lines[start:end])
     assert "24" in paragraph and "44" in paragraph and "2.5.8" in paragraph
+
+def test_router_has_ui():
+    skill = (DEV / "SKILL.md").read_text()
+    assert "| `/dev ui [scope]` | UI review and rework | `ui-review.md` |" in skill
+    assert "/dev ui" in skill.split("---")[1]  # description front matter
+    review = DEV / "ui-review.md"
+    assert review.exists()
+    assert len(review.read_text().splitlines()) <= 120
