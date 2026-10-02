@@ -91,6 +91,7 @@ any added or changed hook entry, compared entry by entry), `new-settings-json`, 
 `new-install-step`, `new-network-access` (scripts and JSON), `license-changed`, `size-jump` (a read
 file more than doubled). Otherwise "new" means more matches in that file than before. Findings are
 input for the review against overrides and invariants, not a verdict — except `missing-read-path`,
-`new-hook`, `new-settings-json`, `new-pipe-to-shell`, `new-install-step` and `license-changed`: these
+`new-hook`, `new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `license-changed` and
+`scan-incomplete` (a new or changed script/JSON file too large to scan; only `.git` is skipped): these
 always hold the update for the user's decision, whatever the review says (`--hold-kinds`).
 `--list-sources` prints `id<TAB>kind<TAB>location` per row, so nothing else parses this table.

