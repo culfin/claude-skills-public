@@ -1,8 +1,7 @@
 # `/dev ui [scope]` — Analyse a UI and rework it
 
-A standalone mode, like `/dev check`: it looks at one part of the running product, writes the
-findings to `UI-REVIEW.md` in the project root, and changes code only for what the user approves.
-Screens follow `companion.md` (UI only; a message ends with the URL only when there is a new screen).
+Standalone mode like `/dev check`: reviews one part of the running product, writes `UI-REVIEW.md`
+(project root), changes code only after approval. Screens per `companion.md` (URL only with a new screen).
 
 ## Precondition
 
@@ -14,24 +13,27 @@ Screens follow `companion.md` (UI only; a message ends with the URL only when th
 
 ## 1. Scope
 
-- **Argument** (`/dev ui /settings`, `/dev ui src/components/Checkout`, `/dev ui OrderTable`): a
-  route, a component name or a folder. Resolve it to `$UI_SCOPE` — the UI files that render it
-  plus the stylesheets and components they import — and to the views to screenshot.
-- **No argument:** `AskUserQuestion` with up to four real candidates from the project (main routes
-  or screens, the most recently changed UI folder first, marked "(Recommended)"). Never review the
-  whole app silently.
+- **Argument** (`/dev ui /settings`, `/dev ui src/components/Checkout`): a route, component or
+  folder. Resolve it to `$UI_SCOPE` — the UI files that render it plus imported stylesheets and
+  components — and to the views to screenshot.
+- **No argument:** `AskUserQuestion` with up to four real candidates (most recently changed UI area
+  first, "(Recommended)"). Never review the whole app silently.
 - **Kind:** `landing` for a marketing page (or `@type: landing`), else `ui`; platform from `$TECH_STACKS`.
-- `$UI_SCOPE` is fixed for the run, like `$CHECK_SCOPE` in `dev-check.md`. No UI files → say so
-  and ask for another scope; no report.
+- `$UI_SCOPE` is fixed for the run (like `$CHECK_SCOPE`). No UI files → ask for another scope; no report.
 
 ## 2. Screenshots of the running app
 
-Start the app as the project does and capture every view in scope. **Web:** Playwright at 1440×900
-and 390×844, light, and dark via `prefers-color-scheme` if supported. **Native:** simulator shots.
+Capture every view in scope. **Web:** prefer build + preview; on a dev
+server hide its overlays first (Astro toolbar, Next.js indicator, Vite error overlay) — they are not
+the product. Read the port from the server's own start log (the default port may belong to another
+project) and check page title and URL before capturing. Playwright at 1440×900 and 390×844, light,
+and dark via `prefers-color-scheme` if supported. **Native:** simulator shots. **Sub-states:** with a
+forms or states row in scope (step 3), trigger error, success, empty and loading with throwaway
+input (never against production) and capture them — else the finding's evidence says "judged from code, not captured".
 
-Save into `screen_dir` as `ui-<view>-<viewport>-<theme>.png` — the "before" set. **Show screen**:
-"Real screen" (markers come in step 4). App not startable → say why; screenshot-based analyses
-report `skipped: app not running`, code-based ones still run.
+Save into `screen_dir` as `ui-<view>[-<state>]-<viewport>-<theme>.png` — the "before" set. Capture
+all views first, then **Show screen** once: "Real screen" (markers come in step 4). App not
+startable → say why; screenshot-based analyses report `skipped: app not running`, the rest still run.
 
 ## 3. Analyses — parallel read-only subagents
 
@@ -45,13 +47,12 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 | empty/loading/error views | "4a ui: error, empty, loading states" | density subagent |
 | visible copy | "4a ui/landing: copy in drafts" | density subagent |
 | web UI files | "5c web UI changed" (design detector, `run`) | design-detector subagent |
-| animation (motion sweep probes hit) | "5c motion changed" | motion subagent |
+| animation (unsure → run `motion.md`'s sweep probes to decide) | "5c motion changed" | motion subagent |
 | kind `landing` | "4a landing" (taste, `subagent`) | taste subagent |
 
 Dispatch per `analyzers/CONTRACT.md`, **mode `full` limited to `$UI_SCOPE`** (no diff, not the
-whole codebase), requirement "the view
-serves its primary task for its primary user", `$TECH_STACKS`; model explicitly per
-`models.md` (cheap tier; taste: standard tier):
+whole codebase), requirement "the view serves its primary task for its primary user",
+`$TECH_STACKS`; model explicitly per `models.md` (cheap tier; taste: standard tier):
 
 - **accessibility** — `analyzers/accessibility.md`, plus the platform file named above.
 - **design-detector** — `analyzers/design-detector.md` (web only; native: `skipped: not web`).
@@ -59,22 +60,20 @@ serves its primary task for its primary user", `$TECH_STACKS`; model explicitly 
 - **density** — `design/density-critique.md` applied to each screenshot, plus the rows above.
 - **taste** (kind `landing` only) — reads the taste file itself and returns findings as notes.
 
-Wait for all (15 minutes, retry once, as in gate step 5c). A missing source under `$DEV_DESIGN_DIR`,
-an unbuilt detector or a missing screenshot → that analysis returns `skipped: <reason>`, recorded
-as such in `UI-REVIEW.md` — never as "no findings".
+Wait for all (15 minutes, retry once, as in gate step 5c). Missing source under `$DEV_DESIGN_DIR`,
+unbuilt detector or missing screenshot → `skipped: <reason>` in `UI-REVIEW.md`, never "no findings".
 
 ## 4. Findings, `UI-REVIEW.md`, decision
 
-Merge and deduplicate (same element, same problem = one finding). Severity:
+Merge and deduplicate (same element, same problem = one finding). Analyzers report critical/note
+(`CONTRACT.md`); map them once, here — guideline-checklist findings follow the same rule:
 
-- **critical** — a user cannot complete the view's task, content is lost or unreadable, or a
-  WCAG 2.2 AA violation (e.g. target below 24×24 CSS px, contrast below 4.5:1).
-- **major** — the task works but users stumble on the main path: hierarchy, density, missing
-  states, broken mobile or dark rendering.
-- **minor** — polish: spacing, consistency, copy, motion detail, targets below 44×44 on touch.
+- **critical** — analyzer critical: the task cannot be completed, content is lost or unreadable.
+- **major** — a note that blocks or misleads a user on a main task, or breaks a hard number
+  (contrast minimum, target size minimum 24×24 CSS px).
+- **minor** — every other note: spacing, consistency, copy, motion detail, targets < 44×44 on touch.
 
-Sort by benefit: severity first, then how many users and views it touches, then lowest effort.
-Write (or update) `UI-REVIEW.md` in the project root:
+Sort by severity, then reach (users, views), then lowest effort. Write or update `UI-REVIEW.md`:
 
 ```markdown
 # UI review — <scope> — YYYY-MM-DD
@@ -88,12 +87,13 @@ Kind: ui | landing · Platform: web · Screenshots: desktop/mobile × light/dark
 | ID | Severity | Where | Finding | Evidence | Acceptance criterion | Status |
 |---|---|---|---|---|---|---|
 | UI-1 | critical | src/Cart.tsx:42 | Remove button is 16×16 px | screenshot cart-mobile-light, marker 1; `className="h-4 w-4"` | Target ≥ 24×24 CSS px at 390 px width | open |
+
+Outside scope: <noticed outside `$UI_SCOPE`, one line each — listed, not offered for rework>
 ```
 
 IDs continue from the existing file, never renumbered; earlier open findings that no longer
-reproduce become `gone`. No evidence (file:line, screenshot + marker, detector rule) or no
-checkable acceptance criterion → not a finding. Then **Show screen**: "Real screen", markers
-numbered by finding ID; the list stays in the terminal.
+reproduce become `gone`. No evidence or no checkable acceptance criterion → not a finding. Then
+**Show screen**: "Real screen", markers numbered by finding ID; the list stays in the terminal.
 
 **Larger interventions** (layout, navigation, several components): 2–3 variants per INDEX row "4a
 ui: show variants" as building block "UI decision"; source missing → say `skipped: prototype source
@@ -110,11 +110,10 @@ per finding: `fixed` or `not fixed: <reason>`.
 
 ## 6. Verify
 
-1. Retake the same screenshots (same views, viewports, themes) and check each acceptance criterion
-   against them; a criterion that does not hold sets the status back to `open`.
+1. Retake the same screenshots and check each acceptance criterion against them; one that does not
+   hold goes back to `open`.
 2. **Show screen**: building block "Before/After" per changed view, from the two screenshot sets.
 3. `/dev check` (`dev-check.md`) over the rework's files, `UI-REVIEW.md` and any pre-existing changes
    kept from the start (name those files). Its commit closes the run; commits not authorized → same
    steps without committing, name the open ones. If it fails, stop as `dev-check.md` says.
-
-End in the terminal: findings fixed / open, skipped analyses, and the gate result.
+4. End in the terminal: findings fixed / open, skipped analyses, and the gate result.

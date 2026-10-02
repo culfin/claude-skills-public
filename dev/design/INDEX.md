@@ -28,4 +28,7 @@ delegated rather than read inline; `run` means a script, not a document.
 | 5c web UI changed | `analyzers/design-detector.md` | run |
 | pre-release web | `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` | subagent |
 
+"4a landing" (taste, about 1,200 lines): the subagent returns only the rules relevant to the page
+(≤ 40 lines). Read inline only when no subagent is available — then only the sections needed.
+
 See `NOTICE.md` for attribution of the platform guideline files.
