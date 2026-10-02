@@ -56,7 +56,8 @@ A `Makefile`, `justfile` or CI workflow that defines these steps wins over the t
 
 | `@type:` | Special behavior in the Quality Gate |
 |----------|------------------------------|
-| `ui` | Tech-Stack Review shadcn/next-best-practices conditionally active |
+| `ui` | Tech-Stack Review shadcn/next-best-practices conditionally active. Accessibility review now triggers on changed UI files for any phase type (see `tech-stack-triggers.md`), not only here. |
+| `landing` | taste pre-flight checks (`$DEV_DESIGN_DIR/taste/skills/taste-skill/SKILL.md`) run as notes, not blockers; Accessibility review always active |
 | `backend` | Security review always active (even without auth files); pg:design-postgres-tables conditionally active |
 | `auth` | Security review always active (full scope, not phase scope) |
 | `security` | Security review always active (full scope); Spec checker: acceptance criteria without a test are always critical |
@@ -109,6 +110,7 @@ The checklist is **dynamically generated** at gate entry based on `$TECH_STACKS`
 - [ ] Tech-Stack Review: next-best-practices   <!-- next.config.* changed -->
 - [ ] Tech-Stack Review: shadcn                <!-- components/** with shadcn imports -->
 - [ ] Tech-Stack Review: pg:design-postgres-tables  <!-- migrations/SQL changed -->
+- [ ] Accessibility review  <!-- UI files changed -->
 - [ ] Security review                           <!-- auth/api/migration changed OR @type: backend/auth/security/data -->
 - [ ] Similar-bugs scan                       <!-- dropped with @gate: fast -->
 

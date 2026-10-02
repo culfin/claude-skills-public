@@ -22,11 +22,22 @@ Scope: the UI files changed in the phase and the components they render.
 6. **Zoom and motion.** Layout works at 200 % zoom and narrow widths without horizontal scrolling
    of text; animations respect `prefers-reduced-motion`.
 7. **Media and images.** Meaningful images have alt text; decorative ones are marked as such.
+8. **Target size.** Interactive targets are at least 24×24 CSS px (WCAG 2.2 SC 2.5.8, AA) —
+   anything smaller is a finding. On touch devices, a target between 24×24 and 44×44 is a note,
+   not a finding; the 44×44 figure is a recommendation, not the AA line.
+
+## Platform checklists
+
+Read only the `## Checklist` section of the matching `design/platform-web.md`,
+`design/platform-apple.md` or `design/platform-android.md` — not the rest of the file. If the
+project targets several platforms, read only the checklists of the platforms the changed files
+belong to.
 
 ## Platform notes
 
 - **SwiftUI:** `accessibilityLabel`, `accessibilityHint`, grouping with `accessibilityElement`;
-  Dynamic Type; hit areas of at least 44×44 pt.
+  Dynamic Type. Apple's own guidance recommends hit areas of at least 44×44 pt — keep this as a
+  platform recommendation (note), not the AA finding threshold, which is 24×24.
 - **Web frameworks:** component libraries often get roles right and names wrong — check the
   rendered output, not the component call.
 

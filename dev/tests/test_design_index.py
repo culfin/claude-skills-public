@@ -28,3 +28,15 @@ def test_no_local_paths():
     for f in DESIGN.glob("*.md"):
         t = f.read_text()
         assert "/Users/" not in t and not re.search(r"\b\d{1,3}(\.\d{1,3}){3}\b", t), f.name
+
+def test_accessibility_trigger_by_files():
+    t = (DEV / "tech-stack-triggers.md").read_text()
+    row = [l for l in t.splitlines() if "Accessibility review" in l and l.startswith("|")][0]
+    assert "@type: ui" not in row.split("|")[2] or "UI files" in row
+
+def test_checklist_has_accessibility():
+    assert "- [ ] Accessibility review" in (DEV / "gate.md").read_text()
+
+def test_target_size_rule():
+    a = (DEV / "analyzers/accessibility.md").read_text()
+    assert "24" in a and "44" in a and "2.5.8" in a

@@ -19,7 +19,7 @@ is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs at every session s
 |-------------------|-----------|-------|-------|
 | `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | `next-best-practices` | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
-| `src/components/**`, `src/app/**` UI files, SwiftUI views | `@type: ui` | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support |
+| `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed (any phase type) | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
 | `src/db/migrations/**`, SQL files, schema changes | `postgres` in `$TECH_STACKS` | `pg:design-postgres-tables` | Check indexing, constraints, type choices |
 | `**/*.swift` | `ios` in `$TECH_STACKS` | `swiftui-pro` | Check modern APIs, performance patterns |
 | `**/*.cs`, `**/*.xaml` | `winui` in `$TECH_STACKS` | `winui-pro` | Check MVVM, threading, WinUI patterns |
