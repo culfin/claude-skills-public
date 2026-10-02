@@ -49,7 +49,7 @@ summary, gate and review dashboards, architecture comparisons) is shown **in the
 
 ```bash
 # Start server (automatically, without asking) — via the /dev wrapper.
-# The wrapper resolves the newest installed superpowers companion and sets
+# The wrapper resolves the ACTIVE superpowers install (superpowers.md) and sets
 # the display host itself: if DEV_COMPANION_URL_HOST is set (e.g. a Tailscale name),
 # the server listens on all interfaces and reports that host, otherwise localhost.
 $DEV_DIR/scripts/companion.sh --project-dir <project-root>
@@ -103,7 +103,7 @@ exactly what is meant — automatically, without asking:
 2. **Write the HTML screen** — content fragment with the `Write` tool into `screen_dir`.
 3. **Share the `url` verbatim** — exactly as returned, including `?key=<TOKEN>`, on its own line at
    the end of the message; again in every later message that refers to the screen (see "The URL
-   Travels With Every Mention"). **Never reconstruct it, never substitute a different host.**
+   Travels With Every New Screen"). **Never reconstruct it, never substitute a different host.**
 
 The screen is the confirmation surface: from it the user immediately sees whether the state is right.
 That is why it always shows the state **after** the change, never the one before.

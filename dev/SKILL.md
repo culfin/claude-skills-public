@@ -56,14 +56,14 @@ the current step needs.
 | File | Holds | Read when |
 |---|---|---|
 | `gate.md` | Quality gate 5a–5k, checklist, phase types, `@gate:`, project commands per stack, subagent models | Gate entry, resuming `[!]`, `/dev check` |
-| `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | The router points there |
+| `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | The router points there; Milestone End (step 7); build/tests fail without obvious cause (Debug Flow) |
 | `state.md` | What STATE.md holds and when each part changes | Before writing STATE.md |
 | `companion.md` | Visual Companion: when browser vs terminal, mandatory triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
-| `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per session, before the first tool call of the workflow |
+| `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per explicit `/dev` run, before its first tool call (not for the automatic one-line status) |
 | `superpowers.md` | Which superpowers install is active, static check, update path (prepares only) | Session start before the first phase step; before any plugin update |
 | `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
-| `tech-stack-triggers.md` | Which tech and security reviews fire when | Step 4a and gate step 5c |
+| `tech-stack-triggers.md` | Which tech, design and security sources fire when | Steps 4a, 4c and gate step 5c |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 
@@ -93,11 +93,11 @@ Store detected stacks as `$TECH_STACKS` for the session (e.g., `[nextjs, shadcn,
 
 **→ Read `tech-stack-triggers.md` in this skill directory for both trigger matrices.**
 
-Summary: Tech skills kick in at two points — during **brainstorming (4a)**, depending on `@type:` and
-`$TECH_STACKS`, and in **gate step 5c** as read-only reviews, triggered by the files the phase
-actually changed. Two matrices: *Tech-Stack Review* (nextjs, shadcn, Accessibility review,
-postgres, swift, winui, rust, tauri, svelte) and *Security Review* (auth/login/session/middleware,
-API routes/actions, DB schema, as well as `@type: auth`/`backend`). Critical findings → fix **before 5d**.
+Summary: Tech skills and design sources kick in at three points — during **brainstorming (4a)**
+and **execution (4c)**, depending on `@type:`, the task and `$TECH_STACKS`, and in **gate step 5c**
+as read-only reviews, triggered by the files the phase actually changed (*Tech-Stack Review* and
+*Security Review* matrices; the list of skills and analyzers lives only there). Critical findings →
+fix **before 5d**.
 
 ---
 
@@ -291,7 +291,7 @@ In both cases: State context: phase name, type, milestone goal, any pre-skill ou
 - **not** run `finishing-a-development-branch` (no merge/PR): `/dev` owns completion via its Quality Gate (Step 5) → Gate commit → any later sync/merge step;
 - **not** create a new/nested worktree — work in the **current** branch/worktree (sessions that already run in their own worktree would otherwise get project-local `.worktrees/` created by 6.x);
 - **not** run a final whole-branch review — `/dev`'s gate (Change review, Bug hunt, Security review) covers that.
-Pass this boundary explicitly when invoking SDD.
+Pass this boundary explicitly when invoking SDD, plus the design rows for UI tasks (`tech-stack-triggers.md`, "During Execution").
 
 **4d. Verification:** Invoke `verification-before-completion`.
 
@@ -328,7 +328,7 @@ Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis
 4. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
 5. **Update STATE.md**: Current Position, Progress table, Last activity
 6. Commit: `roadmap: complete Phase N — <name>`
-7. All phases done in milestone? → Milestone End
+7. All phases done in milestone? → Milestone End (`commands.md`)
 
 ### 8. Next Action
 

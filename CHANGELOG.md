@@ -36,6 +36,14 @@ UI surface without going through a full roadmap phase. Across all of this, a mis
 source (no local checkout, no built engine, no network) is always reported as "skipped" in the
 output — never a silent pass.
 
+An audit of the whole skill against its own load-on-demand rule found content that no step ever
+reached: the `4c` design rows of the index (animation, web on a phone, Apple design) and the
+automatic Debug Flow and Milestone End, which lived in `commands.md` while the file table said it
+was read only from the router. Each now has a pointer from the step that needs it. Two texts had
+drifted from their source — the companion wrapper was described as picking the newest install
+(it picks the active one), and the trigger summary in `SKILL.md` listed reviews the matrix no
+longer matched — and now defer to it. A test keeps every `dev/*.md` in the file table.
+
 ## v2.8.3 — 2026-10-01
 
 **dev** — gate evidence works in monorepos. `check-evidence.py` excluded only a root-level

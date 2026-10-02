@@ -57,7 +57,7 @@ A `Makefile`, `justfile` or CI workflow that defines these steps wins over the t
 | `@type:` | Special behavior in the Quality Gate |
 |----------|------------------------------|
 | `ui` | Tech-Stack Review shadcn/next-best-practices conditionally active. Accessibility review now triggers on changed UI files for any phase type (see `tech-stack-triggers.md`), not only here. |
-| `landing` | taste pre-flight checks (`$DEV_DESIGN_DIR/taste/skills/taste-skill/SKILL.md`) run as notes, not blockers; Accessibility review always active |
+| `landing` | taste pre-flight checks (`$DEV_DESIGN_DIR/taste/skills/taste-skill/SKILL.md`, via subagent per `design/INDEX.md` row "4a landing") run as notes, not blockers; Accessibility review always active |
 | `backend` | Security review always active (even without auth files); pg:design-postgres-tables conditionally active |
 | `auth` | Security review always active (full scope, not phase scope) |
 | `security` | Security review always active (full scope); Spec checker: acceptance criteria without a test are always critical |

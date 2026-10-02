@@ -1,17 +1,21 @@
 # Tech stack and security triggers
 
-Moved out of `SKILL.md` because these matrices are needed in only two places:
-during brainstorming (4a) and on gate entry (5c). The **detection** itself (which stack
-is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs at every session start.
+Moved out of `SKILL.md` because these matrices are needed in only three places:
+during brainstorming (4a), during execution (4c) and on gate entry (5c). The **detection** itself (which stack
+is present → `$TECH_STACKS`) remains in `SKILL.md`; it runs once per explicit `/dev` run, never
+on the automatic one-line status.
 
 ## Where Tech Skills Auto-Trigger
 
 **During Brainstorming (step 4a):**
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
 - If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
-- If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides
+- If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include `next-best-practices` context (RSC boundaries, file conventions, data patterns)
+
+**During Execution (step 4c):**
+- UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
 
 **During Quality Gate — Parallel Analysis Block (step 5c):**
 
