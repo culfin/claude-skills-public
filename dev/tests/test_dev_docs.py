@@ -103,6 +103,10 @@ class DevDocsTests(unittest.TestCase):
                     self.assertNotIn(name, body, str(p.relative_to(DEV)))
 
 
+    def test_milestone_end_pending_marker(self):
+        for f in ("SKILL.md", "commands.md", "state.md"):
+            self.assertIn("Milestone End pending:", text(f), f)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

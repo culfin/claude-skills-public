@@ -17,6 +17,7 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 | `/dev check` completed | **Append Check summary** under `## Context` in STATE.md (permanent — never removed) |
 | Phase completes (`[!]` → `[x]`) | Current Position, Progress table, Last activity, **remove Quality Gate Checklist section**, **replace the Handoff block** (below) |
 | Phase skipped (`[ ]` → `[—]`) | Current Position, Progress table, Last activity |
+| Last phase of a milestone `[x]` | Line `Milestone End pending: <milestone name>`; Milestone End removes it last (`commands.md`) |
 | Milestone completes | Progress table, Next milestone in Current Position |
 | `/dev ui` approval while a phase is `[~]`/`[!]` | **Create or extend `## UI review — approved findings`** (below) |
 | Key decision made | Phase-specific → `Decisions:` under the phase; otherwise Constraints or a Decisions section |

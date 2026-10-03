@@ -49,9 +49,9 @@ All phases `[x]` or `[—]`:
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
-5. **Update STATE.md:** Progress row `Complete` (marks Milestone End as done), Current Position to next milestone.
+5. **Update STATE.md** (Progress table, Current Position to next milestone).
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
-7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
+7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
 
 ---
 
@@ -61,8 +61,8 @@ All phases `[x]` or `[—]`:
 
 1. **Update STATE.md** Session Continuity:
    - `Last session`: today's date
-   - `Stopped at`: current phase name + what was in progress (e.g., "Phase 6 Dashboard — brainstorming complete, plan pending")
-   - `Resume`: specific next action (e.g., "`/dev next` to continue planning Phase 6")
+   - `Stopped at`: current phase name + what was in progress
+   - `Resume`: specific next action
 2. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`

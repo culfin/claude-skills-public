@@ -102,7 +102,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning (`gate.md`, "Tier").
-6. **Find current position:** a milestone with all phases `[x]`/`[—]` whose STATE.md Progress row is not `Complete` → Milestone End first (its step 5 sets `Complete`). Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
+6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
@@ -279,7 +279,7 @@ A check already on the Gate Checklist is not run again, even if listed in `@skil
 3. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
 4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`); delete the phase's SDD workspace (`execution.md`)
 5. Commit: `roadmap: complete Phase N — <name>`
-6. All phases done in milestone? → Milestone End (`commands.md`); it waits for every open CI line
+6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 
 ### 8. Next Action
 
