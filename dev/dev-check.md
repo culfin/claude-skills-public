@@ -1,9 +1,8 @@
 # `/dev check` — Standalone Quality Gate
 
 This procedure is needed exclusively by `/dev check` and has nothing to do with the phase
-lifecycle. It runs **the same** steps 5a–5k as the
-phase gate, only with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions
-themselves are in `gate.md`.
+lifecycle. It runs **the same** gate steps (A–D, tier, evidence, commit, CI) as the phase gate, only
+with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions themselves are in `gate.md`.
 
 ## Procedure
 
@@ -22,40 +21,36 @@ git diff --name-only --cached
 git ls-files --others --exclude-standard   # new, untracked files
 ```
 
-Collect all three outputs, deduplicate, and store as `$CHECK_SCOPE`. This list is immutable for the entire run — later auto-fixes by `/simplify` do not change it.
+Collect all three outputs, deduplicate, and store as `$CHECK_SCOPE`. This list is immutable for the entire run — later fixes do not change it.
 
 If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last commit. Continue anyway?" (Yes / No).
 - **Yes**: all scope-dependent steps run in full-codebase mode.
 - **No**: stop, no action.
 
-**2. Run full Quality Gate** — same steps 5a–5k as the phase gate, with `$CHECK_SCOPE` replacing "phase-changed files":
+**2. Run the Quality Gate** — the steps of `gate.md` with `$CHECK_SCOPE` replacing "phase-changed files":
 
-| Step | Tool | Notes |
+| Step | What | Notes |
 |------|------|-------|
-| 5a | `/simplify` | Scope: `$CHECK_SCOPE` |
-| 5b | Change review | Scope: `$CHECK_SCOPE` |
-| 5c-i | Bug hunt | Scope: `$CHECK_SCOPE` |
-| 5c-ii | Performance review | Scope: `$CHECK_SCOPE` |
-| 5c-iii | Tech-Stack Review | Conditional — same trigger matrix as gate, evaluated against `$CHECK_SCOPE` |
-| 5c-iv | Security review | Conditional — same trigger matrix as gate, evaluated against `$CHECK_SCOPE` |
-| 5c-v | Spec checker | Only if the user names a spec; otherwise it is skipped with the note "no spec" |
-| 5d | Similar-bugs scan | After fixes from 5c |
-| 5e | Typecheck + lint + tests | Full suite |
-| 5f | Production Build | Full build |
-| 5g | E2E Tests | Full suite |
-| 5h | — | Dropped; test gaps are reported by 5c-v |
-| 5i | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
-| before 5j | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be the same, current value before the check commit |
-| 5j | Check-Commit | `chore: dev check [gate-pass]` |
-| 5k | CI-Status-Check | Conditional — if `.github/workflows/` exists or `@gate: ci-wait` set on any phase. When no ROADMAP.md: only `.github/workflows/` triggers this step. |
+| Tier | `gate-tier.py --base HEAD` | Decides small/large for `$CHECK_SCOPE` (uncommitted and untracked changes); full-codebase mode is always large |
+| A | Diff review | `analyzers/diff-review.md`, scope `$CHECK_SCOPE` |
+| A | Spec checker | Only if the user names a spec; otherwise skipped with the note "no spec" |
+| A | Security, Tech-Stack, Performance, design reviews | Large tier only — same trigger matrix as the gate, evaluated against `$CHECK_SCOPE` |
+| B | Fix + Fix review | Bundled fix of all critical findings, Fix review on the fix diff |
+| C | Similar-bugs scan | Only if Step B changed code |
+| D | Typecheck + lint + tests, Production Build, E2E Tests | Full suite; tests and build in parallel |
+| — | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
+| — | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be current before the check commit (review results may keep the wave's state when a current Fix review covers the change since) |
+| — | Check-Commit | `chore: dev check [gate-pass]` |
+| — | CI | If `.github/workflows/` exists — `ci-watch.sh` on the check commit as in `gate.md`, "CI in background". `/dev check` has no next phase to go on with, so it waits for the final status and reports it in the post-check summary; red, `timeout` or `none` → repair as in the gate |
 
-Steps 5c run as parallel Agent subagents (15-minute timeout). Any step failure stops the run — no Check-Commit is created.
+Step A runs as one parallel wave of Agent subagents (15-minute timeout). Any step failure stops the run — no Check-Commit is created.
 
 **3. Check summary format** (STATE.md, inside `## Context`, same area as the `### Gate summary` entries):
 
 ```markdown
 ### Check summary — YYYY-MM-DD — N files
-- Found: <N critical + M notices> (simplify: X fixes, Bug hunt: Y findings, security: W findings)
+- Tier: small|large — <first reason>
+- Found: <N critical + M notices> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green verified | no gaps>
 - Skipped checks: <none | check — reason>
@@ -63,7 +58,7 @@ Steps 5c run as parallel Agent subagents (15-minute timeout). Any step failure s
 
 Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. Same-day duplicates get ` #2`, ` #3` suffix. Check summaries are permanent — never removed.
 
-**4. Post-check summary** — after step 5k, show a summary of what ran:
+**4. Post-check summary** — after the check commit, show a summary of what ran:
 
 - **≥ 3 findings across all checks:** a findings table in the terminal — grouped by category (critical / notice), tools that ran, what was fixed. No companion screen: findings are not user interface (`companion.md`, ground rule). Runs regardless of whether ROADMAP.md exists.
 - **< 3 findings:** Terminal-only — do not echo STATE.md content again. Show two-line confirmation:

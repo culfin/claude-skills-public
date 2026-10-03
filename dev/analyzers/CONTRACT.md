@@ -1,8 +1,9 @@
 # Analyzer contract
 
 Every file in `analyzers/` is an instruction for **one read-only subagent**. The gate (`gate.md`)
-dispatches it; `/dev check`, milestone end and the pre-release review use the same files with a
-wider scope. No analyzer is a slash command, and none needs anything installed — except the design
+dispatches it in its review wave (Step A) and again, on the fix diff only, as Fix review (Step B);
+`/dev check`, milestone end and the pre-release review use the same files with a wider scope. At
+phase scope `diff-review.md` does the whole-diff pass; `bugs.md` serves the full-scope scans. No analyzer is a slash command, and none needs anything installed — except the design
 detector and motion, which read optional sources under `$DEV_DESIGN_DIR` and report
 `skipped: <reason>` when those are missing.
 
@@ -11,12 +12,13 @@ detector and motion, which read optional sources under `$DEV_DESIGN_DIR` and rep
 Give the subagent, in this order:
 
 1. **This contract** and **the analyzer file** — both verbatim, read from disk.
-2. **Mode:** `phase` (the changed files and their direct callers/callees) or `full` (the whole
-   codebase, or the whole milestone's changes).
+2. **Mode:** `phase` (the changed files and their direct callers/callees), `fix` (only the fix diff
+   of gate Step B — judge the fix, not the phase again) or `full` (the whole codebase, or the whole
+   milestone's changes).
 3. **Scope:** the file list — including untracked files
-   (`git ls-files --others --exclude-standard`) — and the diff for `phase` mode.
-4. **The requirement** the change is supposed to meet: the spec from `@spec:`, the approved chat
-   draft from STATE.md, or the phase description.
+   (`git ls-files --others --exclude-standard`) — and the diff as a file for `phase` and `fix` mode.
+4. **The requirement** the change is supposed to meet: the spec from `@spec:`, the acceptance
+   criteria in STATE.md, or the phase description.
 5. **`$TECH_STACKS`**, so the analyzer can pick its language notes.
 
 **Do not** hand over why you believe the change is correct. The analyzer gets the artifact and the
@@ -56,7 +58,7 @@ Report the sweep in the `Checked:` line: probes run, candidates found, candidate
 
 - **critical** — wrong result, data loss or corruption, a security hole, a crash or hang on a
   reachable path, a leak or cost that grows with use, or an acceptance criterion that is not met.
-  The gate fixes these before it continues.
+  The gate fixes these in its bundled fix (Step B) before it continues.
 - **note** — real but bounded: an edge case with a harmless outcome, a missing guard on an
   unlikely path, a clearer alternative. The gate records these in STATE.md.
 

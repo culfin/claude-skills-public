@@ -1,5 +1,9 @@
 # E2E / Integration Tests — Detail
 
+**When it runs (gate Step D):** small tier only if the phase changed UI files or a user flow; large
+tier wherever the phase touches flows; never for `@type: docs`. No flow touched → the `E2E Tests`
+item is left out of the checklist, not ticked.
+
 **What this step must prove:** the user flows this phase touched work end to end on the candidate —
 through the real UI or the real public interface, with the assertions that matter to a user. The
 tool is secondary; what counts is which flows and assertions actually ran.
@@ -37,7 +41,7 @@ regressions. For every flow from step 1: which test covered it, and its result.
 
 **Step 5: Missing coverage.** A changed flow without a test gets one now — written from the
 requirement, seen failing once against a deliberately broken implementation, then green (as the
-spec checker 5c-v requires).
+Spec checker requires).
 
 **No infrastructure for the needed level** (no browser runner, no UI test target): that is not a
 pass and not a skip. Either set up the smallest runner that can cover the flows (with the user's

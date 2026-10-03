@@ -60,7 +60,7 @@ whole codebase), requirement "the view serves its primary task for its primary u
 - **density** — `design/density-critique.md` applied to each screenshot, plus the rows above.
 - **taste** (kind `landing` only) — reads the taste file itself and returns findings as notes.
 
-Wait for all (15 minutes, retry once, as in gate step 5c). Missing source under `$DEV_DESIGN_DIR`,
+Wait for all (15 minutes, retry once, as in the gate's review wave). Missing source under `$DEV_DESIGN_DIR`,
 unbuilt detector, no screenshot → `skipped: <reason>` in `UI-REVIEW.md` and step 6, never "no findings".
 
 ## 4. Findings, `UI-REVIEW.md`, decision

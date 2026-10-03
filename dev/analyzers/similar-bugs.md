@@ -1,10 +1,11 @@
-# Similar bugs (gate step 5d)
+# Similar bugs (gate Step C)
 
 **Question:** The gate just fixed some defects. Where else in the codebase does the same mistake
 exist?
 
 Input, in addition to the contract: the list of fixes made in this gate, each with the file, the
-defect and the fix. Without fixes there is nothing to do — return "no findings".
+defect and the fix — for a `refactor` phase also the code it moved (old and new place). Without
+either there is nothing to do — return "no findings".
 
 ## Procedure
 

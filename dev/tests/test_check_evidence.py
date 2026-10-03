@@ -46,12 +46,12 @@ class EvidenceTests(unittest.TestCase):
 
     def test_all_checked_with_current_id_passes(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
+        self.state([f"- [x] Diff review — 0 critical @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
         self.assertEqual(self.run_check(), [])
 
     def test_change_after_check_makes_it_stale(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}"])
+        self.state([f"- [x] Diff review — 0 critical @{i}"])
         (self.root / "a.txt").write_text("three\n")
         problems = self.run_check()
         self.assertEqual(len(problems), 1)
@@ -77,7 +77,7 @@ class EvidenceTests(unittest.TestCase):
 
     def test_writing_the_checklist_does_not_change_the_state(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}"])
+        self.state([f"- [x] Diff review — 0 critical @{i}"])
         (self.root / "ROADMAP.md").write_text("- [x] Phase 3\n")
         self.assertEqual(i, self.sid())
 
@@ -88,7 +88,7 @@ class EvidenceTests(unittest.TestCase):
         git(self.root, "add", "-A")
         git(self.root, "commit", "-qm", "add app state")
         i = self.sid()
-        (self.root / "apps" / "web" / "STATE.md").write_text("# State\n\n- [x] Bug hunt\n")
+        (self.root / "apps" / "web" / "STATE.md").write_text("# State\n\n- [x] Diff review\n")
         (self.root / "apps" / "web" / "ROADMAP.md").write_text("- [!] Phase 3\n")
         self.assertEqual(i, self.sid())
 
@@ -98,31 +98,31 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(before, git(self.root, "status", "--porcelain"))
 
     def test_missing_id_is_reported(self):
-        self.state(["- [x] Bug hunt — 0 critical"])
+        self.state(["- [x] Diff review — 0 critical"])
         self.assertIn("no @state", self.run_check()[0])
 
     def test_missing_evidence_is_reported(self):
-        self.state([f"- [x] Bug hunt @{self.sid()}"])
+        self.state([f"- [x] Diff review @{self.sid()}"])
         self.assertIn("no evidence", self.run_check()[0])
 
     def test_open_item_blocks_completion(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}", "- [ ] E2E Tests"])
+        self.state([f"- [x] Diff review — 0 critical @{i}", "- [ ] E2E Tests"])
         self.assertIn("open", self.run_check()[0])
 
     def test_before_commit_allows_gate_commit_and_ci_open(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}", "- [ ] Gate commit", "- [ ] CI status check"])
+        self.state([f"- [x] Diff review — 0 critical @{i}", "- [ ] Gate commit", "- [ ] CI status check"])
         self.assertEqual(self.run_check(before_commit=True), [])
         self.assertEqual(len(self.run_check(before_commit=False)), 2)
 
     def test_items_outside_the_gate_section_are_ignored(self):
-        self.state([f"- [x] Bug hunt — ok @{self.sid()}"])
+        self.state([f"- [x] Diff review — ok @{self.sid()}"])
         self.assertEqual(self.run_check(), [])
 
     def test_skipped_optional_check_is_closed_and_reported_as_skipped(self):
         i = self.sid()
-        self.state([f"- [x] Bug hunt — 0 critical @{i}",
+        self.state([f"- [x] Diff review — 0 critical @{i}",
                     "- [x] Design detector — skipped: engine not built",
                     f"- [x] Motion review — skipped: animation standards not found @{i}",
                     "- [x] Tech-Stack Review: shadcn — skipped: skill not installed"])
@@ -153,7 +153,7 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("open", self.run_check()[0])
 
     def test_cli_prints_skipped_not_passed(self):
-        self.state([f"- [x] Bug hunt — 0 critical @{self.sid()}",
+        self.state([f"- [x] Diff review — 0 critical @{self.sid()}",
                     "- [x] Design detector — skipped: engine not built"])
         run = subprocess.run(["python3", str(HERE.parent / "scripts" / "check-evidence.py"), "check", "STATE.md"],
                              cwd=self.root, capture_output=True, text=True)

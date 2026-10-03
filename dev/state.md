@@ -17,8 +17,9 @@ STATE.md is the project's persistent state file. It tracks progress, requirement
 | Phase starts (`[ ]` → `[~]`) | Current Position, Last activity |
 | Phase enters gate (`[~]` → `[!]`) | Current Position, Last activity, **create Quality Gate Checklist section** |
 | Gate step completes | Check off item in Gate Checklist |
-| Gate summary written (5i) | **Append Gate summary** under `### Gate summary — Phase N` in STATE.md (permanent — never removed) |
-| `/dev check` completed (5i) | **Append Check summary** under `## Context` in STATE.md (permanent — never removed) |
+| Gate summary written | **Append Gate summary** under `### Gate summary — Phase N` in STATE.md (permanent — never removed) |
+| CI watcher started after the Gate commit | Add `- <sha> — Phase N <name>: pending` under `## CI in background`; replace `pending` with the status file's line whenever it is read (`gate.md`, "CI in background") |
+| `/dev check` completed | **Append Check summary** under `## Context` in STATE.md (permanent — never removed) |
 | Phase completes (`[!]` → `[x]`) | Current Position, Progress table, Last activity, **remove Quality Gate Checklist section** |
 | Phase skipped (`[ ]` → `[—]`) | Current Position, Progress table, Last activity |
 | Milestone completes | Progress table, Next milestone in Current Position |

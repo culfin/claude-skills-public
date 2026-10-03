@@ -372,7 +372,7 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 | All phases done in MS | Auto-trigger Milestone End. |
 | All milestones done | "Roadmap complete!" Offer add/review. |
 | `@skills` parse error | Warn, use defaults. |
-| `@gate:` conflicts with `@type:` or changed files, or unknown value | Warn and apply the override — rules in `gate.md`, "`@gate:` Annotation". |
+| `@gate:` conflicts with `@type:` or changed files, or unknown value | Warn and apply the override — rules in `gate.md`, "Tier". |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |

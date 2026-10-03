@@ -1,15 +1,22 @@
 # Subagent model choice
 
-Read before dispatching subagents (gate step 5c, Milestone End, Pre-Release Review, `/dev ui`).
+Read before dispatching any subagent (implementation, gate, Milestone End, Pre-Release Review, `/dev ui`).
 
-`/dev` dispatches many parallel Agent subagents. **Always specify a model explicitly when dispatching** — an omitted model inherits the most expensive session model (lesson from superpowers 6.x SDD). Choose the cheapest tier that can handle the task:
+`/dev` dispatches many subagents. **Always specify a model explicitly when dispatching** — an omitted model inherits the most expensive session model (lesson from superpowers 6.x SDD). Choose the cheapest tier that can handle the role:
 
 | Role | Tier |
-|-------|------|
-| Read-only analysis in Step 5c: Bug hunt, Performance review, Tech-Stack Review | **cheap tier** |
-| Design analyses in Step 5c and `/dev ui`: Accessibility review, Design detector, Motion review, density critique | **cheap tier** |
-| Security review (phase or full scope), Spec checker (5c-v) | **standard/capable tier** |
-| Taste subagent (4a landing digest, gate pre-flight, `/dev ui`), impeccable subagent (pre-release audit/polish checklists) | **standard tier** |
-| Milestone-end & pre-release full scans (Bug hunt full, Performance review full, Security review full, Dead-code scan full) | **capable tier** |
+|---|---|
+| Implementer | **cheap** when the plan carries the code (transcription), **standard** when the task needs judgement |
+| Task review (per task, during implementation) | **standard** |
+| Diff review (gate Step A — carries the former bug hunt) | **standard** |
+| Spec checker | **standard** |
+| Security review (phase or full scope) | **capable** |
+| Performance review, Tech-Stack Review | **cheap** |
+| Accessibility review, Design detector, Motion review, density critique | **cheap** |
+| Fix agent (gate Step B) | **standard**; **capable** from round 3 |
+| Fix review (gate Step B) | **standard** |
+| Similar-bugs scan (gate Step C) | **cheap** |
+| Taste subagent (4a landing digest, Taste pre-flight, `/dev ui`), impeccable subagent (pre-release audit/polish) | **standard** |
+| Milestone End and pre-release full scans (Bug hunt, Performance review, Security review, Dead-code scan) | **capable** |
 
-Only the **dispatch model choice** is affected — which checks run and their triggers remain unchanged.
+Only the model is decided here — which checks run, and when, is in `gate.md` and `tech-stack-triggers.md`.

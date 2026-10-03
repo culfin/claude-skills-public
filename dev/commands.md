@@ -191,6 +191,6 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 **→ Read `dev-check.md` in this skill directory for the full flow.**
 
 Summary: Precondition is **no active phase** (`[~]`/`[!]` → stop, point to `/dev next`).
-Snapshot of the changed files as an immutable `$CHECK_SCOPE`, then the same steps
-5a–5k as the phase gate against that scope, Check summary in STATE.md, check commit
+Snapshot of the changed files as an immutable `$CHECK_SCOPE`, then the same gate
+steps as the phase gate against that scope, Check summary in STATE.md, check commit
 `chore: dev check [gate-pass]`.

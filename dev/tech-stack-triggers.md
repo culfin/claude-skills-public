@@ -1,14 +1,14 @@
 # Tech stack and security triggers
 
 Moved out of `SKILL.md` because these matrices are needed in only three places:
-during brainstorming (4a), during execution (4c) and on gate entry (5c). The **detection** itself (which stack
+during brainstorming (4a), during execution (4c) and in the gate's review wave (Step A, tagged `5c` in the index files). The **detection** itself (which stack
 is present → `$TECH_STACKS`) is section 1 of `stack/INDEX.md`; it runs once per session at the first
 explicit `/dev` run, never on the automatic one-line status.
 
 **Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, consult section 2
 of `stack/INDEX.md` and load only the rows whose trigger matches: step 4a → as context before
 designing; step 4c → handed to the implementer with the task that meets the trigger; step 5c → as a
-read-only review of the changed files (one "Tech-Stack Review: <stack id>" item per id). `subagent`
+read-only review of the changed files in the large tier (one "Tech-Stack Review: <stack id>" item per id). `subagent`
 rows come back as findings or a ≤ 40-line digest. Current API facts → `stack/docs.md`, one row.
 The matrices below list what the index does not cover (skills, design, analyzers); Next.js keeps
 its own item and fallback ("Next.js" below) — its bundled-docs index row is the same source, not a second review; its `next` row is a 4c runtime check.
@@ -26,7 +26,8 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
 - Svelte tasks and `svelte` in `$TECH_STACKS` → the implementer uses `svelte:svelte-code-writer` for that task
 
-**During Quality Gate — Parallel Analysis Block (step 5c):**
+**During the Quality Gate — review wave (Step A, `5c`), large tier only:** in the small tier none
+of the reviews below runs (`gate.md`, "Tier"); `@type: landing` adds its design items in either tier.
 
 **Tech-Stack Review** — auto-triggered based on which files the phase actually changed:
 
@@ -57,8 +58,16 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 | `src/db/migrations/**`, SQL, ORM schema | DB schema changed | Security review (phase scope) |
 | Phase `@type: auth` or `@type: backend` | Phase type | Security review (phase scope) |
 
-**Analyzers:** every analysis above and in gate step 5c is carried out by a subagent with the
-matching file from `analyzers/` (contract in `analyzers/CONTRACT.md`) — bug hunt, security, performance,
+**Performance review — only on cause.** It runs only when the changed files contain at least one of:
+- new or changed DB queries (ORM calls, SQL, query builders);
+- loops over collections that come from I/O (database, network, files);
+- list rendering of unbounded data (no pagination, no virtualization);
+- new endpoints that return collections.
+
+No cause → no Performance review item; its probes found nothing in phases without one.
+
+**Analyzers:** every analysis above and in the review wave is carried out by a subagent with the
+matching file from `analyzers/` (contract in `analyzers/CONTRACT.md`) — diff review, security, performance,
 accessibility, design detector, motion. They work for every stack; each carries short notes per language (Swift, TS/JS, Rust,
 PHP, Python, shell, SQL). A project that wants an extra, stack-specific analysis on top names it via
 `@skills:` in ROADMAP.md; `/dev` does not depend on any.
@@ -75,8 +84,8 @@ upstream, so it is a fallback only and not a tracked source.
 **Rules:**
 - Tech-Stack Reviews and Security Review are **read-only analyses** — they flag problems, they do not fix automatically.
 - Only trigger when relevant files were actually changed — not blindly on every phase.
-- Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → fix **before 5d**, not later: Similar-bugs scan (5d) searches for the patterns of the fixes just made. If it runs on unfixed code, it finds nothing.
+- Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → the bundled fix (gate Step B), **before** the Similar-bugs scan (Step C): it searches for the patterns of the fixes just made, and on unfixed code it finds nothing.
 - Notices (could be better, alternative API available) → note them, continue.
 - A tech skill (shadcn, swiftui-pro, …) that is not installed, a stack checkout missing under `$DEV_STACK_DIR` or bundled docs that are absent → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
 - Exception: Design detector and Motion review rely on the optional design sources under `$DEV_DESIGN_DIR` (README, "Design sources"). Missing sources or an unbuilt engine → the item is ticked with the evidence `skipped: <reason>` and listed under "Skipped checks" in the gate summary (`gate.md`, checklist rules) — visible, never counted as "no findings", not blocking.
-- **Parallelization:** Tech-Stack Review, Security Review, Bug hunt, Performance review are all read-only — they can run as parallel Agent subagents (step 5c).
+- **Parallelization:** all of these are read-only and run in the one parallel review wave (gate Step A).
