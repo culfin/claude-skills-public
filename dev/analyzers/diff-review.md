@@ -71,7 +71,7 @@ Cleanup findings are always notes, never critical.
 
 **critical** — a defect or scope violation that ships a wrong result or loses data: a reachable
 failing input, a missing part of the requirement, behaviour the requirement did not ask for, an
-irreversible step without a halt. Everything else is a note.
+irreversible step without a halt, a broken contract for any input (`CONTRACT.md`). Everything else is a note.
 
 ## Output
 

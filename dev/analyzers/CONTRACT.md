@@ -61,6 +61,9 @@ Report the sweep in the `Checked:` line: probes run, candidates found, candidate
 
 - **critical** — wrong result, data loss or corruption, a security hole, a crash or hang on a
   reachable path, a leak or cost that grows with use, or an acceptance criterion that is not met.
+  A promised contract broken for any input is critical too, however unusual the input: wrong
+  return or exception type, untrusted input copied unbounded into messages or logs, formatting
+  that runs code of a caller-supplied object.
   The gate fixes these in its bundled fix (Step B) before it continues.
 - **note** — real but bounded: an edge case with a harmless outcome, a missing guard on an
   unlikely path, a clearer alternative. The gate records these in STATE.md.
