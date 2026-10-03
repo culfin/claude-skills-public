@@ -38,6 +38,10 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 
 All phases `[x]` or `[—]`:
 
+0. **Wait for background CI.** Read every `## CI in background` line of this milestone from its
+   status file (`gate.md`, "CI in background"); wait until none is `pending` (restart a dead watcher).
+   `red` or `timeout` → repair first (`gate.md`, "Repairing a red CI"); `none` stays as noted in its
+   gate summary. Then remove the milestone's lines (`state.md`).
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — deep analysis of the entire milestone scope through all 7 lenses.
@@ -160,6 +164,9 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 ## Pre-Release Review
 
 **Triggered by:** `/dev review`
+
+**Precondition:** every `## CI in background` line is read and none is `pending`, `red` or
+`timeout` — same as Milestone End step 0.
 
 1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see `models.md`):
    - **Bug hunt** (full mode) — entire codebase, 7 lenses.

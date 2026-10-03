@@ -1,31 +1,28 @@
 # Sources `/dev` builds on — update contract
 
-`/dev` reads or invokes skills it does not own. A new version of one of them can quietly change
-how `/dev` behaves, so each update is checked against this contract **before** it becomes active:
-`fits` → applied by the update watcher (with a log line); `unclear` or `conflict` → held back, the
-old version stays active, and the user decides with `/dev updates` (`updates.md`).
+`/dev` reads or invokes skills it does not own; a new version can quietly change how `/dev` behaves,
+so each update is checked against this contract **before** it becomes active: `fits` → applied by the
+update watcher (with a log line); `unclear` or `conflict` → held back, old version stays active, the
+user decides with `/dev updates` (`updates.md`).
 
 Read by: the update watcher, `scripts/check-source-update.py` (the table), the review agent and
-`/dev updates` (table, overrides, invariants). Not loaded during normal phase work.
+`/dev updates`. Not loaded during normal phase work.
 
-**Not covered:** `vibepolish` (lives in this repository, changes go through its own review) and
-every skill or plugin `/dev` does not reference — those update without this check.
+**Not covered:** `vibepolish` (in this repository, own review) and every skill `/dev` does not reference.
 
 ## Sources
 
-`reads` lists paths relative to the source root. Three entries are references instead of copies,
-resolved by the checker: `design/INDEX.md` = every row of that file under `$DEV_DESIGN_DIR/<id>/`;
-`stack/INDEX.md` = every row of that file under `$DEV_STACK_DIR/<id>/` (default
-`~/.claude/dev-stack`); `scripts/check-superpowers.py` = its `required_paths()`. The references
-belong to `/dev` (they live in this skill), not to the source tree — a reviewer must not expect
-them inside a candidate. Kinds: `plugin` (Claude Code plugin cache,
-`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`), `git` (checkout, fast-forward),
-`agents-skill` (`~/.agents/skills/<id>`, installed by the `skills` CLI), `local` (a copy without an
-upstream — nothing to watch until it gets one).
+`reads` lists paths relative to the source root. Three entries are references the checker resolves:
+`design/INDEX.md` = every row of that file under `$DEV_DESIGN_DIR/<id>/`; `stack/INDEX.md` = every row
+under `$DEV_STACK_DIR/<id>/` (default `~/.claude/dev-stack`); `scripts/check-superpowers.py` = its
+`required_paths()`. The references belong to `/dev` (they live in this skill) — a reviewer must not
+expect them inside a candidate. Kinds: `plugin` (`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`),
+`git` (checkout, fast-forward), `agents-skill` (`~/.agents/skills/<id>`, via the `skills` CLI), `local`
+(a copy without an upstream — nothing to watch until it gets one).
 
 | id | kind | location | reads | overrides |
 |---|---|---|---|---|
-| superpowers | plugin | `superpowers@claude-plugins-official` | `scripts/check-superpowers.py` | O1, O2, O3 |
+| superpowers | plugin | `superpowers@claude-plugins-official` | `scripts/check-superpowers.py` | O1–O3, O14–O16 |
 | emil | git | `$DEV_DESIGN_DIR/emil` | `design/INDEX.md`, `LICENSE` | O4 |
 | taste | git | `$DEV_DESIGN_DIR/taste` | `design/INDEX.md`, `LICENSE` | O5 |
 | impeccable | git | `$DEV_DESIGN_DIR/impeccable` | `design/INDEX.md`, `.claude/skills/impeccable/reference/audit.md`, `.claude/skills/impeccable/reference/polish.md`, `Cargo.toml`, `Cargo.lock`, `LICENSE` | O6, O7 |
@@ -49,19 +46,20 @@ upstream — nothing to watch until it gets one).
 | tauri-v2 | local | `~/.claude/skills/tauri-v2` | `SKILL.md` | O8 |
 | winui-pro | local | `~/.claude/skills/winui-pro` | `SKILL.md` | O8 |
 
-Where each is used: superpowers — `SKILL.md` steps 4a–4d, `companion.md`, `superpowers.md`;
+Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `superpowers.md`;
 design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
 `commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources —
-`stack/INDEX.md` (4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs bundled in a project's `node_modules` are not sources here:
-they change with its dependencies. A new use of a source adds its paths here in the same commit.
+`stack/INDEX.md` (4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs bundled
+in a project's `node_modules` are not sources (they change with its dependencies). A new use of a
+source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
 
-An update that strengthens the overridden behaviour is still fine; one that makes the override
-impossible (the source now enforces it, or `/dev`'s instruction no longer applies) is a contradiction.
+An update that strengthens the overridden behaviour is fine; one that makes the override impossible
+(the source enforces it, or `/dev`'s instruction no longer applies) is a contradiction.
 
 - **O1** `subagent-driven-development` stops after tasks and per-task reviews: no
-  `finishing-a-development-branch`, no nested worktree, no final whole-branch review (`SKILL.md` 4c).
+  `finishing-a-development-branch`, no nested worktree, no final whole-branch review (`execution.md`).
 - **O2** Brainstorming asks every question via `AskUserQuestion`, recommendation first; the Visual
   Companion shows only user interface, never plans or findings (`SKILL.md` 4a, `companion.md`).
 - **O3** The active install is the one Claude Code records, never "the newest cache directory"; no
@@ -70,36 +68,40 @@ impossible (the source now enforces it, or `/dev`'s instruction no longer applie
   the content directly (`design/INDEX.md`).
 - **O5** taste is read only for `landing`, by a subagent returning ≤ 40 lines; conflicts with the
   project's component library become questions; `full-output-enforcement` is not used.
-- **O6** impeccable: only the locally built deterministic detector is run; its `SKILL.md` and the
-  `audit`/`polish` references are used as checklists only. Never run `scripts/impeccable`,
-  `npx impeccable`, the `context` step its `SKILL.md` and `polish.md` order, `install` or
-  `hooks on`, and never a downloaded binary (`commands.md`, Pre-Release Review).
+- **O6** impeccable: only the locally built deterministic detector is run; its `SKILL.md` and the `audit`/`polish`
+  references are used as checklists only. Never run `scripts/impeccable`, `npx impeccable`, the `context` step its
+  `SKILL.md` and `polish.md` order, `install` or `hooks on`, and never a downloaded binary (`commands.md`).
 - **O7** impeccable telemetry is off: `IMPECCABLE_NO_TELEMETRY=1`, `DO_NOT_TRACK=1`.
-- **O8** Stack skills and sources run as read-only reviews in gate step 5c and as context in 4a/4c
+- **O8** Stack skills and sources run as read-only reviews in gate Step A and as context in 4a/4c
   (sole exception: the `next` runtime check, O11); their own fix or install instructions do not apply.
-- **O9** Stack sources are a review yardstick and context, never an order to rebuild: the project's
-  conventions win (a file name or restart policy the source prefers is not enforced); no hosted
-  product a source recommends is passed on. For `read` and `subagent` rows alike nothing outside
-  the listed file's folder is read — no sibling skill, no skill or instruction fetched from a URL
-  the source names. No script a source ships is executed and no vendor CLI or API call is made
-  on a source's instruction. Sole exception: O11.
+- **O9** Stack sources are a review yardstick and context, never an order to rebuild: the project's conventions win (a
+  file name or restart policy the source prefers is not enforced); no hosted product a source recommends is passed on.
+  For `read` and `subagent` rows alike nothing outside the listed file's folder is read — no sibling skill, no skill
+  or instruction fetched from a URL the source names. No script a source ships is executed and no vendor CLI or API
+  call is made on a source's instruction. Sole exception: O11.
 - **O10** stripe: only the skill files under `skills/` are read — never its plugin, hooks, MCP
   server or usage reporting (`stripe agent report_usage`).
-- **O11** next: the dev loop may do exactly two things — HTTP requests to `/_next/mcp` of the
-  project's own dev server, and the `agent-browser` CLI, driving only that server's URL (its
-  `--version`, built-in help and session commands included); no other stack source acts. `agent-browser` must already be on `PATH` in at least the minimum version the skill
-  file states (`agent-browser --version` is checked first; lower or unreadable → `skipped`).
-  Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and never `--headed`;
-  a route that needs a login → `skipped`; `/dev` installs nothing, no Next.js upgrade (`next upgrade`) is run
-  and the skill's feedback reporting is not used. The CLI's own built-in help output (e.g. `agent-browser
-  skills get core`) may be read as tool documentation; anything it would download or install is not followed.
-- **O12** wordpress: O9 applies unchanged — no WP-CLI on a source's instruction anywhere; the
-  scripts inside the indexed folders may be read, never run, and the sibling triage script is not
-  run. When the task itself calls for WP-CLI, nothing runs against a production site without the user's
-  go-ahead. The skills' "WordPress 7.0+" assumption is checked against the project's version before a rule applies.
+- **O11** next: the dev loop may do exactly two things — HTTP requests to `/_next/mcp` of the project's own dev
+  server, and the `agent-browser` CLI, driving only that server's URL (its `--version`, built-in help and session
+  commands included); no other stack source acts. `agent-browser` must already be on `PATH` in at least the minimum
+  version the skill file states (`agent-browser --version` is checked first; lower or unreadable → `skipped`).
+  Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and never `--headed`; a route that needs a
+  login → `skipped`; `/dev` installs nothing, no Next.js upgrade (`next upgrade`) is run and the skill's feedback
+  reporting is not used. The CLI's own built-in help output (e.g. `agent-browser skills get core`) may be read as tool
+  documentation; anything it would download or install is not followed.
+- **O12** wordpress: O9 applies unchanged — no WP-CLI on a source's instruction anywhere; the scripts inside the
+  indexed folders may be read, never run, and the sibling triage script is not run. When the task itself calls for
+  WP-CLI, nothing runs against a production site without the user's go-ahead. The skills' "WordPress 7.0+" assumption
+  is checked against the project's version before a rule applies.
 - **O13** brag: offered, never started on its own; output stays local (`brag-output*/` ignored, never committed,
-  uploaded or posted); `--voice` only on request; personal data only as fictional stand-ins (the skill's own
-  rule — an update that drops it is a conflict). Its switch to `brag-slim` on some models is accepted.
+  uploaded or posted); `--voice` only on request; personal data only as fictional stand-ins (the skill's own rule — an
+  update that drops it is a conflict). Its switch to `brag-slim` on some models is accepted.
+- **O14** brainstorming: no section approvals, no spec review gate; its HARD-GATE is not applied —
+  `/dev` writes and commits the spec and continues; clarification questions stay (`SKILL.md` 4a).
+- **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).
+- **O16** subagent-driven-development: `execution.md` uses its prompts and scripts; parallel implementers in
+  worktrees (not "never parallel"), at most 3 fix rounds (not 5), no final review, no branch finishing (O1). Removing
+  `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`, `scripts/task-brief` or `scripts/review-package` is a conflict.
 
 ## Invariants — must hold after every update
 

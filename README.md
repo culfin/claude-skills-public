@@ -99,7 +99,7 @@ impeccable can install hooks and phone home; neither is used here. If you run it
 ### Stack sources (optional)
 
 For some technologies `/dev` can read the vendor's or maintainer's own skill repository as context
-(steps 4a, 4c) and as a read-only review of the files a phase changed (gate step 5c). Clone the
+(steps 4a, 4c) and as a read-only review of the files a phase changed (gate review wave). Clone the
 ones your projects use under `$DEV_STACK_DIR` (default `~/.claude/dev-stack`), one directory per id:
 
 ```bash
@@ -173,11 +173,14 @@ On Codex, ask by name where there is no slash command: "use dev: check".
 
 ### dev
 
-A phase: **clarify** (questions in rounds, recommended answer first; UI questions as mockups and
-architecture as diagrams in the browser) → **plan and build** (superpowers: spec, plan, subagents
-with a review per task) → **quality gate** (cleanup, change review, parallel analyses for bugs,
-performance and security, spec check, typecheck, lint, tests, build, end-to-end, CI) → **close**
-(gate commit, summary in `STATE.md`).
+A run takes the phases of a milestone back to back and stops only for decisions that are yours,
+irreversible actions, red CI, a gate still red after three fix rounds and the milestone end. A
+phase: **clarify** (questions in rounds, recommended answer first; UI questions as mockups in the
+browser) → **plan and build** (spec and plan without approval stops; independent tasks run in
+parallel worktrees, each reviewed as it finishes) → **quality gate**, sized by risk (one parallel
+review wave: diff review, spec check, security when triggered, stack and UI reviews on larger
+phases; one bundled fix; typecheck, lint, tests and build in parallel, end-to-end) → **close**
+(gate commit, summary in `STATE.md`; CI is followed in the background).
 
 Principles:
 - **Every checkmark needs evidence** — the decisive output and the state of the code it ran on.
