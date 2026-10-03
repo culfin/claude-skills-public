@@ -61,6 +61,11 @@ class WavesTests(unittest.TestCase):
         rc, out, _ = run({"tasks": [t("1", []), t("2", ["b.py"])]})
         self.assertEqual(out["waves"], [["1"], ["2"]])
 
+    def test_duplicate_id_exits_2(self):
+        rc, out, err = run({"tasks": [t("1", ["a"]), t("1", ["b"])]})
+        self.assertEqual(rc, 2)
+        self.assertIn("duplicate", err)
+
 
 if __name__ == "__main__":
     unittest.main()

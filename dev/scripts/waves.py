@@ -40,6 +40,9 @@ def main(argv):
         after = {str(t["id"]): [str(x) for x in t.get("after") or []] for t in tasks}
     except (OSError, ValueError, KeyError, TypeError) as e:
         return fail(f"malformed input: {e}")
+    if len(ids) != len(set(ids)):
+        dupes = [i for i in set(ids) if ids.count(i) > 1]
+        return fail(f"duplicate task id(s): {', '.join(dupes)}")
     for i, deps in after.items():
         for d in deps:
             if d not in files:

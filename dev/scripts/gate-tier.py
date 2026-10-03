@@ -32,7 +32,7 @@ def git(root, *args):
 def changed(root, base):
     """(path, changed lines) for tracked changes against base plus untracked files."""
     rows = []
-    for line in git(root, "diff", "--numstat", base, "--").splitlines():
+    for line in git(root, "diff", "--numstat", "--no-renames", base, "--").splitlines():
         add, rem, path = line.split("\t", 2)
         n = 0 if add == "-" else int(add) + int(rem)
         rows.append((path, n))

@@ -39,5 +39,15 @@ PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0
   bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status"
 [[ "$(cat "$tmp/status")" == "timeout" ]] && ok "gh error is never none/green" || bad "gh error: $(cat "$tmp/status")"
 
+# ci-watch without jq: minimal PATH with only essential tools + gh stub
+mkdir -p "$tmp/nojq/bin"
+for tool in bash dirname mkdir mv git cat sleep printf; do
+    ln -s /bin/$tool "$tmp/nojq/bin/$tool" 2>/dev/null || ln -s /usr/bin/$tool "$tmp/nojq/bin/$tool" 2>/dev/null || true
+done
+cp "$tmp/bin/gh" "$tmp/nojq/bin/gh"
+PATH="$tmp/nojq/bin" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
+  bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status_nojq" >/dev/null 2>&1
+[[ "$(cat "$tmp/status_nojq")" == "timeout" ]] && [[ $? -eq 0 ]] && ok "missing jq -> timeout exit 0" || bad "missing jq: $(cat "$tmp/status_nojq")"
+
 echo "load/ci: $fails failed"
 [[ $fails -eq 0 ]]

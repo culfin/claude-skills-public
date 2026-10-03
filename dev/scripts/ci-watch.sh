@@ -5,14 +5,14 @@
 # here instead of blocking. Only runs of this SHA count, skipped/cancelled is not a pass, and a
 # failing gh call is never read as "no runs" — it only ever ends as timeout.
 set -uo pipefail
-if ! command -v jq >/dev/null 2>&1; then
-    echo "ci-watch: jq not found in PATH" >&2
-    mkdir -p "$(dirname "${2:-$(git rev-parse --git-common-dir)/dev-ci/dummy}")}"
-    printf '%s\n' "timeout" > "${2:-$(git rev-parse --git-common-dir)/dev-ci/dummy}"
-    exit 0
-fi
 sha="${1:?usage: ci-watch.sh <sha> [<status-file>]}"
 out="${2:-$(git rev-parse --git-common-dir)/dev-ci/$sha}"
+if ! command -v jq >/dev/null 2>&1; then
+    echo "ci-watch: jq not found in PATH" >&2
+    mkdir -p "$(dirname "$out")"
+    printf '%s\n' "timeout" > "$out"
+    exit 0
+fi
 interval="${DEV_CI_INTERVAL:-60}"; none_after="${DEV_CI_NONE_AFTER:-900}"; max="${DEV_CI_MAX:-5400}"
 mkdir -p "$(dirname "$out")"
 put(){ printf '%s\n' "$1" > "$out.tmp" && mv "$out.tmp" "$out"; }
