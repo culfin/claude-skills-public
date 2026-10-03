@@ -34,7 +34,8 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | Tier | `gate-tier.py --base HEAD` | Decides small/large for `$CHECK_SCOPE` (uncommitted and untracked changes); full-codebase mode is always large |
 | A | Diff review | `analyzers/diff-review.md`, scope `$CHECK_SCOPE` |
 | A | Spec checker | Only if the user names a spec; otherwise skipped with the note "no spec" |
-| A | Security, Tech-Stack, Performance, design reviews | Large tier only — same trigger matrix as the gate, evaluated against `$CHECK_SCOPE` |
+| A | Security review | Either tier, when the security trigger matrix matches `$CHECK_SCOPE` |
+| A | Tech-Stack, Performance, design reviews | Large tier only — same trigger matrix as the gate, evaluated against `$CHECK_SCOPE` |
 | B | Fix + Fix review | Bundled fix of all critical findings, Fix review on the fix diff |
 | C | Similar-bugs scan | Only if Step B changed code |
 | D | Typecheck + lint + tests, Production Build, E2E Tests | Full suite; tests and build in parallel |

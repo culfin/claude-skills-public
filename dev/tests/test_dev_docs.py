@@ -48,6 +48,7 @@ class DevDocsTests(unittest.TestCase):
         t = text("tech-stack-triggers.md")
         self.assertIn("either tier**, whenever its trigger matrix", g)
         self.assertIn("Security Review runs in either tier", t)
+        self.assertIn("| A | Security review | Either tier, when the security trigger matrix matches", text("dev-check.md"))
 
     def test_diff_review_is_self_contained(self):
         d = text("analyzers/diff-review.md")
