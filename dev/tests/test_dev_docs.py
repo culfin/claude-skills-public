@@ -83,6 +83,13 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(s, st, s)
         self.assertIn("## Bundled round at run start", text("befragung.md"))
 
+    def test_ponytail_ideas_present(self):
+        d = text("analyzers/diff-review.md")
+        for s in ("stdlib:", "yagni:"):
+            self.assertIn(s, d)
+        self.assertIn("standard library", text("execution.md"))
+        self.assertNotIn("ponytail", d.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

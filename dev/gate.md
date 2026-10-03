@@ -157,7 +157,8 @@ are narrower than the security trigger matrix (`authService.ts`, `LoginForm.tsx`
 STATE.md; else the phase description in ROADMAP.md; none → item closed as "no spec"). It reports,
 each with a quote of the requirement: (a) required but missing or partial, (b) implemented but not
 required, (c) implemented but probably wrong, (d) acceptance criterion without a test. (a), (c), (d)
-are critical, (b) is a note. For each (d) it writes the test and **sees it red once** (break the
+are critical, (b) is a note. Simplicity never removes a requirement: a dropped criterion, error
+handling, trust-boundary validation, or security or data-integrity behaviour is critical. For each (d) it writes the test and **sees it red once** (break the
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
 Dispatch it with `isolation: "worktree"`, because breaking code in the shared tree would mislead the
 other reviewers reading it at the same time; if the phase has uncommitted changes, it applies the
@@ -204,8 +205,7 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
    wherever the phase touches flows. Details: `e2e-testing.md`.
 3. **A code change forced by a red test, build or E2E run is a fix round** and goes through Step B:
    add or refresh `Fix review` (Diff review on the fix diff, plus any analysis whose area the fix
-   touches) and `Similar-bugs scan`, then rerun Step D. It counts towards the three rounds. Without
-   it the review items of the wave turn stale in the evidence check.
+   touches) and `Similar-bugs scan`, then rerun Step D. It counts towards the three rounds.
 
 A type check misses build-time errors (server/client boundaries, dynamic imports, bundler issues,
 asset resolution), so the build is its own item:

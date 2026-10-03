@@ -10,7 +10,7 @@ seams, leftovers, things no single task owned.
 
 Besides the contract: the diff as a file (including untracked files), the requirement (the spec
 from `@spec:` or the acceptance criteria in STATE.md) and the list of changed files. Never the
-implementer's reasoning — you are reviewing the artifact, not an argument for it.
+implementer's reasoning.
 
 ## Sweep
 
@@ -57,9 +57,10 @@ Probe the changed files for these (adapt the syntax to the languages in scope) a
   the broken value.
 
 **Cleanup** — what a simplification pass would look for:
-- An existing helper that already does what new code re-implements.
+- Start each note with a tag: `reuse:` (existing helper re-implemented), `stdlib:`, `native:`
+  (platform feature), `yagni:` (built for a case no requirement asks for), `delete:` (dead code
+  the phase left: functions, parameters, imports, branches, flags).
 - Duplication introduced by the phase, across tasks too.
-- Dead code the phase left behind: unused functions, parameters, imports, branches, flags.
 - Needless work in hot paths: repeated computation in loops, a query per item, re-reading a file.
 - Names that do not say what things are; clever code where plain code works.
 
