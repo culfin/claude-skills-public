@@ -41,7 +41,7 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | — | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
 | — | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be current before the check commit (review results may keep the wave's state when a current Fix review covers the change since) |
 | — | Check-Commit | `chore: dev check [gate-pass]` |
-| — | CI | If `.github/workflows/` exists — `ci-watch.sh` on the check commit as in `gate.md`, "CI in background". `/dev check` has no next phase to go on with, so it waits for the final status and reports it in the post-check summary; red, `timeout` or `none` → repair as in the gate |
+| — | CI | If `.github/workflows/` exists — `ci-watch.sh` on the check commit as in `gate.md`, "CI in background". `/dev check` has no next phase to go on with, so it waits for the final status and reports it in the post-check summary; `red` or `timeout` → repair as in the gate; `none` is reported, not green |
 
 Step A runs as one parallel wave of Agent subagents (15-minute timeout). Any step failure stops the run — no Check-Commit is created.
 

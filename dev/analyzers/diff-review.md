@@ -14,14 +14,23 @@ implementer's reasoning — you are reviewing the artifact, not an argument for 
 
 ## Sweep
 
-Run the probes from the `Sweep` section of `analyzers/bugs.md` over the changed files, plus:
-`TODO`/`FIXME`/`console.log`/`print(`/`dbg!` added by the diff, and commented-out code.
+Probe the changed files for these (adapt the syntax to the languages in scope) and judge every hit:
+
+- Hand-rolled escaping: `sed 's/`, `.replace(`, `str_replace(` on data bound for a URL, query,
+  shell, SQL, HTML or JSON; manual `%20`/`&amp;`; string-built URLs and queries.
+- Swallowed errors: `|| true`, `|| echo`, `2>/dev/null`, `except: pass`, `catch {}`, `@` in PHP,
+  `?:`/`??`/`||` right after a call that can return an error object.
+- Early-exit readers in pipes under `pipefail`: `grep -q`, `grep -m`, `head`, `read`, `awk … exit`.
+- Variables used but never assigned; exit codes not checked after network, disk or process calls.
+- Writes, deletes, publishes, sends: is the object's state checked right there?
+- Leftovers added by the diff: `TODO`/`FIXME`, `console.log`/`print(`/`dbg!`, commented-out code.
 
 ## Checks
 
 **Scope** — does the diff do what the requirement asks, and nothing else?
 - Missing: every place that must change together — callers of a changed signature, other
-  implementations of an interface, migrations for a model change, docs and config for a new option.
+  implementations of an interface, migrations for a model change, docs and config for a new
+  option, both branches of a platform split.
 - Stray: hunks the requirement does not explain (debug code, unrelated reformatting, files outside
   the phase, files another session left in the tree).
 - Tests: each behaviour change has a test that would fail without it; tests that only assert that
@@ -29,25 +38,30 @@ Run the probes from the `Sweep` section of `analyzers/bugs.md` over the changed 
 - Irreversible: anything `git revert` cannot undo (migrations, data changes, deploy steps, messages
   to real recipients). For migrations: is there a rollback path, and does it work?
 
-**Defects** — one lens each; construct the input that breaks the line, or drop it:
+**Defects** — construct the input that breaks the line, or drop it:
+- Obvious slips: typos in names and keys, inverted conditions, the wrong variable, copy-paste leftovers.
 - Assumptions: non-empty, loaded, unique, logged in, a success return — where the caller does not
   guarantee it (error objects, `null`, `false`, empty collections used as the happy-path type).
-- State: an operation allowed in a state it should not be; a retry that runs twice.
-- Boundaries: zero/one/many, first/last, empty vs missing vs `null`, off-by-one, `>` vs `>=`.
+- State: an operation allowed in a state it should not be; a status that can be skipped; a retry
+  that runs twice.
+- Boundaries: zero/one/many, first/last, empty vs missing vs `null`, off-by-one, `>` vs `>=`, size
+  limits of integers, dates and strings.
 - Data lifecycle: read after delete, double writes, partial writes when step 2 of 3 fails, stale cache.
-- Error paths: swallowed errors (`catch {}`, `|| true`, `2>/dev/null`) that let a wrong value through.
-- Time: overlap, check-then-act gaps, timezones, "now" read twice, timeouts shorter than the work.
+- Error paths: swallowed errors that let a wrong value through; a failure in cleanup that masks the
+  original error.
+- Time and concurrency: two requests at once, a job overlapping its next run, check-then-act gaps,
+  timezones, "now" read twice, timeouts shorter than the work.
 - Platform: permissions, locale, GNU vs BSD tools, container vs host paths, missing binaries.
 - Escaping: every boundary into URL, shell, SQL, HTML, JSON, regex or file name uses the library
-  meant for it; hand-rolled escaping is a finding with the input it breaks.
-
-The language notes in `analyzers/bugs.md` apply.
+  meant for it; for hand-rolled escaping, name the input it breaks and what the receiver does with
+  the broken value.
 
 **Cleanup** — what a simplification pass would look for:
 - An existing helper that already does what new code re-implements.
 - Duplication introduced by the phase, across tasks too.
 - Dead code the phase left behind: unused functions, parameters, imports, branches, flags.
 - Needless work in hot paths: repeated computation in loops, a query per item, re-reading a file.
+- Names that do not say what things are; clever code where plain code works.
 
 Cleanup findings are always notes, never critical.
 

@@ -60,7 +60,7 @@ CI now always runs in the background.
 |---|---|
 | `ui` | Large tier: Accessibility review, Design detector and Motion review on the changed UI files; shadcn/Next.js Tech-Stack Reviews per trigger. Small tier: E2E runs because UI files changed. |
 | `landing` | Adds Accessibility review, Design detector and Taste pre-flight in either tier; Taste findings are notes, not blockers. |
-| `backend` | Security review per the trigger matrix; a DB change makes the phase large. `pg:design-postgres-tables` when migrations or SQL changed. |
+| `backend` | Security review in the large tier, and in either tier when a changed file matches the security matrix; a DB change makes the phase large. `pg:design-postgres-tables` when migrations or SQL changed. |
 | `auth` | Always large; Security review in full scope, not phase scope. |
 | `security` | Always large; Security review in full scope; Spec checker: an acceptance criterion without a test is always critical. |
 | `data` | Always large; Security review; `pg:design-postgres-tables`. |
@@ -82,7 +82,7 @@ run; an item whose condition is not met is left out, not marked `[—]`.
 <!-- Step A, always -->
 - [ ] Diff review
 - [ ] Spec checker                   <!-- not for @type: docs -->
-<!-- Step A, conditional: large tier and its trigger (table in Step A) -->
+<!-- Step A, conditional: its trigger and, except Security review, the large tier (table in Step A) -->
 - [ ] Security review
 - [ ] Tech-Stack Review: Next.js docs
 - [ ] Tech-Stack Review: <stack id>  <!-- one per matching stack (except `nextjs`, which has the item above), e.g. shadcn -->
@@ -133,14 +133,18 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
 `models.md`. Record the `@state` the wave ran on — Step B diffs against it. The `stack/INDEX.md` and
 `design/INDEX.md` rows tagged `5c` belong to this wave; rows tagged `5g` belong to E2E.
 
+Security review is the one conditional item that ignores the tier: the tier script's path patterns
+are narrower than the security trigger matrix (`authService.ts`, `LoginForm.tsx` and a
+`route.ts` outside `api/` come out small), so the matrix decides on its own.
+
 | Item | Analyzer / source | When |
 |---|---|---|
 | Diff review | `analyzers/diff-review.md` | always |
 | Spec checker | the prompt below | always, except `@type: docs` |
-| Security review | `analyzers/security.md` | large tier, trigger matrix in `tech-stack-triggers.md`; full scope for `auth`/`security` |
+| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches; full scope for `auth`/`security` |
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
-| Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed (`landing`: either tier) |
+| Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
 
 **Two dispatch rules decide the hit rate:**
@@ -157,11 +161,12 @@ are critical, (b) is a note. For each (d) it writes the test and **sees it red o
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
 Dispatch it with `isolation: "worktree"`, because breaking code in the shared tree would mislead the
 other reviewers reading it at the same time; if the phase has uncommitted changes, it applies the
-diff file in its worktree first.
+diff file in its worktree first. Once its patch is taken, remove that worktree (`git worktree remove
+<path>`) — a worktree with changes is not cleaned up automatically.
 
 **Timeouts.** A subagent still running after 15 minutes is cancelled and started once more, if
 useful with the scope split in two. Still no report → its item stays open with "timeout" and the
-phase stays `[!]`; Steps C and D may go on meanwhile. Only an independent substitute counts —
+phase stays `[!]`; Step D may go on meanwhile. Only an independent substitute counts —
 another subagent with the same analyzer file, or an equivalent tool the project already uses —
 never the implementer reviewing its own change.
 
@@ -176,7 +181,9 @@ Older ROADMAPs may name former third-party skills under `@skills:` (`bug-prospec
   the same files.
 - **Non-critical findings** go to STATE.md Blockers & Risks; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
-  fix diff: `git diff <@state of the wave>` plus new untracked files. Add `- [ ] Fix review` and
+  fix diff: the diff against the state before the fix (the wave's `@state`), including all untracked
+  files — `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)`, two
+  trees, so files untracked at the wave do not show up as deleted. Add `- [ ] Fix review` and
   `- [ ] Similar-bugs scan` to the checklist now; tick Fix review with the merged result.
 - A Fix review with a new critical finding starts the next round. **At most 3 rounds**; still
   critical after the third → halt and report what remains (one of the run's halt points).
@@ -195,6 +202,10 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
    both write the same output directory. Everything that runs must be green.
 2. **E2E Tests** after the build — small tier only if UI files or a user flow changed, large tier
    wherever the phase touches flows. Details: `e2e-testing.md`.
+3. **A code change forced by a red test, build or E2E run is a fix round** and goes through Step B:
+   add or refresh `Fix review` (Diff review on the fix diff, plus any analysis whose area the fix
+   touches) and `Similar-bugs scan`, then rerun Step D. It counts towards the three rounds. Without
+   it the review items of the wave turn stale in the evidence check.
 
 A type check misses build-time errors (server/client boundaries, dynamic imports, bundler issues,
 asset resolution), so the build is its own item:
@@ -255,13 +266,31 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    - <sha> — Phase N <name>: pending
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
-3. **Before each next phase starts and at Milestone End**, read the status files
-   (`$(git rev-parse --git-common-dir)/dev-ci/<sha>`) and copy them into the STATE.md lines:
+3. **Read the status** (`$(git rev-parse --git-common-dir)/dev-ci/<sha>`) when the watcher reports,
+   before each next phase starts and at Milestone End, and copy it into the STATE.md line:
    - `green <ids>` → done.
-   - `red …`, `timeout`, `none` → halt: show the failing run(s) (`gh run view <id> --log-failed`),
-     repair, new gate commit, new watcher. `none` means no run of this SHA appeared — CI did not
-     see the commit.
-   - `pending` → go on between phases; at Milestone End, wait for it.
+   - `red …` or `timeout` → halt after the current step: show the failing run(s)
+     (`gh run view <id> --log-failed`) and repair (below).
+   - `none` → no run of this SHA appeared (a `paths`/`on:` filter can exclude a commit on purpose).
+     Not a halt and never green: add `- CI: none — <sha>` to that phase's gate summary.
+   - `pending` → is a watcher for this SHA still running (`pgrep -f "ci-watch.sh <sha>"`)? It dies
+     with the session and may with `/clear`; none running → start it again (step 2, same SHA). Then
+     go on between phases; at Milestone End, wait for it.
+
+**Repairing a red CI of a closed phase.** Its checklist is gone, so open a short one in STATE.md and
+let `check-evidence.py check STATE.md --before-commit` check it like a gate:
+
+```markdown
+## Quality Gate — Phase N: <Name> (CI repair)
+- [ ] Fix review                 <!-- Diff review on `git diff <red sha>` plus untracked files -->
+- [ ] Typecheck + lint + tests
+- [ ] Production Build
+- [ ] Gate commit
+```
+
+Then a new `[gate-pass]` commit, a new watcher, and the old line becomes
+`- <sha> — Phase N <name>: red … → repaired in <new sha>`. Remove the repair checklist once the new
+status is green.
 
 ---
 
@@ -288,7 +317,7 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | Dispatching the review wave one by one | One message, all Step A items in parallel. |
 | One fix agent per finding | One bundled fix dispatch, then a Fix review on the fix diff only. |
 | Rerunning every analysis after a fix | Only the ones with a critical finding, only on the fix diff. |
-| Starting the next phase while a CI status is red | Read the CI status files first; red, `timeout` or `none` halts until repaired. |
+| Starting the next phase while a CI status is red | Read the CI status files first; `red` or `timeout` halts until repaired; restart a dead watcher. |
 | Passing over a Spec checker test gap "because the phase is small" | Every acceptance criterion needs a test that was red once. |
 | `@type: data` or `backend` for a phase with migrations | Use `@type: migration` — rollback and irreversibility are its own risks. |
 | Deleting a Gate summary from STATE.md | Summaries are permanent; only the checklist goes after `[x]`. |

@@ -30,15 +30,29 @@ class DevDocsTests(unittest.TestCase):
                      "Typecheck + lint + tests", "Production Build", "E2E Tests",
                      "Gate summary (STATE.md)", "Gate commit"):
             self.assertIn(f"- [ ] {name}", g)
+        for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
+                     "Accessibility review", "Design detector", "Motion review", "Taste pre-flight"):
+            self.assertIn(f"- [ ] {name}", g)
         for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check"):
             self.assertNotIn(old, g)
 
     def test_every_dispatched_role_has_a_model(self):
         m = text("models.md").lower()
         for role in ("diff review", "spec checker", "security review", "performance review",
-                     "tech-stack review", "accessibility review", "similar-bugs", "fix",
+                     "tech-stack review", "accessibility review", "similar-bugs", "fix agent",
                      "fix review", "implementer", "task review", "milestone"):
             self.assertIn(role, m, role)
+
+    def test_security_review_ignores_the_tier(self):
+        g = text("gate.md")
+        t = text("tech-stack-triggers.md")
+        self.assertIn("either tier**, whenever its trigger matrix", g)
+        self.assertIn("Security Review runs in either tier", t)
+
+    def test_diff_review_is_self_contained(self):
+        d = text("analyzers/diff-review.md")
+        self.assertIn("## Sweep", d)
+        self.assertNotIn("analyzers/bugs.md", d)
 
     def test_gate_uses_the_scripts(self):
         g = text("gate.md")

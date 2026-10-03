@@ -3,9 +3,10 @@
 Every file in `analyzers/` is an instruction for **one read-only subagent**. The gate (`gate.md`)
 dispatches it in its review wave (Step A) and again, on the fix diff only, as Fix review (Step B);
 `/dev check`, milestone end and the pre-release review use the same files with a wider scope. At
-phase scope `diff-review.md` does the whole-diff pass; `bugs.md` serves the full-scope scans. No analyzer is a slash command, and none needs anything installed — except the design
-detector and motion, which read optional sources under `$DEV_DESIGN_DIR` and report
-`skipped: <reason>` when those are missing.
+phase scope `diff-review.md` does the whole-diff pass; `bugs.md` serves the full-scope scans. No
+analyzer is a slash command, and none needs anything installed — except the design detector and
+motion, which read optional sources under `$DEV_DESIGN_DIR` and report `skipped: <reason>` when
+those are missing.
 
 ## How the gate dispatches an analyzer
 

@@ -26,8 +26,10 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest
 - Svelte tasks and `svelte` in `$TECH_STACKS` → the implementer uses `svelte:svelte-code-writer` for that task
 
-**During the Quality Gate — review wave (Step A, `5c`), large tier only:** in the small tier none
-of the reviews below runs (`gate.md`, "Tier"); `@type: landing` adds its design items in either tier.
+**During the Quality Gate — review wave (Step A, `5c`):** the Tech-Stack, design and performance
+reviews below run in the large tier only (`gate.md`, "Tier"; `@type: landing` adds Accessibility
+review and Design detector in either tier). **Security Review runs in either tier** whenever its
+matrix matches — the tier script's path patterns are narrower than this matrix.
 
 **Tech-Stack Review** — auto-triggered based on which files the phase actually changed:
 
@@ -56,7 +58,7 @@ of the reviews below runs (`gate.md`, "Tier"); `@type: landing` adds its design 
 | `**/auth*`, `**/login*`, `**/session*`, `**/middleware*` | Auth code changed | Security review (phase scope) |
 | `src/app/api/**`, `src/actions/**`, `**/route.ts` | API endpoints changed | Security review (phase scope) |
 | `src/db/migrations/**`, SQL, ORM schema | DB schema changed | Security review (phase scope) |
-| Phase `@type: auth` or `@type: backend` | Phase type | Security review (phase scope) |
+| Phase `@type: auth`, or `@type: backend` in the large tier | Phase type | Security review (phase scope) |
 
 **Performance review — only on cause.** It runs only when the changed files contain at least one of:
 - new or changed DB queries (ORM calls, SQL, query builders);

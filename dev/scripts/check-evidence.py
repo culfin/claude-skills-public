@@ -12,7 +12,7 @@ content keeps every item valid — and any edit to the code after a check makes 
 
     check-evidence.py id                              # current state id
     check-evidence.py check [STATE.md]                # before completing the phase
-    check-evidence.py check [STATE.md] --before-commit   # before the gate commit (5j, 5k may be open)
+    check-evidence.py check [STATE.md] --before-commit   # before the gate commit (Gate commit may be open)
 
 A check whose optional source or tool is missing is closed visibly instead (gate.md):
 
