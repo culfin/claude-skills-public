@@ -161,6 +161,44 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("skipped: Design detector — engine not built", run.stdout)
         self.assertIn("1 skipped, not passed", run.stdout)
 
+    OLD = "0123456789ab"
+
+    def test_review_items_valid_with_current_fix_review(self):
+        i = self.sid()
+        self.state([f"- [x] Diff review — 0 findings @{self.OLD}", f"- [x] Spec checker — ok @{self.OLD}",
+                    f"- [x] Fix review — fix diff clean @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_review_items_stale_without_fix_review(self):
+        i = self.sid()
+        self.state([f"- [x] Diff review — 0 findings @{self.OLD}", f"- [x] Spec checker — ok @{self.OLD}",
+                    f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 2)
+        self.assertTrue(any("Diff review" in x for x in problems))
+        self.assertTrue(any("Spec checker" in x for x in problems))
+
+    def test_fix_review_must_be_current(self):
+        self.state([f"- [x] Diff review — 0 findings @{self.OLD}", f"- [x] Spec checker — ok @{self.OLD}",
+                    f"- [x] Fix review — fix diff clean @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 3)
+        self.assertTrue(any("Fix review" in x for x in problems))
+
+    def test_tests_item_never_inherits(self):
+        i = self.sid()
+        self.state([f"- [x] Fix review — fix diff clean @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("Typecheck", problems[0])
+
+    def test_similar_bugs_never_inherits(self):
+        i = self.sid()
+        self.state([f"- [x] Fix review — fix diff clean @{i}", f"- [x] Similar-bugs scan — none @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("Similar-bugs", problems[0])
+
     def test_missing_gate_section_is_reported(self):
         (self.root / "STATE.md").write_text("# State\n\nno gate here\n")
         self.assertIn("no gate checklist", self.run_check()[0])

@@ -21,6 +21,11 @@ A check whose optional source or tool is missing is closed visibly instead (gate
 Such an item is closed, needs no `@<state>`, and is printed as `skipped: <item> — <reason>` — it
 is never reported as passed. Only the checks in SKIPPABLE may be skipped this way.
 
+After a bundled fix the gate reviews only the fix diff ("Fix review"). So when a checked Fix review
+carries the current @state, the review items in REVIEW_ITEMS (diff, spec, security, ...) may keep
+an older @state; tests, build, E2E, similar-bugs scan and the Fix review itself must stay current.
+Without that, a full re-run of every analysis would be forced after every fix.
+
 Exit 0 = consistent. Exit 1 = problems, one per line. What it cannot know: whether the evidence
 text is true, or whether the checklist lists every required check — that stays the gate's job.
 """
@@ -35,12 +40,17 @@ from pathlib import Path
 ID_LEN = 12
 # Files the gate itself writes while checking; they are bookkeeping, not the code under review.
 BOOKKEEPING = ("STATE.md", "ROADMAP.md")
-LATER_STEPS = ("gate commit", "ci status check")   # happen after the local checks
+# Happen after the local checks. "ci status check" is kept for old checklists.
+LATER_STEPS = ("gate commit", "ci status check")
 ITEM = re.compile(r"^\s*- \[( |x|X)\] (.*)$")
 STATE_TAG = re.compile(r"@([0-9a-f]{7,64})\s*$")
 SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 # Checks that depend on an optional source or tool; nothing else may be closed as skipped.
 SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "tech-stack review")
+# Analyses that may keep an older @state when a current "Fix review" covers the fix diff.
+REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
+                "performance review", "accessibility review", "design detector", "motion review",
+                "taste pre-flight")
 
 
 def state_id(root):
@@ -99,6 +109,13 @@ def check(root, state_file, before_commit=False):
         return [f"{state_file}: no gate checklist ('## Quality Gate …' section)"]
     current = state_id(root)
     problems = []
+    fix_current = False
+    for done, body in items:
+        name, evidence = _split(body)
+        t = STATE_TAG.search(body)
+        if (done and name.lower().startswith("fix review") and evidence and t
+                and (current.startswith(t.group(1)[:ID_LEN]) or t.group(1).startswith(current))):
+            fix_current = True
     for done, body in items:
         name, evidence = _split(body)
         if not done:
@@ -119,6 +136,8 @@ def check(root, state_file, before_commit=False):
         if not tag:
             problems.append(f"no @state: {name} (append '@{current}' when checked on this state)")
         elif not current.startswith(tag.group(1)[:ID_LEN]) and not tag.group(1).startswith(current):
+            if fix_current and name.lower().startswith(REVIEW_ITEMS):
+                continue
             problems.append(f"stale: {name} was checked on @{tag.group(1)}, the code is now @{current} — rerun it")
     return problems
 
