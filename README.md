@@ -174,7 +174,8 @@ On Codex, ask by name where there is no slash command: "use dev: check".
 ### dev
 
 A run takes the phases of a milestone back to back and stops only for decisions that are yours,
-irreversible actions, red CI, a gate still red after three fix rounds and the milestone end. A
+irreversible actions, red CI, a gate or task still red after three fix rounds, a large context and the
+milestone end. A
 phase: **clarify** (questions in rounds, recommended answer first; UI questions as mockups in the
 browser) → **plan and build** (spec and plan without approval stops; independent tasks run in
 parallel worktrees, each reviewed as it finishes) → **quality gate**, sized by risk (one parallel

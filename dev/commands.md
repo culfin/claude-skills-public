@@ -44,12 +44,12 @@ All phases `[x]` or `[—]`:
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
    - **Performance review** (full mode) — the milestone's changes.
-   - **Security review** (full mode) — the whole milestone scope; finds cross-cutting risks the per-phase reviews cannot.
+   - **Security review** (full mode) — the whole milestone scope (cross-cutting risks).
    - Critical findings: fix before proceeding. Non-critical: STATE.md Blockers & Risks.
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
-   Fix the safe ones (unused imports, unreferenced functions); ask before larger removals.
+   Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
-5. **Update STATE.md** (Progress table, Current Position to next milestone).
+5. **Update STATE.md:** Progress row `Complete` (marks Milestone End as done), Current Position to next milestone.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
 7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
 
@@ -73,7 +73,7 @@ All phases `[x]` or `[—]`:
 ## Debug Flow
 
 **Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug"; and
-automatically during a phase when a build, test run or app fails without an obvious cause.
+automatically during a phase when a build, test run or app fails or behaves unexpectedly without an obvious cause.
 An obvious fix (typo, missing import or dependency, outdated test expectation — under 2 minutes) is
 just made. Otherwise read and follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the
 fix, then back to the `[~]` phase).
@@ -122,8 +122,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 **Triggered by:** `/dev review`
 
-**Precondition:** every `## CI in background` line is read and none is `pending`, `red` or
-`timeout` — same as Milestone End step 0.
+**Precondition:** wait for and repair open CI lines as in Milestone End step 0, then continue.
 
 1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see `models.md`):
    - **Bug hunt** (full mode) — entire codebase, 7 lenses.

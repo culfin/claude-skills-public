@@ -4,42 +4,34 @@ Why things changed, not just what. Rules in the skills stay free of history; it 
 
 ## v3.0.0 — 2026-10-03
 
-**dev** — leaner and faster, without finding fewer real defects. Measured over eight real runs
-(11.09.–02.10.2026, six projects) as the baseline for v3: median ~270M tokens and ~260 active
-minutes per run; 56 % of all tokens were the main session rereading its own context; 25–78 % of the
-wall clock was waiting for the user, mostly before a plain "continue" that decided nothing (one
-run: 11 pauses, 361 min); the same diff was reviewed 4–6 times; implementers ran strictly serial.
-The yield per check decided what stays: the spec checker and the similar-bugs scan had real
-findings in every run, security in two of seven, while the performance review had no confirmed
-critical finding in seven runs and change review, bug hunt and `/simplify` mostly flagged code
-already checked.
+**dev** — leaner and faster without finding fewer real defects. Baseline, eight real runs (11.09.–02.10.2026,
+six projects): median ~270M tokens and ~260 active minutes per run; 56 % of tokens were the main session
+rereading its context; 25–78 % of the wall clock was waiting for the user, mostly before a plain "continue"
+(one run: 11 pauses, 361 min); the same diff was reviewed 4–6 times; implementers ran strictly serial. Yield
+per check: spec checker and similar-bugs found real defects in every run, security in two of seven,
+performance no confirmed critical finding in seven; change review, bug hunt and `/simplify` mostly flagged
+code already checked.
 
-What changed: a run works through the phases back to back and halts only for decisions only the
-user can make, irreversible actions, a gate or task still red after three fix rounds, red CI, the
-context hint and Milestone End — no spec, plan or "continue?" approvals (overrides O14–O16 in
-`sources.md`). Small phases write their acceptance criteria into `STATE.md` and skip the plan.
-The gate is tiered by `gate-tier.py` (small/large) and runs one parallel review wave (a single diff
-review replaces change review, bug hunt and `/simplify`; performance only on cause), one bundled
-fix with a targeted fix review, then tests and build in parallel; a floor guard blocks lowered
-tests or checks. CI is followed in the background per commit (`ci-watch.sh`); Milestone End and
-the pre-release review wait for every open line first. Planned phases run in waves of up to five
-parallel implementers in worktrees behind a load brake, each task reviewed as soon as it finishes,
-at most three fix rounds. A word budget keeps the skill text from growing back (test).
+Changes: a run takes the phases back to back and halts only for the user's decisions, irreversible actions,
+a gate or task still red after three fix rounds, red CI, the context hint and Milestone End — no spec, plan
+or "continue?" stops (O14–O16 in `sources.md`). Small phases write acceptance criteria into `STATE.md`
+instead of a plan. `gate-tier.py` sizes the gate; one parallel review wave (a diff review replaces change
+review, bug hunt and `/simplify`; performance only on cause), one bundled fix with a targeted fix review,
+tests and build in parallel, a floor guard against lowered tests. CI runs in the background per commit
+(`ci-watch.sh`); Milestone End and the pre-release review wait for it. Planned phases run in waves of up to
+five implementers in worktrees behind a load brake, each task reviewed when it finishes, at most three fix
+rounds. A word-budget test keeps the skill text from growing back. Kept: halt on irreversible actions,
+evidence per checkmark, spec checker, similar-bugs after fixes, security when triggered (either tier),
+per-task reviews, tests and build before `[gate-pass]`, the full analysis at Milestone End.
 
-What deliberately stayed: halt on irreversible actions, evidence per checkmark, spec checker,
-similar-bugs after fixes, security when its trigger matrix matches (in either tier), per-task
-reviews, tests and build before `[gate-pass]`, and the full analysis at Milestone End.
+**Breaking:** `@gate: fast` and `@gate: ci-wait` are ignored with a warning (only `@gate: full` remains);
+the old confirmation stops between steps and phases are gone.
 
-**Breaking:** ROADMAPs with `@gate: fast` or `@gate: ci-wait` — both are now ignored with a warning
-(only `@gate: full` remains, forcing the large tier); anyone relying on the old confirmation stops
-between steps or phases.
-
-Ideas borrowed, rewritten in `/dev`'s own words (both MIT): from **ponytail**
-(github.com/dietrichgebert/ponytail) the ladder before writing code, cleanup tags on diff-review
-findings, and "simplicity never drops a requirement"; from **agent-skills** by Addy Osmani
-(github.com/addyosmani/agent-skills) the floor guard, a rollback plan before any deploy, approvals
-that must name the action, error output treated as untrusted data, the handoff contract, the stop
-test for interviews, and "quote the doc or mark it UNVERIFIED".
+Ideas borrowed and rewritten (both MIT): **ponytail** (github.com/dietrichgebert/ponytail) — ladder before
+writing code, cleanup tags on diff-review findings, simplicity never drops a requirement; **agent-skills**
+by Addy Osmani (github.com/addyosmani/agent-skills) — floor guard, rollback plan before deploy, approvals
+that name the action, error output as untrusted data, handoff contract, interview stop test, "quote the doc
+or mark it UNVERIFIED".
 
 ## v2.12.0 — 2026-10-03
 

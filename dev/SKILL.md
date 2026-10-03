@@ -102,7 +102,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning (`gate.md`, "Tier").
-6. **Find current position:** First milestone with incomplete phase. If all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
+6. **Find current position:** a milestone with all phases `[x]`/`[—]` whose STATE.md Progress row is not `Complete` → Milestone End first (its step 5 sets `Complete`). Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
