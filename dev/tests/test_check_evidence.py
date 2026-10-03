@@ -110,11 +110,63 @@ class EvidenceTests(unittest.TestCase):
         self.state([f"- [x] Diff review — 0 critical @{i}", "- [ ] E2E Tests"])
         self.assertIn("open", self.run_check()[0])
 
-    def test_before_commit_allows_gate_commit_and_ci_open(self):
+    def test_before_commit_allows_only_the_gate_commit_open(self):
         i = self.sid()
-        self.state([f"- [x] Diff review — 0 critical @{i}", "- [ ] Gate commit", "- [ ] CI status check"])
+        self.state([f"- [x] Diff review — 0 critical @{i}", "- [ ] Gate commit"])
         self.assertEqual(self.run_check(before_commit=True), [])
-        self.assertEqual(len(self.run_check(before_commit=False)), 2)
+        self.assertEqual(self.run_check(before_commit=False), ["open: Gate commit"])
+
+    def v2_checklist(self, i):
+        # A `[!]` phase written by /dev v2: items v3 has no step for, CI status check still open.
+        return ["- [x] /simplify — 2 edits @" + i, "- [x] Change review — 0 critical @" + i,
+                "- [ ] Bug hunt (phase scope)", f"- [x] Performance review (phase scope) — ok @{i}",
+                f"- [x] Spec checker (5c-v) — 0 gaps @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}",
+                f"- [x] Production Build — ok @{i}", "- [ ] Gate summary (STATE.md)", "- [ ] Gate commit",
+                "- [ ] CI status check"]
+
+    def test_v2_checklist_is_reported_for_rebuild(self):
+        self.state(self.v2_checklist(self.sid()))
+        for before_commit in (True, False):
+            with self.subTest(before_commit=before_commit):
+                old = [x for x in self.run_check(before_commit) if x.startswith("pre-v3 item:")]
+                self.assertEqual(len(old), 4, old)
+                for name in ("/simplify", "Change review", "Bug hunt", "CI status check"):
+                    self.assertTrue(any(name in x for x in old), name)
+                self.assertTrue(all("rebuild the checklist" in x for x in old))
+
+    def test_rebuilt_v2_checklist_passes(self):
+        # gate.md "Gate Checklist": kept items keep their evidence (Spec checker (5c-v) -> Spec checker),
+        # /simplify + Change review + Bug hunt become one open Diff review, CI status check is dropped.
+        i = self.sid()
+        rebuilt = ["- [ ] Diff review", f"- [x] Spec checker — 0 gaps @{i}",
+                   f"- [x] Typecheck + lint + tests — 412 passed @{i}", f"- [x] Production Build — ok @{i}",
+                   "- [ ] Gate summary (STATE.md)", "- [ ] Gate commit"]
+        self.state(rebuilt)
+        self.assertEqual(self.run_check(before_commit=True), ["open: Diff review", "open: Gate summary (STATE.md)"])
+        rebuilt[0] = f"- [x] Diff review — 0 critical @{i}"
+        rebuilt[4] = f"- [x] Gate summary (STATE.md) — written @{i}"
+        self.state(rebuilt)
+        self.assertEqual(self.run_check(before_commit=True), [])
+        rebuilt[5] = f"- [x] Gate commit — abc1234 @{i}"
+        self.state(rebuilt)
+        self.assertEqual(self.run_check(), [])
+
+    def test_phase_check_ignores_a_ci_repair_checklist(self):
+        # A CI repair of Phase 2 lands while Phase 3 is in its gate: each check reads its own section.
+        i = self.sid()
+        (self.root / "STATE.md").write_text(
+            "## Quality Gate — Phase 3: Login\n"
+            f"- [x] Diff review — 0 critical @{i}\n- [ ] Gate commit\n\n"
+            "## Quality Gate — Phase 2: Signup (CI repair)\n- [ ] Fix review\n- [ ] Production Build\n")
+        self.assertEqual(self.run_check(before_commit=True), [])
+        self.assertEqual(ce.check(self.root, self.root / "STATE.md", before_commit=True, repair=True),
+                         ["open: Fix review", "open: Production Build"])
+
+    def test_repair_without_repair_checklist_is_reported(self):
+        self.state([f"- [x] Diff review — 0 critical @{self.sid()}"])
+        problems = ce.check(self.root, self.root / "STATE.md", repair=True)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("no CI-repair checklist", problems[0])
 
     def test_items_outside_the_gate_section_are_ignored(self):
         self.state([f"- [x] Diff review — ok @{self.sid()}"])

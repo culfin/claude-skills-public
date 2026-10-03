@@ -8,7 +8,8 @@ Prints `small` or `large` on the first line, then one `- <reason>` per line. Exi
 
 Why a script: the tier decides which checks run, and a judgement call ("this looks small") is
 exactly how a risky one-line auth change ends up with the light gate. Size alone never makes a
-phase small — a sensitive path or a risk type always makes it large.
+phase small — a sensitive path or a risk type always makes it large. `*.md` files (the phase's spec
+and plan, STATE.md, ROADMAP.md) do not count towards the size, but still towards sensitive paths.
 """
 import argparse
 import re
@@ -60,7 +61,7 @@ def main():
         print(f"gate-tier: git failed: {e.stderr.strip() or e}", file=sys.stderr)
         return 2
     reasons = []
-    lines = sum(n for _, n in rows)
+    lines = sum(n for p, n in rows if not p.lower().endswith(".md"))
     if a.gate == "full":
         reasons.append("@gate: full")
     if a.type in RISK_TYPES:
@@ -73,14 +74,14 @@ def main():
     if a.tasks > MAX_TASKS:
         reasons.append(f"{a.tasks} tasks > {MAX_TASKS}")
     if lines > MAX_LINES:
-        reasons.append(f"{lines} changed lines > {MAX_LINES}")
+        reasons.append(f"{lines} changed lines (without *.md) > {MAX_LINES}")
     if reasons:
         print("large")
         for r in reasons:
             print(f"- {r}")
     else:
         print("small")
-        print(f"- {a.tasks} task(s), {lines} changed lines, no risk type, no sensitive files")
+        print(f"- {a.tasks} task(s), {lines} changed lines (without *.md), no risk type, no sensitive files")
     return 0
 
 

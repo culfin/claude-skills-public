@@ -101,7 +101,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
-   - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning (`gate.md`, "Tier").
+   - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
@@ -181,10 +181,10 @@ halts only for:**
 - the context hint (below);
 - Milestone End (`commands.md`);
 - plus the gate's own stops (`gate.md`): wrong branch at the gate commit, unclear staging, no
-  authorized route for CI, a review item that timed out twice.
+  authorized route for CI (once per run), a review item that timed out twice, a floor-guard
+  critical that is not undone (needs approval).
 
-CI `red` or `timeout` = halt to repair (`gate.md`), then the run continues; `none` is no halt but
-never green and is noted in the gate summary.
+CI `red` or `timeout` halts to repair (`gate.md`), then the run continues; `none` does not halt.
 
 Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
 phases — a pause before a plain "continue" decides nothing. Each phase ends with one status line;
@@ -209,7 +209,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
    `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool)
+2. Mark phase `[~]` in ROADMAP.md (Edit tool); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 
@@ -221,7 +221,7 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
 
 **Resume logic:**
 - Phase is `[!]` → skip directly to Quality Gate (step 5), read Gate Checklist from STATE.md to find remaining steps
-- Phase is `[~]` with `@plan:` path on disk, or acceptance criteria ending in `Criteria complete.` (small phase) → execution (4c); the ledger says which tasks are done (`execution.md`, "Ledger")
+- Phase is `[~]` with `@plan:` path on disk, or acceptance criteria ending in `Criteria complete.` (small phase; without that line if the phase already has commits) → execution (4c); the ledger says which tasks are done (`execution.md`, "Ledger")
 - Phase is `[~]` with `@spec:` path on disk → planning (4b)
 - STATE.md has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
 - Phase is `[~]` with neither, or with criteria lacking that last line → clarification (4a)
@@ -240,12 +240,7 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
 
 In both cases, include matching tech skills beforehand (`tech-stack-triggers.md`, "During
 Brainstorming"). For questions with a UI/UX side, ensure the companion via the "Show screen"
-procedure and pass this instruction along: "The Visual Companion is already running (URL below). Do
-not offer it, use it directly for every question with a UI/UX side — and only for those: no plans,
-approaches, architecture diagrams or text summaries on screens; building blocks in
-`companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or asks
-about one, ends with this URL on its own line, verbatim; messages without anything new to see carry
-no URL."
+procedure and pass along the companion sentences of the hand-off note (`befragung.md`, step 5).
 
 **4b. Planning:** `superpowers:writing-plans` with "no execution-method question; do not start
 execution — `/dev` does" (`sources.md` O15). Write and commit the plan, add `@plan:` to ROADMAP.md, go on to
@@ -274,10 +269,10 @@ A check already on the Gate Checklist is not run again, even if listed in `@skil
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 
-1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 — every Quality Gate item `[x]`, with evidence, on the current state (the gate commit keeps that state). If any unchecked → STOP, return to first unchecked step 5.
+1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present (small phases have neither)
 3. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`); delete the phase's SDD workspace (`execution.md`)
+4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
 5. Commit: `roadmap: complete Phase N — <name>`
 6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 

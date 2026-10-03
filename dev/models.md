@@ -15,8 +15,9 @@ Read before dispatching any subagent (implementation, gate, Milestone End, Pre-R
 | Accessibility review, Design detector, Motion review, density critique | **standard** |
 | Fix agent (gate Steps B and D) | **standard**; **capable** from round 3 |
 | Fix review (gate Step B) | **standard** |
-| Similar-bugs scan (gate Step C) | **cheap** |
+| Similar-bugs scan (gate Step C) | **standard** |
 | Taste subagent (4a landing digest, Taste pre-flight, `/dev ui`), impeccable subagent (pre-release audit/polish) | **standard** |
+| Configured skills (pre/post-phase, milestone start, pre-release) | **standard** unless the skill says otherwise |
 | Milestone End and pre-release full scans (Bug hunt, Performance review, Security review, Dead-code scan) | **capable** |
 
 Only the model is decided here — which checks run, and when, is in `gate.md` and `tech-stack-triggers.md`.

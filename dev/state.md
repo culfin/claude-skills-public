@@ -8,7 +8,7 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 | Event | What to Update |
 |-------|---------------|
 | Bundled clarification at run start (`befragung.md`) | Answers under each phase as `Decisions:` (below) |
-| Phase starts (`[ ]` → `[~]`) | Current Position, Last activity |
+| Phase starts (`[ ]` → `[~]`) | Current Position, Last activity, `Phase base: <sha>` under the phase |
 | Small phase clarified (`SKILL.md` 4a) | `Acceptance criteria:` under the phase (below) — no approval round |
 | Phase enters gate (`[~]` → `[!]`) | Current Position, Last activity, **create Quality Gate Checklist section** |
 | Gate step completes | Check off item in Gate Checklist |
@@ -54,6 +54,7 @@ Traps: tests need `DATABASE_URL` from .env.test; the build writes to dist/ — n
 
 ## Phases
 ### Phase 6: Filters
+Phase base: 8e01b7d
 Decisions: date range defaults to 30 days; filters persist per user (bundled round, YYYY-MM-DD)
 Acceptance criteria:
 - [ ] Filter by status and date range; empty result shows the empty state
@@ -67,7 +68,7 @@ Criteria complete.
 - **Decisions:** — answers from the bundled round and from later clarification, one line per phase;
   a phase with decisions does not ask them again. **Acceptance criteria:** — the draft of a small
   phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks the
-draft as finished — without it, a resume goes back to clarification instead of execution. Both stay until the phase is `[x]`, then the
+  draft as finished (`SKILL.md`, Resume logic). Both stay until the phase is `[x]`, then the
   phase's entry is removed; its gate summary, a separate entry, keeps the result.
 
 ### UI review — approved findings

@@ -107,6 +107,18 @@ class DevDocsTests(unittest.TestCase):
         for f in ("SKILL.md", "commands.md", "state.md"):
             self.assertIn("Milestone End pending:", text(f), f)
 
+    def test_final_review_fixes(self):
+        # Phase base recorded at phase start; repair checklist read separately; no skill edits from a project.
+        for f in ("SKILL.md", "state.md", "gate.md"):
+            self.assertIn("Phase base:", text(f), f)
+        g = text("gate.md")
+        self.assertIn("--before-commit --repair", g)
+        self.assertIn("**A pre-v3 checklist**", g)
+        self.assertNotIn("add the pattern to `gate-tier.py`", g)
+        self.assertIn("rerun the tier with `--gate full`", g)
+        self.assertIn("| Similar-bugs scan (gate Step C) | **standard** |", text("models.md"))
+        self.assertIn("never their specs or plans", text("befragung.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

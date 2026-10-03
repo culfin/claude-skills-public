@@ -37,7 +37,7 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | A | Security review | Either tier, when the security trigger matrix matches `$CHECK_SCOPE` |
 | A | Tech-Stack, Performance, design reviews | Large tier only — same trigger matrix as the gate, evaluated against `$CHECK_SCOPE` |
 | B | Fix + Fix review | Bundled fix of all critical findings, Fix review on the fix diff |
-| C | Similar-bugs scan | Only if Step B changed code |
+| C | Similar-bugs scan | Only if Step B fixed a defect |
 | D | Typecheck + lint + tests, Production Build, E2E Tests | Full suite; tests and build in parallel |
 | — | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
 | — | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be current before the check commit (review results may keep the wave's state when a current Fix review covers the change since) |

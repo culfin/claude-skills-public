@@ -81,6 +81,21 @@ class GateTierTests(unittest.TestCase):
                 self.assertEqual(out[0], "large")
                 (self.root / rel).unlink()
 
+    def test_markdown_does_not_count_towards_size(self):
+        # A planned phase carries its spec and plan (often 500+ lines); they must not make it large.
+        self.write("docs/plans/phase-5.md", 900)
+        self.write("STATE.md", 120)
+        self.write("app.py", 50)
+        rc, out, _ = self.run_tier("--tasks", "2")
+        self.assertEqual((rc, out[0]), (0, "small"), out)
+        self.assertIn("51 changed lines", out[1])          # app.py: 1 removed + 50 added
+
+    def test_markdown_still_counts_as_sensitive_path(self):
+        self.write("src/auth/notes.md", 3)
+        rc, out, _ = self.run_tier("--tasks", "1")
+        self.assertEqual(out[0], "large")
+        self.assertTrue(any("sensitive files" in r for r in out[1:]))
+
     def test_gate_full_forces_large(self):
         rc, out, _ = self.run_tier("--tasks", "1", "--gate", "full")
         self.assertEqual(out[0], "large")

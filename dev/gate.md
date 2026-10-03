@@ -35,12 +35,12 @@ At gate entry, decide the tier with the script, not by eye:
 python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tasks <n> [--gate full]
 ```
 
-`<phase base>` is the commit the phase started from (the last `[gate-pass]` commit, or the commit
-before the phase's first task commit). Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
+`<phase base>` is the phase's `Phase base:` line in STATE.md, written when it started; a CI repair
+never changes it (none, from before v3 → the commit before its first task commit). `*.md` files
+do not count towards the size, only towards sensitive paths. Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
 Exit 2 means git failed — fix the base ref, never guess a tier.
 
-`@gate: full` in ROADMAP.md forces large (pass `--gate full`). Other `@gate:` values (the old
-`fast` and `ci-wait`) are ignored with a warning.
+`@gate: full` in ROADMAP.md forces large (pass `--gate full`).
 
 ## Phase Types
 
@@ -50,7 +50,7 @@ Exit 2 means git failed — fix the base ref, never guess a tier.
 | `landing` | Adds Accessibility review, Design detector and Taste pre-flight in either tier; Taste findings are notes, not blockers. |
 | `backend` | Security review in the large tier, and in either tier when a changed file matches the security matrix; a DB change makes the phase large. `pg:design-postgres-tables` when migrations or SQL changed. |
 | `auth` | Always large; Security review in full scope, not phase scope. |
-| `security` | Always large; Security review in full scope; Spec checker: an acceptance criterion without a test is always critical. |
+| `security` | Always large; Security review in full scope. |
 | `data` | Always large; Security review; `pg:design-postgres-tables`. |
 | `migration` | Always large; Security review; Diff review checks the rollback path; E2E includes a migration smoke test (migrate up, verify data, migrate down if possible). |
 | `refactor` | Similar-bugs scan in full-codebase mode whenever something was fixed **or** code moved — moved code is where a pattern survives in its old place. |
@@ -78,7 +78,7 @@ Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet
 - [ ] Design detector
 - [ ] Motion review
 - [ ] Taste pre-flight
-<!-- Steps B and C, added only when the fix step changes code (refactor: Similar-bugs also when code moved) -->
+<!-- Steps B and C, added only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
 <!-- Step D and closing, always (Build and E2E not for @type: docs) -->
@@ -88,6 +88,11 @@ Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet
 - [ ] Gate summary (STATE.md)
 - [ ] Gate commit
 ```
+
+**A pre-v3 checklist** (`/simplify`, `Change review`, `Bug hunt`, `CI status check`) is rebuilt on
+resume: run the tier, write this checklist, keep current `[x]` items that still exist with their
+evidence (`Spec checker (5c-v)` → `Spec checker`); the first three become one open `Diff review`,
+`CI status check` goes (CI: "CI in background"). Then continue.
 
 **Evidence rules:**
 - **A checkmark carries its evidence and the state it ran on:**
@@ -118,8 +123,6 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
 `git ls-files --others --exclude-standard`) and the requirement. The model is set explicitly per
 `models.md`. Record the `@state` the wave ran on — Step B diffs against it. The `stack/INDEX.md` and
 `design/INDEX.md` rows tagged `5c` belong to this wave; rows tagged `5g` belong to E2E.
-
-Security review ignores the tier: the security matrix is wider than the tier script's path patterns.
 
 | Item | Analyzer / source | When |
 |---|---|---|
@@ -167,8 +170,8 @@ Former skill names under `@skills:` (`bug-prospector`, `security-audit`, `perfor
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
   fix diff: the diff against the state before the fix (the wave's `@state`), including all untracked
   files — `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)`, two
-  trees, so files untracked at the wave do not show up as deleted. Add `- [ ] Fix review` and
-  `- [ ] Similar-bugs scan` to the checklist now; tick Fix review with the merged result.
+  trees, so files untracked at the wave do not show up as deleted. Add `- [ ] Fix review` (and
+  `- [ ] Similar-bugs scan` if a defect was fixed) now; tick Fix review with the merged result.
 - A Fix review with a new critical finding starts the next round. **At most 3 rounds**; still
   critical after the third → halt and report what remains (one of the run's halt points).
 
@@ -176,7 +179,7 @@ No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `
 
 ## Step C — Similar-bugs
 
-Only if Step B changed code: `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix)
+Only if Step B fixed a defect: `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix)
 as input, whole codebase. A confirmed twin goes back through Step B; complex ones go to STATE.md.
 
 ## Step D — Verify
@@ -241,8 +244,9 @@ edit an `@…` value by hand. It checks consistency, not truth — reading the e
 If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
 
 1. **CI must see the commit** through the route the project already allows (push of the phase
-   branch, PR update, workflow dispatch). No authorized route → halt and name it as the blocker;
-   never push to a protected or production branch for this.
+   branch, PR update, workflow dispatch). No authorized route → halt once per run, name the blocker,
+   note the answer (a route, or `no CI this run`) under `## CI in background` and follow it.
+   Never push to a protected or production branch for this.
 2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add a line to
    STATE.md:
    ```markdown
@@ -254,7 +258,8 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    before each next phase starts and at Milestone End, and copy it into the STATE.md line:
    - `green <ids>` → done.
    - `red …` or `timeout` → halt after the current step: show the failing run(s)
-     (`gh run view <id> --log-failed`) and repair (below).
+     (`gh run view <id> --log-failed`) and repair (below). A `timeout` from missing `jq` or failing
+     `gh` (`gh auth status`) is a tooling problem: report it, never repair.
    - `none` → no run of this SHA appeared (a `paths`/`on:` filter can exclude a commit on purpose).
      Not a halt and never green: add `- CI: none — <sha>` to that phase's gate summary.
    - `pending` → is a watcher for this SHA still running (`pgrep -f "ci-watch.sh <sha>"`)? It dies
@@ -262,7 +267,7 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
      go on between phases; at Milestone End, wait for it.
 
 **Repairing a red CI of a closed phase.** Its checklist is gone, so open a short one in STATE.md and
-let `check-evidence.py check STATE.md --before-commit` check it like a gate:
+let `check-evidence.py check STATE.md --before-commit --repair` check it like a gate:
 
 ```markdown
 ## Quality Gate — Phase N: <Name> (CI repair)
@@ -273,8 +278,8 @@ let `check-evidence.py check STATE.md --before-commit` check it like a gate:
 ```
 
 Then a new `[gate-pass]` commit, a new watcher, and the old line becomes
-`- <sha> — Phase N <name>: red … → repaired in <new sha>`. Remove the repair checklist once the new
-status is green.
+`- <sha> — Phase N <name>: red … → repaired in <new sha>`. Remove the repair checklist right after
+its gate commit.
 
 ---
 
@@ -284,8 +289,8 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 
 | Thought | Reality |
 |---|---|
-| "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, add the pattern to `gate-tier.py` and rerun; never argue the tier. |
-| "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass. Retry once or run an independent substitute; until one reports, the item stays open. Two timeouts in one gate are a finding. |
+| "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, rerun the tier with `--gate full` and note the missed path in the gate summary; never argue the tier. |
+| "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass ("Timeouts", Step A). |
 | "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
 | "The plan says I should run the migration" | A plan describes, it does not approve (`SKILL.md`, "Halt on Irreversible Actions"). |
 
@@ -294,4 +299,3 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | Mistake | Fix |
 |---|---|
 | `@type: data` or `backend` for a phase with migrations | Use `@type: migration` — rollback and irreversibility are its own risks. |
-| Code-modifying skills as automatic pre-phase triggers, web-only skills in native projects | On demand only; match skills to the project type at `/dev init`. |

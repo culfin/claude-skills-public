@@ -41,8 +41,8 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
 A run goes through several phases without stopping, so the questions that are already foreseeable
 are asked once, up front, instead of halting each phase for them.
 
-1. Read the remaining phases of the milestone (ROADMAP.md, their `@spec:`/`@plan:` if present, the
-   `Decisions:` already in STATE.md). Collect the decisions that will clearly be needed and that only
+1. Read only the remaining phases' lines in ROADMAP.md and the `Decisions:` already in STATE.md —
+   never their specs or plans. Collect the decisions that will clearly be needed and that only
    the user can make — with the same filter as above: facts are looked up, not asked.
 2. Ask them in one round: up to four independent questions per `AskUserQuestion` call, recommendation
    first with "(Recommended)", each labelled with its phase. More than four → further calls right

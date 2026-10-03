@@ -13,6 +13,12 @@ content keeps every item valid — and any edit to the code after a check makes 
     check-evidence.py id                              # current state id
     check-evidence.py check [STATE.md]                # before completing the phase
     check-evidence.py check [STATE.md] --before-commit   # before the gate commit (Gate commit may be open)
+    check-evidence.py check [STATE.md] --repair       # the '(CI repair)' checklist instead of the phase's
+
+Without --repair only the phase's own '## Quality Gate' section is read, never a CI-repair one, so a
+repair of an earlier phase cannot stand in for the running phase's evidence. Items of a checklist
+from before v3 (/simplify, Change review, Bug hunt, CI status check) are reported, open or not:
+gate.md rebuilds such a checklist on resume.
 
 A check whose optional source or tool is missing is closed visibly instead (gate.md):
 
@@ -40,8 +46,10 @@ from pathlib import Path
 ID_LEN = 12
 # Files the gate itself writes while checking; they are bookkeeping, not the code under review.
 BOOKKEEPING = ("STATE.md", "ROADMAP.md")
-# Happen after the local checks. "ci status check" is kept for old checklists.
-LATER_STEPS = ("gate commit", "ci status check")
+# Happens after the local checks.
+LATER_STEPS = ("gate commit",)
+# Items v3 has no step for; their checklist is rebuilt (gate.md, "Gate Checklist").
+PRE_V3 = ("/simplify", "change review", "bug hunt", "ci status check")
 ITEM = re.compile(r"^\s*- \[( |x|X)\] (.*)$")
 STATE_TAG = re.compile(r"@([0-9a-f]{7,64})\s*$")
 SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
@@ -69,12 +77,12 @@ def state_id(root):
         return run("write-tree")[:ID_LEN]
 
 
-def gate_items(text):
-    """Checklist items of the (last) '## Quality Gate' section, or None if there is none."""
+def gate_items(text, repair=False):
+    """Items of the last '## Quality Gate' section (a '(CI repair)' one only with repair), or None."""
     lines, inside, found = [], False, False
     for line in text.splitlines():
         if line.startswith("## "):
-            inside = line.startswith("## Quality Gate")
+            inside = line.startswith("## Quality Gate") and ("(CI repair)" in line) == repair
             if inside:
                 found, lines = True, []
             continue
@@ -92,10 +100,10 @@ def _split(body):
     return name, STATE_TAG.sub("", evidence).strip()
 
 
-def skipped(state_file):
+def skipped(state_file, repair=False):
     """(name, reason) of every ticked item closed as 'skipped: <reason>' — closed, not passed."""
     out = []
-    for done, body in gate_items(Path(state_file).read_text(encoding="utf-8")) or []:
+    for done, body in gate_items(Path(state_file).read_text(encoding="utf-8"), repair) or []:
         name, evidence = _split(body)
         m = SKIP.match(evidence)
         if done and m and m.group(1).strip() and name.lower().startswith(SKIPPABLE):
@@ -103,10 +111,11 @@ def skipped(state_file):
     return out
 
 
-def check(root, state_file, before_commit=False):
-    items = gate_items(Path(state_file).read_text(encoding="utf-8"))
+def check(root, state_file, before_commit=False, repair=False):
+    items = gate_items(Path(state_file).read_text(encoding="utf-8"), repair)
     if items is None:
-        return [f"{state_file}: no gate checklist ('## Quality Gate …' section)"]
+        kind = "CI-repair checklist ('## Quality Gate … (CI repair)'" if repair else "gate checklist ('## Quality Gate …'"
+        return [f"{state_file}: no {kind} section)"]
     current = state_id(root)
     problems = []
     fix_current = False
@@ -118,6 +127,9 @@ def check(root, state_file, before_commit=False):
             fix_current = True
     for done, body in items:
         name, evidence = _split(body)
+        if name.lower().startswith(PRE_V3):
+            problems.append(f"pre-v3 item: {name} — rebuild the checklist (gate.md, \"Gate Checklist\")")
+            continue
         if not done:
             if before_commit and name.lower().startswith(LATER_STEPS):
                 continue
@@ -149,6 +161,7 @@ def main():
     c = sub.add_parser("check")
     c.add_argument("state", nargs="?", default="STATE.md")
     c.add_argument("--before-commit", action="store_true")
+    c.add_argument("--repair", action="store_true")
     a = p.parse_args()
     root = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
     if not root:
@@ -157,10 +170,10 @@ def main():
     if a.cmd == "id":
         print(state_id(root))
         return 0
-    problems = check(root, a.state, a.before_commit)
+    problems = check(root, a.state, a.before_commit, a.repair)
     for line in problems:
         print(line)
-    skips = skipped(a.state) if Path(a.state).is_file() else []
+    skips = skipped(a.state, a.repair) if Path(a.state).is_file() else []
     for name, reason in skips:
         print(f"skipped: {name} — {reason}")
     if not problems:

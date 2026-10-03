@@ -1,8 +1,6 @@
 # E2E / Integration Tests — Detail
 
-**When it runs (gate Step D):** small tier only if the phase changed UI files or a user flow; large
-tier wherever the phase touches flows; never for `@type: docs`. No flow touched → the `E2E Tests`
-item is left out of the checklist, not ticked.
+No flow touched → the `E2E Tests` item is left out of the checklist, not ticked.
 
 **What this step must prove:** the user flows this phase touched work end to end on the candidate —
 through the real UI or the real public interface, with the assertions that matter to a user. The
