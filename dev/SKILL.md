@@ -205,10 +205,13 @@ halts only for:**
 - clarification questions only the user can answer (`befragung.md`);
 - irreversible actions (section above);
 - a gate still red after 3 fix rounds, or a task still open after its 3 fix rounds (`execution.md`);
-- a CI status `red` or `timeout` (`none` is no halt but never green; it is noted in the gate
-  summary — `gate.md`, "CI in background");
 - the context hint (below);
-- Milestone End (`commands.md`).
+- Milestone End (`commands.md`);
+- plus the gate's own stops (`gate.md`): wrong branch at the gate commit, unclear staging, no
+  authorized route for CI, a review item that timed out twice.
+
+CI `red` or `timeout` = halt to repair (`gate.md`), then the run continues; `none` is no halt but
+never green and is noted in the gate summary.
 
 Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
 phases. Measured over eight runs, 25–78 % of the wall clock was waiting for the user, mostly before
@@ -268,15 +271,15 @@ If pre-skills produced output files (e.g. a handoff file in a dot-directory of t
 
 **Resume logic:**
 - Phase is `[!]` → skip directly to Quality Gate (step 5), read Gate Checklist from STATE.md to find remaining steps
-- Phase is `[~]` with `@plan:` path on disk, or acceptance criteria in STATE.md (small phase) → execution (4c); the ledger in the SDD workspace says which tasks are done
+- Phase is `[~]` with `@plan:` path on disk, or acceptance criteria ending in `Criteria complete.` (small phase) → execution (4c); the ledger says which tasks are done (`execution.md`, "Ledger")
 - Phase is `[~]` with `@spec:` path on disk → planning (4b)
 - STATE.md has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
-- Phase is `[~]` with neither → clarification (4a)
+- Phase is `[~]` with neither, or with criteria lacking that last line → clarification (4a)
 
 **4a. Clarification:**
 1. **Classify:** architectural if the phase creates a new project or subsystem, changes how components interact, or changes interfaces that others build on; `@type: migration` always. When in doubt, architectural. For `@type: docs`, no interview.
 2. **Small → write the draft straight into STATE.md** under the phase as `Acceptance criteria:`
-   (format in `state.md`) — no approval round; the Spec checker and a resume read it there. Ask only
+   (format in `state.md`), closed by the line `Criteria complete.` — no approval round; the Spec checker and a resume read it there. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
    "(Recommended)"; look up facts yourself instead of asking.
 3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
@@ -294,17 +297,15 @@ approaches, architecture diagrams or text summaries on screens; building blocks 
 about one, ends with this URL on its own line, verbatim; messages without anything new to see carry
 no URL."
 
-**4b. Planning:** `superpowers:writing-plans` with "no execution-method question; execution is
-defined by `/dev`" (`sources.md` O15). Write and commit the plan, add `@plan:` to ROADMAP.md, go on to
+**4b. Planning:** `superpowers:writing-plans` with "no execution-method question; do not start
+execution — `/dev` does" (`sources.md` O15). Write and commit the plan, add `@plan:` to ROADMAP.md, go on to
 4c — no plan approval.
 
-**4c. Execution → read `execution.md`.** It implements small phases from the acceptance criteria and
-planned phases in waves of parallel implementers, with a task review per task, and ends before any
-branch completion or whole-branch review (the gate owns those).
+**4c. Execution → read `execution.md`:** small phases from the acceptance criteria, planned phases in
+waves of parallel implementers, a task review per task; no branch completion, no whole-branch review.
 
-There is no separate verification step any more: the gate's Step D proves tests, build and E2E on
-the final state, and its evidence rules keep the principle of `verification-before-completion` —
-no claim without a command whose output was read.
+No separate verification step: gate Step D proves tests, build and E2E on the final state, and its
+evidence rules keep the principle (no claim without a command whose output was read).
 
 **4d. Gate Transition (`[~]` → `[!]`):**
 1. Mark phase `[!]` in ROADMAP.md (Edit tool)
@@ -338,7 +339,7 @@ Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis
 2. **CI runs in background;** its status is checked before the next phase (`gate.md`, "CI in background").
 3. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present (small phases have neither)
 4. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-5. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`)
+5. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`); delete the phase's SDD workspace (`execution.md`)
 6. Commit: `roadmap: complete Phase N — <name>`
 7. All phases done in milestone? → Milestone End (`commands.md`); it waits for every open CI line
 
@@ -354,7 +355,7 @@ run" applies, the context hint included.
 **Triggered by:** User says "drop it", "do something else", "stop", "cancel" or similar during an active `[~]` or `[!]` phase.
 
 **Behavior:**
-1. **Stop current work immediately.** Do not continue the current skill invocation.
+1. **Stop current work immediately.** Do not continue the current skill invocation; stop running background implementers (TaskStop or the host's stop) and record each as `interrupted` in the ledger (`execution.md`).
 2. **AskUserQuestion** (single-select):
    - **Pause phase** (Recommended) — save progress in STATE.md, keep phase `[~]`/`[!]`, resume later with `/dev next`
    - **Skip phase** — mark `[—]` with reason, move to next phase
@@ -380,7 +381,7 @@ run" applies, the context hint included.
 | All phases done in MS | Auto-trigger Milestone End. |
 | All milestones done | "Roadmap complete!" Offer add/review. |
 | `@skills` parse error | Warn, use defaults. |
-| CI status `red` or `timeout` | Halt before the next phase; repair per `gate.md`, "CI in background". `none` → not a halt, never green, noted in the gate summary. |
+| CI status `red` or `timeout` | Halt to repair before the next phase (`gate.md`, "CI in background"), then the run continues. `none` → not a halt, never green, noted in the gate summary. |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |

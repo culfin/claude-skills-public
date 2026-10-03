@@ -1,22 +1,23 @@
 # Execution — step 4c
 
-Read at step 4c and when resuming a `[~]` phase that has a plan or acceptance criteria. This file is
-the only description of how a phase gets implemented. The main session dispatches every implementer
-and every reviewer itself: in Claude Code a subagent cannot dispatch subagents, and a worker that
-reviews its own change only repeats its own conclusions.
+Read at step 4c and when resuming a `[~]` phase that has a plan or complete acceptance criteria. This
+file is the only description of how a phase gets implemented. The main session dispatches every
+implementer and every reviewer itself: in Claude Code a subagent cannot dispatch subagents, and a
+worker that reviews its own change only repeats its own conclusions.
 
 ## Setup
 
 - **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development` (active root per
   `superpowers.md`). Its prompts and scripts are used directly; its skill is not invoked, so its own
   serial loop, five fix rounds and final review do not apply (`sources.md` O1, O16).
+- **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
+  nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
   this phase. Ledger, tasks JSON, wave output, briefs, reports and review packages live there as files;
   the chat gets one status line per task (`Task 3: complete — 2 commits, review clean`). Everything
-  pasted into the chat is reread on every later turn, so hand artifacts over as paths.
-- **Ledger** `<workspace>/progress.md`, first line `# SDD ledger — plan: <plan file>`. A task with a
-  `Task <N>: complete` line is done — never dispatch it again; after `/clear` or compaction trust the
-  ledger and `git log` over memory.
+  pasted into the chat is reread on every later turn, so hand artifacts over as paths. When the phase
+  reaches `[x]`, delete its workspace — git history is the record, and a stale ledger would make a
+  later phase skip work.
 - **Models:** every dispatch names its model per `models.md`; an omitted model inherits the most
   expensive one.
 - **UI tasks:** pass the `design/INDEX.md` and `stack/INDEX.md` rows marked `4c` whose trigger the task
@@ -25,12 +26,35 @@ reviews its own change only repeats its own conclusions.
   on each (the spec is binding, the plan argues from it) and write `Ruling: <what> — <why>` to the
   ledger; ask the user only if the answer changes what gets built and no reading of the spec decides it.
 
+## Ledger
+
+`<workspace>/progress.md`, first line `# SDD ledger — plan: <plan file>`. Every task transition gets a
+line the moment it happens, because a session can end at any point and memory does not survive
+`/clear` or compaction:
+
+```
+Task 2: dispatched (worktree /abs/path, branch task-2, BASE 3f9c2a1)
+Task 2: reviewed (2 findings)
+Task 2: fix round 1/3 (1 addressed, 1 open)
+Task 2: reviewed clean
+Task 2: complete (merged 8e01b7d)
+Task 4: interrupted (worktree /abs/path, branch task-4)
+```
+
+**Resume** reads the ledger, then `git worktree list` and the task branches: `complete` → skip.
+`dispatched`, `reviewed`, `fix round` or `interrupted` with its worktree or branch still there →
+continue from that state — review its commits, or redispatch into that same worktree (as in fix round
+3 below) — never a second fresh dispatch, which would leave two branches for one task. Worktree and
+branch gone → dispatch fresh.
+
 ## Small phase (no plan)
 
-Copy the phase's acceptance criteria from STATE.md into `.superpowers/sdd/phase-<N>.md` and run
-`sdd-workspace` on that file at once (it writes the `.gitignore` that keeps it out of git); the file is
-both plan and brief. One implementer with `$SDD/implementer-prompt.md`, in the current tree; one task
-review and its fix loop (below); then the gate.
+Copy the phase's acceptance criteria from STATE.md into `.superpowers/sdd/phase-<N>-<slug>.md` (slug
+of the phase name, so a renumbered or repeated phase number never adopts an old workspace) and run
+`sdd-workspace` on it at once (it writes the `.gitignore` that keeps the file out of git); the file is
+both plan and brief. BASE is the `<phase base>` defined in `gate.md`, "Tier". One implementer with
+`$SDD/implementer-prompt.md`, in the current tree; one task review and its fix loop (below); then the
+gate.
 
 ## Planned phase — waves
 
@@ -44,16 +68,21 @@ review and its fix loop (below); then the gate.
    rulings, and the report path `…/task-<N>-report.md` — absolute paths, because the workspace is
    git-ignored and does not exist inside a task worktree.
 
-**Per wave.** Before it starts, the phase's own work is committed — a task worktree starts from
-`HEAD`, and uncommitted changes are not in it (changes that are not the phase's stay untouched).
-Record the wave's BASE (`git rev-parse HEAD`).
+**Per wave.** Before it starts, the phase's own work is committed — a task worktree starts from a
+commit, and uncommitted changes are not in it (changes that are not the phase's stay untouched).
+Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 
-- **Load brake:** before each dispatch `bash "$DEV_DIR/scripts/load-ok.sh"`. Exit 1 → wait 60 s and
-  retry; after 10 minutes, dispatch the remaining tasks of the wave one at a time. Parallel builds on
-  a busy machine turn every check into a timeout and save nothing.
-- **More than one task in the wave:** dispatch each implementer with `isolation: "worktree"`, all in
-  one message. Parallel commits, builds and test runs in one working tree collide. A single-task wave
-  runs in the current tree.
+- **More than one task in the wave:** dispatch each implementer with `isolation: "worktree"`.
+  Parallel commits, builds and test runs in one working tree collide. If the worktree does not start
+  from the phase branch's HEAD (the base is host-dependent), the implementer first creates its task
+  branch from that HEAD (BASE, given in the dispatch) before changing anything — otherwise the review
+  package fails with "HEAD is not a descendant of BASE". A single-task wave, or a host without
+  worktree isolation, runs serially in the current tree.
+- **Load brake:** one Agent call per message, with `bash "$DEV_DIR/scripts/load-ok.sh"` before each —
+  the load can only change between messages. Exit 1 → wait 60 s in the background (a background
+  `sleep` or the host's wait/until-loop, not a foreground `sleep`) and check again; after 10 minutes,
+  run the rest of the wave serially in the current tree. Parallel builds on a busy machine turn every
+  check into a timeout and save nothing.
 - **In a worktree, implementers run unit tests only;** integration and E2E run once on the merged
   state (gate Step D) — several copies of a database or browser stack overload the machine.
 - **Irreversible steps** (`SKILL.md`, "Halt on Irreversible Actions") are never run by an implementer:
@@ -67,21 +96,22 @@ answer and resume; `BLOCKED` → change something (context, model one tier up, s
 dispatching again.
 
 **Fix loop — at most 3 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
-Rounds 1–2 resume the same implementer with the open findings verbatim; round 3 dispatches a fresh
-implementer one tier up (`models.md`) with brief, report and findings, in the same worktree. After
-each round, a scoped re-review: `review-package <plan> <head the last review saw> <new head>` and
-`$SDD/re-review-prompt.md`. Ledger line per round: `Task <N>: fix round <R>/3 (<X> addressed, <Y> open)`.
-Still open after round 3 → halt and report what remains (one of the run's halts). Minor findings go
-to the ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks
-— a list nobody reads is a silent discard. Never fix findings in the main session: that skips review.
+Rounds 1–2 resume the same implementer with the open findings verbatim. Round 3 dispatches a fresh
+implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
+to work only inside the task's existing worktree (its absolute path), where the task branch and its
+commits are; a new isolated worktree would start without them. After each round, a scoped re-review:
+`review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`. Still
+open after round 3 → halt and report what remains (one of the run's halts). Minor findings go to the
+ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks — a
+list nobody reads is a silent discard. Never fix findings in the main session: that skips review.
 
-**Merge after the wave,** once every task in it is complete: bring each task branch into the phase
-branch in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits). A conflict →
-`git merge --abort`, and run that task again serially on top of the merged state (new brief run,
-same review loop). Then run the unit tests once on the merged state; red → fix loop of the task whose
-merge broke it. Remove the task worktrees (`git worktree remove <path>`) and delete merged task
-branches with `git branch -d` (it refuses unmerged work); an unmerged branch stays and is named in the
-ledger. Ledger: `Task <N>: complete (merged <sha>)`.
+**Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
+phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)
+and run the unit tests after each merge, so a red run names the task that broke it — that task goes
+back into its fix loop. A conflict → `git merge --abort`, and run that task again serially on top of
+the merged state (same brief, same review loop). Then remove the task worktrees (`git worktree remove
+<path>`) and delete merged task branches with `git branch -d` (it refuses unmerged work); an unmerged
+branch stays and is named in the ledger.
 
 ## Scope boundary
 

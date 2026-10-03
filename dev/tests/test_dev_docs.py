@@ -22,7 +22,7 @@ class DevDocsTests(unittest.TestCase):
 
     def test_gate_fast_is_gone(self):
         for p in DEV.rglob("*.md"):
-            self.assertNotIn("@gate: " + "fast", p.read_text(), str(p.relative_to(DEV)))
+            self.assertNotIn("@gate: fast", p.read_text(), str(p.relative_to(DEV)))
 
     def test_checklist_names(self):
         g = text("gate.md")
