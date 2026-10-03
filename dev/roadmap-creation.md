@@ -49,11 +49,9 @@ Show both installed and newly discovered skills as options.
 - **Code-modifying** (refactoring tools, test generators) → better on-demand, not automatic
 - **Project-type-dependent** (browser automation: web only, store screenshots: app stores only)
 
-The gate's own analyzers (`analyzers/`) are not configured here — the gate picks them by tier (`gate.md`).
-
 **Recommended defaults** (mark as Recommended in AskUserQuestion):
 
-Note: the Quality Gate (`gate.md`) decides its own checks by tier — always Diff review, Spec checker, tests and build, plus E2E where flows changed; Security, stack, design and performance reviews in the large tier — and none of them is configured here. A phase that must always get the large tier carries `@gate: full`; there is no lighter gate annotation. Bug hunt (full) + Performance review (full) + Dead-code scan (quick) are mandatory at milestone-end. Bug hunt (full) + Performance review (full) + Dead-code scan (full) are mandatory at pre-release. Only list additional, optional skills below.
+The gate's checks (`gate.md`) and the mandatory milestone-end and pre-release analyses (`commands.md`) are not configured here; `@gate: full` forces the large tier. List only additional, optional skills:
 
 - Post-phase any: `requesting-code-review`
 - Post-phase UI (web): `playwright-cli` (for interactive browser testing beyond E2E)

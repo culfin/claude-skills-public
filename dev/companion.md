@@ -2,7 +2,7 @@
 
 Read before the first screen of a session. What screens look like is in `companion-screens.md`.
 
-The Visual Companion is a browser-based server that renders HTML screens. It is used **without asking and without permission** — it is a fixed part of the workflow, not an optional feature.
+The Visual Companion is a browser-based server that renders HTML screens, used **without asking** — a fixed part of the workflow.
 
 ### Ground Rule: The Companion Shows the User Interface — Nothing Else
 
@@ -13,8 +13,7 @@ Text on a screen is limited to captions and labels (one or two sentences per blo
 
 **Never in the companion — always in the terminal:** roadmaps, phase or milestone overviews, plans,
 specs, strategy, approaches and their trade-offs, architecture or data-flow diagrams, gate findings,
-review results, lists of decisions, legal reasoning. If a screen would mostly be text that could just
-as well be written in the chat, it does not belong in the companion — write it in the chat.
+review results, lists of decisions, legal reasoning — text that could be written in the chat goes there.
 
 | Content | Medium |
 |--------|--------|
@@ -38,12 +37,7 @@ reading it? If the honest answer is "it is text in a nicer box" → terminal.
 | **Review or acceptance of views with real data** | Screenshots of the running app, annotated with markers where something is wrong | Building block "Real screen" |
 | **Visual fix or UI change done** | The view before and after, side by side | Building block "Before/After" |
 
-Everything else that earlier went to the browser (roadmap at session start, `/dev status`, milestone
-summary, gate and review dashboards, architecture comparisons) is shown **in the terminal only**.
-
 **When a question has a UI/UX side:** when the answer becomes visible — layout, navigation, a user's flow through views, forms, feedback (error, loading, empty), rendering across sizes and themes. Not: data model, library choice, naming — then no screen, question in the terminal only.
-
-**Look of the screens:** Style rules and ready-made building blocks are in `companion-screens.md` (in this skill directory).
 
 ### How the Server Is Started
 
@@ -67,16 +61,11 @@ $DEV_DIR/scripts/companion.sh --project-dir <project-root>
 
 ### The URL Travels With Every New Screen
 
-The link from the first start scrolls away within minutes; the user must never have to search
-for it when there is something to look at. So: **a message ends with the companion's current
-`url` on its own line whenever it points the user at something new on a screen** — a newly
-written or updated screen, or a question that refers to one — verbatim, including `?key=<TOKEN>`.
-Messages without anything new to see (progress reports, status updates, test results) carry **no**
-URL, even while the server runs: a link repeated in every message is noise, and the user stops
-noticing the one that matters. If the user asks for the link, give it.
-
-This also binds every subagent or delegated skill (e.g. brainstorming) that writes a screen — it
-receives the URL and follows the same rule.
+**A message ends with the companion's current `url` on its own line whenever it points the user at
+something new on a screen** — a newly written or updated screen, or a question about one — verbatim,
+including `?key=<TOKEN>`. Messages without anything new to see carry **no** URL (a link in every
+message gets ignored); asked for the link, give it. Every subagent or delegated skill that writes a
+screen receives the URL and follows the same rule.
 
 - When a question dialog (`AskUserQuestion`) refers to a screen, the text **before** the call ends
   with the URL — the dialog can cover everything earlier.
@@ -101,13 +90,8 @@ exactly what is meant — automatically, without asking:
 1. **Ensure the server** — alive check; if not active, start `companion.sh --project-dir <project-root>`
    (same `--project-dir` → same port, an open tab reconnects by itself).
 2. **Write the HTML screen** — content fragment with the `Write` tool into `screen_dir`.
-3. **Share the `url` verbatim** — exactly as returned, including `?key=<TOKEN>`, on its own line at
-   the end of the message; again in every later message that refers to the screen (see "The URL
-   Travels With Every New Screen"). **Never reconstruct it, never substitute a different host.**
+3. **Share the `url` verbatim** per "The URL Travels With Every New Screen".
 
-The screen is the confirmation surface: from it the user immediately sees whether the state is right.
-That is why it always shows the state **after** the change, never the one before.
-
-What a screen looks like — content fragments, style rules, building blocks (UI decision, State grid, Real screen, Before/After, Waiting, etc.) — is described in `companion-screens.md`.
+A screen shows the state **after** the change, never the one before — it is the confirmation surface.
 
 ---

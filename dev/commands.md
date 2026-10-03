@@ -32,8 +32,6 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 
 ---
 
----
-
 ## Milestone End
 
 All phases `[x]` or `[—]`:
@@ -44,13 +42,12 @@ All phases `[x]` or `[—]`:
    gate summary. Then remove the milestone's lines (`state.md`).
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
-   - **Bug hunt** (full mode) — deep analysis of the entire milestone scope through all 7 lenses.
-   - **Performance review** (full mode) — comprehensive performance anti-pattern scan across the milestone's changes.
-   - **Security review** (full mode) — complete security scan of the entire milestone scope. Even if every phase already had conditional security audits, full mode uncovers cross-cutting attack surfaces (interplay of several components, cumulative risks).
-   - Critical findings from all three: fix before proceeding.
-   - Non-critical findings: note in STATE.md under Blockers & Risks.
-3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode) — scans for unused code accumulated across the milestone's phases. Hardcoded, runs regardless of configuration.
-   - If dead code is found: show findings, fix automatically where safe (unused imports, unreferenced functions), ask for confirmation on larger removals.
+   - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
+   - **Performance review** (full mode) — the milestone's changes.
+   - **Security review** (full mode) — the whole milestone scope; finds cross-cutting risks the per-phase reviews cannot.
+   - Critical findings: fix before proceeding. Non-critical: STATE.md Blockers & Risks.
+3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
+   Fix the safe ones (unused imports, unreferenced functions); ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
 5. **Update STATE.md** (Progress table, Current Position to next milestone).
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
@@ -58,13 +55,9 @@ All phases `[x]` or `[—]`:
 
 ---
 
----
-
 ## Pause Session
 
 **Triggered by:** `/dev pause`
-
-Explicitly saves session state for clean handoff to next conversation.
 
 1. **Update STATE.md** Session Continuity:
    - `Last session`: today's date
@@ -77,47 +70,13 @@ Explicitly saves session state for clean handoff to next conversation.
 
 ---
 
----
-
 ## Debug Flow
 
-**Triggered by:**
-- `/dev debug` or `/dev debug <description>` — explicit user request
-- User says "fix crash", "why is this broken", "not working", "find bug"
-- **Automatically during Phase Execution** when:
-  - Build fails and the error is not a simple typo or missing import (i.e., requires investigation)
-  - Tests fail after implementation and the cause is not immediately obvious
-  - App crashes during `build-and-run`
-  - A verification step reveals unexpected behavior
-
-**When NOT to use debug flow:**
-- Compiler error with obvious fix (missing semicolon, typo, wrong type) → just fix it
-- Build failure due to missing dependency → just add it
-- Test fails because test expectations need updating → just update
-- If the fix is obvious within 2 minutes, skip the debug flow
-
-```dot
-digraph debug_decision {
-  "Error encountered" -> "Obvious fix?" [label=""];
-  "Obvious fix?" -> "Fix directly" [label="yes, <2min"];
-  "Obvious fix?" -> "Start Debug" [label="no"];
-  "Fix directly" -> "Continue phase";
-  "Start Debug" -> "Claude: debugger.md flow";
-  "Claude: debugger.md flow" -> "Root Cause -> Fix";
-  "Root Cause -> Fix" -> "Similar-bugs scan";
-  "Similar-bugs scan" -> "Continue phase";
-}
-```
-
-Read and follow `debugger.md` in this skill directory for the Claude-side flow. It implements scientific debugging with persistent state files in `.debug/`, a knowledge base that learns from past bugs, and session resume capability.
-
-Key integration points:
-- Debug files record which `/dev` phase was active (if any)
-- After fix: Similar-bugs scan runs automatically
-- After archive: returns to the `[~]` phase if one was in progress
-- Knowledge base (`.debug/knowledge-base.md`) accelerates future debugging
-
----
+**Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug"; and
+automatically during a phase when a build, test run or app fails without an obvious cause.
+An obvious fix (typo, missing import or dependency, outdated test expectation — under 2 minutes) is
+just made. Otherwise read and follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the
+fix, then back to the `[~]` phase).
 
 ---
 
@@ -159,8 +118,6 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 ---
 
----
-
 ## Pre-Release Review
 
 **Triggered by:** `/dev review`
@@ -178,7 +135,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
    - **Web:** run `vibepolish` in launch-audit mode (findings only, no fixes) over the whole app; then a subagent reads `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` plus only the reference file of the step it performs — `audit` first, `polish` only after the user approves specific findings. **These files are used as checklists only:** the subagent applies their criteria by reading the code and the running app itself. It never runs `scripts/impeccable` or `npx impeccable` (a launcher that downloads a binary), never the `context` step that `SKILL.md` and `reference/polish.md` order, never `install`, never `hooks on` — where a file says to run one of these, skip that instruction and say so in the report. Set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` regardless.
    - **Native (Apple/Android):** read the `## Checklist` section of the matching platform file (`design/platform-apple.md` or `design/platform-android.md`) and review the app against it.
    - Missing source (vibepolish not installed, no `$DEV_DESIGN_DIR/impeccable` checkout) → report `skipped: <reason>`, never a silent pass.
-4. **Read Gate summaries** — read all `### Gate summary` entries from STATE.md. If there are none (first release or fresh project): output the note "No gate history available — this is the first release", skip this step. If present: show a consolidated quality picture: which findings were found and fixed across all phases? Are there recurring patterns?
+4. **Read Gate summaries** from STATE.md and show a consolidated picture: findings and fixes across all phases, recurring patterns. None → note "No gate history available — this is the first release".
 5. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause
 6. **Launch video (offer only)** — if `brag.md` "When to offer" holds for this release (landing page
@@ -189,15 +146,10 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 ---
 
----
-
 ## Standalone Quality Gate
 
 **Triggered by:** `/dev check`
 
 **→ Read `dev-check.md` in this skill directory for the full flow.**
 
-Summary: Precondition is **no active phase** (`[~]`/`[!]` → stop, point to `/dev next`).
-Snapshot of the changed files as an immutable `$CHECK_SCOPE`, then the same gate
-steps as the phase gate against that scope, Check summary in STATE.md, check commit
-`chore: dev check [gate-pass]`.
+Precondition: **no active phase** (`[~]`/`[!]` → stop, point to `/dev next`).

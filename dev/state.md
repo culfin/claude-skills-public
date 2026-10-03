@@ -1,14 +1,7 @@
 # STATE.md — what it holds and when it changes
 
-Read on every `/dev` run that writes STATE.md.
-
-STATE.md is the project's persistent state file. It tracks progress, requirements, constraints, risks, and session continuity across conversations.
-
-### When to Read STATE.md
-
-- **Every `/dev` and `/dev next` invocation** — read before showing summary
-- **`/dev status`** — use STATE.md data for the status display
-- **Session start** (when ROADMAP.md exists) — read STATE.md for context
+Read on every `/dev` run that writes STATE.md — the project's persistent state across sessions
+(progress, requirements, constraints, risks, continuity). Every `/dev` run and `/dev status` reads it.
 
 ### When to Update STATE.md
 
@@ -45,8 +38,7 @@ STATE.md is the project's persistent state file. It tracks progress, requirement
 
 ### Run blocks
 
-A run carries many phases, and after `/clear` the next session knows only what STATE.md says. Three
-blocks carry the run across that boundary:
+After `/clear` the next session knows only STATE.md; three blocks carry the run:
 
 ```markdown
 ## Handoff
@@ -79,9 +71,8 @@ draft as finished — without it, a resume goes back to clarification instead of
 
 ### UI review — approved findings
 
-`/dev ui` run during an active phase only analyses and asks (`ui-review.md`); the approved rework
-belongs to that phase. So the approval is not lost, it is stored in its own section — not in
-Current Position, which is overwritten on every phase transition:
+`/dev ui` during an active phase only analyses and asks (`ui-review.md`); the approved rework belongs
+to that phase and is stored in its own section (Current Position is overwritten):
 
 ```markdown
 ## UI review — approved findings
@@ -98,13 +89,8 @@ Current Position, which is overwritten on every phase transition:
   remove the section when it is empty. A phase does not become `[x]` while the section still lists
   an ID — it is gone, with the gate checklist, by phase completion at the latest.
 
-### STATE.md is NOT for
-
-- Detailed plan contents (those go in spec/plan files)
-- Code-level decisions (those belong in CLAUDE.md or code comments)
-- Debug state (that goes in `.debug/` files)
-- Performance metrics or velocity tracking (unnecessary overhead)
-
-**Exception: Gate summaries** — these stay in STATE.md permanently. They are not temporary state but a quality knowledge log. Each Gate summary under `### Gate summary — Phase N` is NOT removed on phase completion. Only the `## Quality Gate — Phase N` checklist section is removed. The same applies to **Check summaries** (created by `/dev check`) — these too are kept permanently under `## Context` and are never removed.
+**Not for:** plan details (spec/plan files), code-level decisions (CLAUDE.md or comments), debug state
+(`.debug/`), velocity metrics. **Gate and Check summaries are permanent** — a quality log; only the
+`## Quality Gate — Phase N` checklist is removed.
 
 ---

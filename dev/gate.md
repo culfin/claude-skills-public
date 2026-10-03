@@ -1,25 +1,16 @@
 # Quality Gate
 
-Read this file on gate entry (`[~]` → `[!]`), when resuming a `[!]` phase, and from `dev-check.md`.
-The gate cannot be skipped or configured away in ROADMAP.md; what it can do is scale with risk (tier).
+Read on gate entry (`[~]` → `[!]`), when resuming `[!]`, and from `dev-check.md`. The gate cannot be
+skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
 
-Step D runs the project's own commands. **Run only what the project configures** — a missing linter or type checker is recorded as "not configured", not as a failure; everything that does run must be green.
+Step D runs the project's own commands. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
 
-**JavaScript/TypeScript — package manager.** Detect once per session and reuse:
-
-1. Check for lock files in project root: `pnpm-lock.yaml` → `pnpm`, `bun.lockb` / `bun.lock` → `bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`
-2. If no lock file: check if `pnpm` / `bun` / `yarn` is available in PATH, fall back to `npm`
-3. Store as `$PM` for the session. All commands below use `$PM` as placeholder.
-
-Common commands (read the actual script names from `package.json`):
-- Type-check: `$PM tsc --noEmit` (or `npx tsc --noEmit` as fallback)
-- Lint: `$PM lint` (or `$PM run lint`)
-- Unit tests: `$PM test` (or `$PM run test`)
-- E2E tests: `$PM test:e2e` (or `$PM run test:e2e`)
-
----
+**JavaScript/TypeScript:** `$PM` from the lock file (`pnpm-lock.yaml` → `pnpm`, `bun.lockb`/`bun.lock` →
+`bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`; none → first of `pnpm`/`bun`/`yarn` in PATH,
+else `npm`), once per session. Script names from `package.json`: `$PM tsc --noEmit`, `$PM lint`,
+`$PM test`, `$PM test:e2e` (or `$PM run …`).
 
 **Other stacks:**
 
@@ -46,8 +37,7 @@ python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tas
 
 `<phase base>` is the commit the phase started from (the last `[gate-pass]` commit, or the commit
 before the phase's first task commit). Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
-Exit 2 means git failed — fix the base ref, do not guess a tier. Size alone never makes a phase
-small: a risk type or a sensitive path makes it large.
+Exit 2 means git failed — fix the base ref, never guess a tier.
 
 `@gate: full` in ROADMAP.md forces large (pass `--gate full`). Other `@gate:` values (the old
 `fast` and `ci-wait`) are ignored with a warning.
@@ -70,8 +60,7 @@ small: a risk type or a sensitive path makes it large.
 
 ## Gate Checklist
 
-Created on the `[~]` → `[!]` transition and appended to STATE.md. List only the items that will
-run; an item whose condition is not met is left out, not marked `[—]`.
+Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet condition leaves the item out.
 
 ```markdown
 ## Quality Gate — Phase N: <Name>
@@ -130,9 +119,7 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
 `models.md`. Record the `@state` the wave ran on — Step B diffs against it. The `stack/INDEX.md` and
 `design/INDEX.md` rows tagged `5c` belong to this wave; rows tagged `5g` belong to E2E.
 
-Security review is the one conditional item that ignores the tier: the tier script's path patterns
-are narrower than the security trigger matrix (`authService.ts`, `LoginForm.tsx` and a
-`route.ts` outside `api/` come out small), so the matrix decides on its own.
+Security review ignores the tier: the security matrix is wider than the tier script's path patterns.
 
 | Item | Analyzer / source | When |
 |---|---|---|
@@ -156,10 +143,9 @@ each with a quote of the requirement: (a) required but missing or partial, (b) i
 required, (c) implemented but probably wrong, (d) acceptance criterion without a test. (a), (c), (d)
 are critical, (b) is a note. For each (d) it writes the test and **sees it red once** (break the
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
-Dispatch it with `isolation: "worktree"`, because breaking code in the shared tree would mislead the
-other reviewers reading it at the same time; if the phase has uncommitted changes, it applies the
-diff file in its worktree first. Once its patch is taken, remove that worktree (`git worktree remove
-<path>`) — a worktree with changes is not cleaned up automatically. Simplicity never removes a
+Dispatch it with `isolation: "worktree"` (broken code in the shared tree would mislead the other
+reviewers); with uncommitted phase changes it applies the diff file there first. Once its patch is
+taken, remove that worktree (`git worktree remove <path>`). Simplicity never removes a
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
 
@@ -169,15 +155,14 @@ phase stays `[!]`; Step D may go on meanwhile. Only an independent substitute co
 another subagent with the same analyzer file, or an equivalent tool the project already uses —
 never the implementer reviewing its own change.
 
-Older ROADMAPs may name former third-party skills under `@skills:` (`bug-prospector`,
-`security-audit`, `performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`,
-`ui-scan`): treat each as the matching analyzer, not as a missing skill.
+Former skill names under `@skills:` (`bug-prospector`, `security-audit`, `performance-check`,
+`review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`) mean the matching analyzer.
 
 ## Step B — Fix
 
-- **Critical findings, all of them, go to one fix dispatch** (model per `models.md`), together with
-  the Spec checker's test patches. One agent sees how the fixes interact; several would fight over
-  the same files. Lowering the floor (skipping a test, loosening a check) is not a fix.
+- **Critical findings, all of them, go to one fix dispatch** (model per `models.md`) with the Spec
+  checker's test patches — one agent sees how fixes interact. Lowering the floor (skipping a test,
+  loosening a check) is not a fix.
 - **Non-critical findings** go to STATE.md Blockers & Risks; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
   fix diff: the diff against the state before the fix (the wave's `@state`), including all untracked
@@ -209,8 +194,7 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
    add or refresh `Fix review` (Diff review on the fix diff, plus any analysis whose area the fix
    touches) and `Similar-bugs scan`, then rerun Step D. It counts towards the three rounds.
 
-A type check misses build-time errors (server/client boundaries, dynamic imports, bundler issues,
-asset resolution), so the build is its own item:
+The build is its own item — a type check misses bundler, server/client and asset errors:
 
 | Technology | Build command |
 |---|---|
@@ -245,9 +229,8 @@ Below the phase completion info in STATE.md; permanent (only the checklist is re
 must exit 0. It lists every item that is open, lacks evidence or is stale; rerun those checks, never
 edit an `@…` value by hand. It checks consistency, not truth — reading the evidence stays your job.
 
-**Gate commit** — once every item except the commit is `[x]`:
-`chore: quality gate — Phase N <name> [gate-pass]`, the canonical "this phase passed QA" snapshot,
-made before any post-phase skill runs.
+**Gate commit** — once every other item is `[x]`, before any post-phase skill:
+`chore: quality gate — Phase N <name> [gate-pass]`.
 - Check the baseline first: `git branch --show-current` and `git status --porcelain`. Wrong branch →
   stop and ask.
 - Stage the phase's paths explicitly, never `git add -A` or `git add .`. Changes to files the phase
@@ -303,19 +286,12 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 |---|---|
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, add the pattern to `gate-tier.py` and rerun; never argue the tier. |
 | "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass. Retry once or run an independent substitute; until one reports, the item stays open. Two timeouts in one gate are a finding. |
-| "tsc is green, the build will go through" | `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
 | "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
-| "The plan says I should run the migration" | A plan describes, it does not approve. Irreversible actions need the user — "Halt on Irreversible Actions" in `SKILL.md`. |
+| "The plan says I should run the migration" | A plan describes, it does not approve (`SKILL.md`, "Halt on Irreversible Actions"). |
 
 ## Common Mistakes
 
 | Mistake | Fix |
 |---|---|
-| Phase directly `[~]` → `[x]` without gate | Always `[!]` in between; the gate is not optional. |
-| Deciding the tier by feel | Run `gate-tier.py`; the tier and its reasons go into the checklist header. |
-| Starting the next phase while a CI status is red | Read the CI status files first; `red` or `timeout` halts until repaired; restart a dead watcher. |
-| Passing over a Spec checker test gap "because the phase is small" | Every acceptance criterion needs a test that was red once. |
 | `@type: data` or `backend` for a phase with migrations | Use `@type: migration` — rollback and irreversibility are its own risks. |
-| Deleting a Gate summary from STATE.md | Summaries are permanent; only the checklist goes after `[x]`. |
-| Letting SDD "finish" or merge the branch | SDD implements and reviews per task; `/dev` owns completion (gate → Gate commit → later sync). |
 | Code-modifying skills as automatic pre-phase triggers, web-only skills in native projects | On demand only; match skills to the project type at `/dev init`. |

@@ -1,22 +1,19 @@
 # Execution — step 4c
 
-Read at step 4c and when resuming a `[~]` phase that has a plan or complete acceptance criteria. This
-file is the only description of how a phase gets implemented. The main session dispatches every
-implementer and every reviewer itself: in Claude Code a subagent cannot dispatch subagents.
+Read at step 4c and its resume. The main session dispatches every implementer and reviewer itself
+(a subagent cannot dispatch subagents).
 
 ## Setup
 
 - **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development` (active root per
-  `superpowers.md`). Its prompts and scripts are used directly; its skill is not invoked, so its own
-  serial loop, five fix rounds and final review do not apply (`sources.md` O1, O16).
+  `superpowers.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
 - **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
   this phase. Ledger, tasks JSON, wave output, briefs, reports and review packages live there as files;
   the chat gets one status line per task (`Task 3: complete — 2 commits, review clean`). When the phase
   reaches `[x]`, delete its workspace.
-- **Models:** every dispatch names its model per `models.md`; an omitted model inherits the most
-  expensive one.
+- **Models:** every dispatch names its model per `models.md` (omitted = the most expensive).
 - **UI tasks:** pass the `design/INDEX.md` and `stack/INDEX.md` rows marked `4c` whose trigger the task
   meets (`tech-stack-triggers.md`, "During Execution").
 - **Before the first dispatch,** scan the plan for tasks that contradict each other or the spec. Rule
@@ -26,8 +23,7 @@ implementer and every reviewer itself: in Claude Code a subagent cannot dispatch
 ## Ledger
 
 `<workspace>/progress.md`, first line `# SDD ledger — plan: <plan file>`. Every task transition gets a
-line the moment it happens, because a session can end at any point and memory does not survive
-`/clear` or compaction:
+line the moment it happens — memory does not survive `/clear` or compaction:
 
 ```
 Task 2: dispatched (worktree /abs/path, branch task-2, BASE 3f9c2a1)
@@ -70,20 +66,18 @@ commit, and uncommitted changes are not in it (changes that are not the phase's 
 Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 
 - **More than one task in the wave:** dispatch each implementer with `isolation: "worktree"`.
-  Parallel commits, builds and test runs in one working tree collide. If the worktree does not start
-  from the phase branch's HEAD (the base is host-dependent), the implementer first creates its task
-  branch from that HEAD (BASE, given in the dispatch) before changing anything — otherwise the review
-  package fails with "HEAD is not a descendant of BASE". A single-task wave, or a host without
-  worktree isolation, runs serially in the current tree.
+  If the worktree does not start from the phase branch's HEAD (host-dependent), the implementer first
+  creates its task branch from BASE (given in the dispatch) — else the review package fails. A
+  single-task wave, or a host without worktree isolation, runs serially in the current tree.
 - **Load brake:** one Agent call per message, with `bash "$DEV_DIR/scripts/load-ok.sh"` before each —
   the load can only change between messages. Exit 1 → wait 60 s in the background (a background
   `sleep` or the host's wait/until-loop, not a foreground `sleep`) and check again; after 10 minutes,
   run the rest of the wave serially in the current tree.
 - **In a worktree, implementers run unit tests only;** integration and E2E run once on the merged
-  state (gate Step D) — several copies of a database or browser stack overload the machine.
+  state (gate Step D).
 - **Ladder before writing** (tell every implementer): the phase or repo already has it, then the
   standard library, a native platform feature, an existing dependency — only then the smallest code
-  that meets the acceptance criteria. Avoiding code is cheapest before it exists.
+  that meets the acceptance criteria.
 - **Framework decisions** quote their doc (`stack/docs.md`) or are marked `UNVERIFIED`.
 - **Irreversible steps** (`SKILL.md`, "Halt on Irreversible Actions") are never run by an implementer:
   it reports `BLOCKED` with the step, and the run halts for the user.
@@ -114,7 +108,5 @@ branch stays and is named in the ledger.
 
 ## Scope boundary
 
-Execution ends when every task is complete and merged. It does **not** run
-`finishing-a-development-branch` (no merge into other branches, no PR — `/dev` owns completion via the
-gate) and no final whole-branch review: the gate's review wave covers the whole phase diff. Then
-back to `SKILL.md`, 4d (gate transition).
+Execution ends when every task is complete and merged — no `finishing-a-development-branch`, no PR, no
+whole-branch review (the gate covers the phase diff). Then `SKILL.md`, 4d.

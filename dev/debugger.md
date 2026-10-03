@@ -1,10 +1,6 @@
 # /dev debug — Scientific Debugger
 
-Autonomous bug investigator using scientific method with persistent state, knowledge base, and session resume. Consolidates approaches from GSD debugger (scientific method, persistence) and xcode-workflow-skills (platform patterns, issue ratings).
-
-## Invocation
-
-Called via `/dev debug` or `/dev debug <description>`. Returns to phase execution after fix is verified.
+Scientific bug investigation with persistent state, knowledge base and resume. Called via `/dev debug [<description>]`; returns to phase execution once the fix is verified.
 
 ---
 
@@ -205,8 +201,6 @@ All must be YES:
 
 ---
 
----
-
 ## Execution Flow
 
 ### Step 0: Pre-flight
@@ -345,27 +339,3 @@ ALL must be true:
 - [ ] Issue Rating Table complete
 
 **Red flags:** "seems to work," "I think it's fixed" — NOT verified.
-
----
-
-## Worked Example
-
-```
-User: "App crashes when I tap an item in the list"
-
-Step 0 — Pre-flight: git status clean
-Step 1 — No active sessions, create new
-Step 2 — Create .debug/item-detail-crash.md
-Step 3 — Gather: Crash on tap, EXC_BAD_ACCESS, started after last commit
-Step 4 — Investigate:
-  Phase 0: Knowledge base empty
-  Phase 1: git log shows ItemDetailView.swift changed yesterday
-           Trace: List tap → NavigationLink → ItemDetailView → loadItem()
-           Read ItemDetailViewModel.swift: find `item.category!` line 34
-  Phase 2: Hypothesis: force unwrap of nil optional (category nil for CSV imports)
-  Phase 3: Check data — category IS nil for CSV-imported items. Confirmed.
-Step 5 — Fix: Replace `item.category!` with `item.category ?? "Uncategorized"`
-         Build passes, tap works, test added for nil category
-Step 6 — Similar-bugs scan: found 2 more force unwraps on optional fields
-Step 7 — Archive, commit, knowledge base updated
-```

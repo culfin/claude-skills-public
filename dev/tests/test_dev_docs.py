@@ -103,5 +103,18 @@ class DevDocsTests(unittest.TestCase):
                     self.assertNotIn(name, body, str(p.relative_to(DEV)))
 
 
+    def test_word_budget(self):
+        # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
+        def words(f):
+            return len(f.read_text().split())
+        hot = sum(words(DEV / f) for f in ("SKILL.md", "gate.md", "execution.md", "state.md"))
+        files = [f for f in DEV.rglob("*.md") if "tests" not in f.relative_to(DEV).parts]
+        sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
+        total = sum(n for n, _ in sizes)
+        msg = f"hot path {hot}/9000, total {total}/38189; largest: {sizes[:5]}"
+        self.assertLessEqual(hot, 9000, msg)
+        self.assertLessEqual(total, 38189, msg)
+
+
 if __name__ == "__main__":
     unittest.main()
