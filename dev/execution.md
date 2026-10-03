@@ -87,6 +87,7 @@ Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 - **Ladder before writing** (tell every implementer): the phase or repo already has it, then the
   standard library, a native platform feature, an existing dependency — only then the smallest code
   that meets the acceptance criteria. Avoiding code is cheapest before it exists.
+- **Framework decisions** quote their doc (`stack/docs.md`) or are marked `UNVERIFIED`.
 - **Irreversible steps** (`SKILL.md`, "Halt on Irreversible Actions") are never run by an implementer:
   it reports `BLOCKED` with the step, and the run halts for the user.
 

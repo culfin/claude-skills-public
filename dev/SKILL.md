@@ -192,7 +192,8 @@ commit revert restore the state?* If the answer is no, the decision belongs to t
 Procedure: stop, say in one sentence what would happen and what about it cannot be undone,
 state the proposal, get approval. For `@type: migration` this halt is mandatory and cannot
 be replaced by a line in the plan — a plan that describes the migration is not approval
-to run it.
+to run it. An approval must name the action: "looks fine" to another question is none. A deploy
+or release approval comes with a rollback plan (trigger, steps, time to restore), stated before asking.
 
 ---
 
@@ -373,18 +374,15 @@ run" applies, the context hint included.
 |----------|----------|
 | ROADMAP.md missing | Suggest `/dev init`. Stop. |
 | YAML malformed | Show error. Stop. |
-| Unknown `@type:` | Warn, continue with empty skill lists. |
-| Skill not installed | Warn, skip, continue. |
 | Phase `[!]` found | Resume Quality Gate — read STATE.md checklist, continue from first unchecked item. |
 | Phase `[~]` found | Resume per "Resume logic" (spec, plan, acceptance criteria, ledger). |
 | Phase `[—]` found | Skip in sequencing, show reason on status. |
 | All phases done in MS | Auto-trigger Milestone End. |
 | All milestones done | "Roadmap complete!" Offer add/review. |
-| `@skills` parse error | Warn, use defaults. |
 | CI status `red` or `timeout` | Halt to repair before the next phase (`gate.md`, "CI in background"), then the run continues. `none` → not a halt, never green, noted in the gate summary. |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |
 | `/dev ui` with active phase `[~]`/`[!]` | Analyse and get approval only; the rework belongs to that phase (`ui-review.md`). |
 
-**Principle:** Never block for recoverable errors. Warn and continue. Stop only for missing ROADMAP.md, broken YAML and the halts in "The run".
+**Principle:** Never block for recoverable errors (unknown `@type:`, a skill not installed, an `@skills` parse error): warn and continue with empty or default lists. Stop only for missing ROADMAP.md, broken YAML and the halts in "The run".

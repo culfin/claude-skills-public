@@ -47,12 +47,10 @@ python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tas
 `<phase base>` is the commit the phase started from (the last `[gate-pass]` commit, or the commit
 before the phase's first task commit). Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
 Exit 2 means git failed — fix the base ref, do not guess a tier. Size alone never makes a phase
-small: one line in an auth path or a migration can do more damage than 400 lines of markup, so a
-risk type or a sensitive path makes the phase large whatever its size.
+small: a risk type or a sensitive path makes it large.
 
-`@gate: full` in ROADMAP.md forces large (pass `--gate full`). `@gate:` values other than `full`
-(the old `fast` and `ci-wait`) are ignored with a warning: the small tier replaces the first, and
-CI now always runs in the background.
+`@gate: full` in ROADMAP.md forces large (pass `--gate full`). Other `@gate:` values (the old
+`fast` and `ci-wait`) are ignored with a warning.
 
 ## Phase Types
 
@@ -121,7 +119,6 @@ run; an item whose condition is not met is left out, not marked `[—]`.
 - **A command whose output was not read has not run.** A pipe (`| tail`, `2>/dev/null`) can
   swallow the exit status; when in doubt, rerun without it. A tool that reports overall success
   proves only what it checked, not every sub-step.
-- A session that ends mid-gate resumes at the first open `[ ]`.
 
 ---
 
@@ -178,7 +175,7 @@ Older ROADMAPs may name former third-party skills under `@skills:` (`bug-prospec
 ## Step B — Fix
 
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`), together with
-  the Spec checker's test patches. One agent sees how the fixes interact; several would fight over
+  the Spec checker's test patches; lowering the floor is not a fix. One agent sees how the fixes interact; several would fight over
   the same files.
 - **Non-critical findings** go to STATE.md Blockers & Risks; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
@@ -200,7 +197,10 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
 
 1. **Typecheck + lint + tests and Production Build in parallel** — two background commands with the
    project's own commands ("Project Commands per Stack"). Run them one after the other only if
-   both write the same output directory. Everything that runs must be green.
+   both write the same output directory. Everything that runs must be green. Before `[gate-pass]`
+   also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>`; its result
+   (`floor-guard: 0 findings` or the list) joins that evidence. A finding is critical: undo it, or
+   record it in `.floor-guard-allow` with the reason after the user's explicit approval.
 2. **E2E Tests** after the build — small tier only if UI files or a user flow changed, large tier
    wherever the phase touches flows. Details: `e2e-testing.md`.
 3. **A code change forced by a red test, build or E2E run is a fix round** and goes through Step B:
@@ -249,8 +249,7 @@ made before any post-phase skill runs.
 - Check the baseline first: `git branch --show-current` and `git status --porcelain`. Wrong branch →
   stop and ask.
 - Stage the phase's paths explicitly, never `git add -A` or `git add .`. Changes to files the phase
-  did not touch (a parallel session, tools rewriting files) stay out; unclear → ask. A gate commit
-  that sweeps up someone else's work is worthless as a rollback point.
+  did not touch (a parallel session, tools rewriting files) stay out; unclear → ask.
 
 ## CI in background
 
@@ -300,12 +299,10 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 
 | Thought | Reality |
 |---|---|
-| "The tier script said small, but this touches auth — fine, it said small" | The script already checks sensitive paths. If it missed one, add the pattern to `gate-tier.py` and rerun — fix the script, do not argue the tier in either direction. |
+| "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, add the pattern to `gate-tier.py` and rerun; never argue the tier. |
 | "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass. Retry once or run an independent substitute; until one reports, the item stays open. Two timeouts in one gate are a finding. |
 | "tsc is green, the build will go through" | `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
-| "The tests already ran earlier" | Earlier was before the fixes. Tests, build and E2E run on the final state, otherwise they prove the wrong code. |
-| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering it still pass. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
-| "Set the checkmark, I'll write the evidence later" | Later the context is gone and the checkmark stays. Evidence and checkmark come into being together. |
+| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
 | "The plan says I should run the migration" | A plan describes, it does not approve. Irreversible actions need the user — "Halt on Irreversible Actions" in `SKILL.md`. |
 
 ## Common Mistakes
@@ -314,9 +311,6 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 |---|---|
 | Phase directly `[~]` → `[x]` without gate | Always `[!]` in between; the gate is not optional. |
 | Deciding the tier by feel | Run `gate-tier.py`; the tier and its reasons go into the checklist header. |
-| Dispatching the review wave one by one | One message, all Step A items in parallel. |
-| One fix agent per finding | One bundled fix dispatch, then a Fix review on the fix diff only. |
-| Rerunning every analysis after a fix | Only the ones with a critical finding, only on the fix diff. |
 | Starting the next phase while a CI status is red | Read the CI status files first; `red` or `timeout` halts until repaired; restart a dead watcher. |
 | Passing over a Spec checker test gap "because the phase is small" | Every acceptance criterion needs a test that was red once. |
 | `@type: data` or `backend` for a phase with migrations | Use `@type: migration` — rollback and irreversibility are its own risks. |

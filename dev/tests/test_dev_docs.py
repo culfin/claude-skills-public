@@ -90,6 +90,18 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("standard library", text("execution.md"))
         self.assertNotIn("ponytail", d.lower())
 
+    def test_agent_skills_ideas_present(self):
+        self.assertIn("floor-guard.py", text("gate.md"))
+        for f in ("SKILL.md", "commands.md"):
+            self.assertIn("rollback", text(f).lower(), f)
+        self.assertIn("UNVERIFIED", text("stack/docs.md"))
+        self.assertIn("three questions", text("befragung.md"))
+        for p in DEV.rglob("*"):
+            if p.is_file() and not {"tests", "__pycache__"} & set(p.parts):
+                body = p.read_text(errors="ignore").lower()
+                for name in ("agent-skills", "addyosmani"):
+                    self.assertNotIn(name, body, str(p.relative_to(DEV)))
+
 
 if __name__ == "__main__":
     unittest.main()

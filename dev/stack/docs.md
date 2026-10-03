@@ -7,6 +7,7 @@ Read only the row you need. The order is fixed — take the first source that ex
 3. **`llms.txt`** — fetch the index, then single pages; never `llms-full.txt`.
 4. **Context7** — with the version the project resolves (lockfile), not "latest".
 
+A framework or library decision quotes the doc it relies on (path or URL + line) or is marked `UNVERIFIED`.
 A subagent does the reading and returns findings or a ≤ 40-line digest. Nothing reachable →
 say so (`skipped: <reason>` on a gate item); never answer from memory as if it were the docs.
 "—" = that step does not exist for the technology. Context7 ids are given where one is known to

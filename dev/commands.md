@@ -49,7 +49,7 @@ All phases `[x]` or `[—]`:
    - If dead code is found: show findings, fix automatically where safe (unused imports, unreferenced functions), ask for confirmation on larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
 5. **Update STATE.md** (Progress table, Current Position to next milestone).
-6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After").
+6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
 7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
 
 ---
@@ -178,7 +178,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
    changed, or a minor/major release with a new user-facing feature): AskUserQuestion with "Create
    launch video" or "Skip (Recommended only if the user declined before)"; run per `brag.md`.
    Otherwise skip without mentioning it.
-7. Final summary after all skills.
+7. Final summary after all skills, with the rollback plan for the proposed deploy.
 
 ---
 

@@ -33,7 +33,7 @@ Probe the changed files for these (adapt the syntax to the languages in scope) a
   option, both branches of a platform split.
 - Stray: hunks the requirement does not explain (debug code, unrelated reformatting, files outside
   the phase, files another session left in the tree).
-- Tests: each behaviour change has a test that would fail without it; tests that only assert that
+- Tests: the change must not weaken a test, check or threshold to get green; each behaviour change has a test that would fail without it; tests that only assert that
   code runs, or mirror the implementation, do not count.
 - Irreversible: anything `git revert` cannot undo (migrations, data changes, deploy steps, messages
   to real recipients). For migrations: is there a rollback path, and does it work?
@@ -60,6 +60,7 @@ Probe the changed files for these (adapt the syntax to the languages in scope) a
 - Start each note with a tag: `reuse:` (existing helper re-implemented), `stdlib:`, `native:`
   (platform feature), `yagni:` (built for a case no requirement asks for), `delete:` (dead code
   the phase left: functions, parameters, imports, branches, flags).
+- A file the phase grows past ~1000 lines: note "split before adding".
 - Duplication introduced by the phase, across tasks too.
 - Needless work in hot paths: repeated computation in loops, a query per item, re-reading a file.
 - Names that do not say what things are; clever code where plain code works.

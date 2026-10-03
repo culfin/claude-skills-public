@@ -1,0 +1,163 @@
+"""floor-guard.py reports ways a change lowers the quality floor to get green."""
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "floor-guard.py"
+
+
+def git(root, *args):
+    return subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True, text=True).stdout
+
+
+class FloorGuardTests(unittest.TestCase):
+    def setUp(self):
+        self.fresh()
+
+    def fresh(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        git(self.root, "init", "-q")
+        git(self.root, "config", "user.email", "t@example.com")
+        git(self.root, "config", "user.name", "t")
+
+    def put(self, rel, text):
+        p = self.root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+
+    def commit_base(self, **files):
+        for rel, text in files.items():
+            self.put(rel.replace("__", "/"), text)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "base")
+        self.base = git(self.root, "rev-parse", "HEAD").strip()
+
+    def run_guard(self, base=None):
+        out = subprocess.run([sys.executable, str(SCRIPT), "--base", base or self.base, "--root", str(self.root)],
+                             capture_output=True, text=True)
+        return out.returncode, out.stdout.splitlines()
+
+    def kinds(self, lines):
+        return [l.split(": ", 2)[1] for l in lines]
+
+    def check_kind(self, kind, line, path="src/a.js", neutral="x = 1\n"):
+        """The line triggers when added, and does not when it was already there at base."""
+        self.fresh()
+        self.commit_base(**{path.replace("/", "__"): neutral + line + "\n"})
+        self.assertEqual(self.run_guard(), (0, []))
+        self.put(path, neutral + line + "\n" + line + "\n")
+        rc, out = self.run_guard()
+        self.assertEqual(rc, 1)
+        self.assertEqual(self.kinds(out), [kind])
+        self.assertTrue(out[0].startswith(f"{path}:3: {kind}: "), out[0])
+
+    def test_skipped_test(self):
+        for line in ["it.skip('a', f)", "describe.skip('a', f)", "xit('a', f)", "xdescribe('a', f)"]:
+            with self.subTest(line=line):
+                self.check_kind("skipped-test", line, path="src/a.test.js")
+        for line in ["@pytest.mark.skip", "@unittest.skip('x')"]:
+            with self.subTest(line=line):
+                self.check_kind("skipped-test", line, path="tests/test_a.py")
+        self.check_kind("skipped-test", "#[ignore]", path="src/lib.rs")
+        self.check_kind("skipped-test", "t.Skip(\"x\")", path="a_test.go")
+        self.check_kind("skipped-test", "test.skip('a', f)", path="src/b.spec.ts")
+
+    def test_type_suppression(self):
+        self.check_kind("type-suppression", "// @ts-ignore", path="src/a.ts")
+        self.check_kind("type-suppression", "x = y  # type: ignore", path="a.py")
+        self.check_kind("type-suppression", "// @ts-nocheck", path="src/a.ts")
+
+    def test_ts_expect_error_needs_comment_text(self):
+        self.commit_base(**{"a.ts": "x\n"})
+        self.put("a.ts", "x\n// @ts-expect-error legacy API returns any\ny\n")
+        self.assertEqual(self.run_guard(), (0, []))
+        self.put("a.ts", "x\n// @ts-expect-error\ny\n")
+        rc, out = self.run_guard()
+        self.assertEqual((rc, self.kinds(out)), (1, ["type-suppression"]))
+
+    def test_lint_suppression(self):
+        self.check_kind("lint-suppression", "// eslint-disable-next-line no-x", path="src/a.js")
+        self.check_kind("lint-suppression", "import x  # noqa", path="a.py")
+        self.check_kind("lint-suppression", "#[allow(dead_code)]", path="src/lib.rs")
+        self.check_kind("lint-suppression", "x() // nolint", path="a.go")
+        self.check_kind("lint-suppression", "@SuppressWarnings(\"unchecked\")", path="A.java")
+
+    def test_ci_bypass(self):
+        self.check_kind("ci-bypass", "        continue-on-error: true", path=".github/workflows/ci.yml")
+        self.check_kind("ci-bypass", "      - run: pnpm test || true", path=".github/workflows/ci.yml")
+        self.check_kind("ci-bypass", "git commit --no-verify", path="scripts/x.sh")
+
+    def test_or_true_outside_workflows_is_not_ci_bypass(self):
+        self.commit_base(**{"a.sh": "x\n"})
+        self.put("a.sh", "x\nrm f || true\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_clean_diff_exits_0(self):
+        self.commit_base(**{"a.py": "x = 1\n"})
+        self.put("a.py", "x = 2\ny = 3\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_removed_assertion(self):
+        self.commit_base(**{"t_test.py": "assert a\nassert b\nx = 1\n", "app.py": "assert a\nassert b\n"})
+        self.put("t_test.py", "assert a\nx = 1\n")
+        rc, out = self.run_guard()
+        self.assertEqual((rc, self.kinds(out)), (1, ["removed-assertion"]))
+
+    def test_removed_assertion_only_in_test_files(self):
+        self.commit_base(**{"app.py": "assert a\nassert b\n"})
+        self.put("app.py", "assert a\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_replaced_assertion_is_not_removed(self):
+        self.commit_base(**{"a.test.js": "expect(a).toBe(1)\n"})
+        self.put("a.test.js", "expect(a).toBe(2)\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_lowered_threshold_detected_raised_not(self):
+        self.commit_base(**{"cfg.toml": "fail_under = 90\nnote = 5\n"})
+        self.put("cfg.toml", "fail_under = 80\nnote = 5\n")
+        rc, out = self.run_guard()
+        self.assertEqual((rc, self.kinds(out)), (1, ["lowered-threshold"]))
+        self.put("cfg.toml", "fail_under = 95\nnote = 5\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_max_warnings_raised_is_reported(self):
+        self.commit_base(**{"package.json": '{"lint": "eslint . --max-warnings 0"}\n'})
+        self.put("package.json", '{"lint": "eslint . --max-warnings 50"}\n')
+        rc, out = self.run_guard()
+        self.assertEqual((rc, self.kinds(out)), (1, ["lowered-threshold"]))
+
+    def test_allow_file_suppresses_with_reason(self):
+        self.commit_base(**{"a.ts": "x\n"})
+        self.put("a.ts", "x\n// @ts-ignore\n")
+        self.put(".floor-guard-allow", "a.ts type-suppression # vendor typing bug, issue 12\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_allow_without_reason_reported(self):
+        self.commit_base(**{"a.ts": "x\n"})
+        self.put("a.ts", "x\n// @ts-ignore\n")
+        self.put(".floor-guard-allow", "a.ts type-suppression\n")
+        rc, out = self.run_guard()
+        self.assertEqual(rc, 1)
+        self.assertIn("allow-without-reason", self.kinds(out))
+        self.assertIn("type-suppression", self.kinds(out))
+
+    def test_untracked_file_scanned(self):
+        self.commit_base(**{"a.py": "x\n"})
+        self.put("new_test.py", "import pytest\n@pytest.mark.skip\ndef test_a(): pass\n")
+        rc, out = self.run_guard()
+        self.assertEqual(rc, 1)
+        self.assertTrue(out[0].startswith("new_test.py:2: skipped-test: "), out[0])
+
+    def test_bad_base_exits_2(self):
+        self.commit_base(**{"a.py": "x\n"})
+        rc, out = self.run_guard(base="does-not-exist")
+        self.assertEqual((rc, out), (2, []))
+
+
+if __name__ == "__main__":
+    unittest.main()

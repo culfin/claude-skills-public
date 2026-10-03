@@ -21,7 +21,7 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
    and the text before the call ends with the companion URL (the dialog can cover earlier output); the
    options have the same names in the browser and in the terminal.
-4. **End:** when no decision is left open. Summarize the decisions as a short list
+4. **End:** when no decision is left open, or you can predict the answers to your next three questions. Summarize the decisions as a short list
    and have the user confirm it via `AskUserQuestion` ("Is this correct?"). If the user clicked
    through a round accepting only the recommendations and a later question depends on one of those
    answers, the summary explicitly names the most far-reaching of them.

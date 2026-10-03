@@ -50,7 +50,7 @@ blocks carry the run across that boundary:
 
 ```markdown
 ## Handoff
-<!-- replaced at every phase completion; at most 8 lines -->
+<!-- replaced at every phase completion; at most 8 lines; a restart works from files alone: commits done, Next, Open; approvals are only those recorded in STATE.md/ROADMAP.md -->
 Next: Phase 5 — Export (@type:backend), plan docs/plans/export.md, tasks 1–2 done (ledger)
 Open: Similar-bugs twin in src/report.ts parked (Blockers & Risks)
 Traps: tests need `DATABASE_URL` from .env.test; the build writes to dist/ — not in parallel
