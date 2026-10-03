@@ -70,6 +70,7 @@ the current step needs.
 | `stack/INDEX.md`, `stack/docs.md` | Stack detection; which stack source or bundled docs load on which trigger; live-docs source per technology | Detection once per session (section 1); otherwise only via `tech-stack-triggers.md` — then only the matching rows |
 | `design/INDEX.md` | Which design guideline or source loads on which trigger | Only via `tech-stack-triggers.md`, `ui-review.md`, companion building block "UI decision" — then only the matching rows |
 | `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate 5b–5d, Milestone End, Pre-Release Review, `/dev ui`) |
+| `brag.md` | When the launch video (brag) is offered and how it runs | Milestone End step 7, Pre-Release Review step 6 |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 | `sources.md`, `updates.md` | Contract per referenced skill (reads, overrides, invariants); `/dev updates` and its queue | `/dev updates`; when adding a use of a foreign skill |
 

@@ -50,7 +50,7 @@ All phases `[x]` or `[—]`:
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
 5. **Update STATE.md** (Progress table, Current Position to next milestone).
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After").
-7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause.
+7. AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
 
 ---
 
@@ -174,7 +174,11 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 4. **Read Gate summaries** — read all `### Gate summary` entries from STATE.md. If there are none (first release or fresh project): output the note "No gate history available — this is the first release", skip this step. If present: show a consolidated quality picture: which findings were found and fixed across all phases? Are there recurring patterns?
 5. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause
-6. Final summary after all skills.
+6. **Launch video (offer only)** — if `brag.md` "When to offer" holds for this release (landing page
+   changed, or a minor/major release with a new user-facing feature): AskUserQuestion with "Create
+   launch video" or "Skip (Recommended only if the user declined before)"; run per `brag.md`.
+   Otherwise skip without mentioning it.
+7. Final summary after all skills.
 
 ---
 

@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v2.12.0 — 2026-10-03
+
+**dev** — a launch video where one is worth making. `brag` (plugin `brag@brag`, rendered with
+HyperFrames) turns a project into a 15–25 s video, but a run costs minutes and noticeable usage,
+so `/dev` only ever *offers* it, at three points written down in the new `dev/brag.md`: the end of
+a milestone that contained a `@type: landing` phase (redesigns usually finish there, not at the
+next release), and the pre-release review when the landing page changed since the last tag or the
+release is a minor/major one with a new user-facing feature. Patch releases, single UI phases and
+`/dev check` never get the offer.
+
+What the source may not do is pinned as O13: the output stays local (`brag-output*/` goes into
+`.gitignore` before the first run), `/dev` never uploads or posts it, narration only on request,
+and products that handle personal data show fictional stand-ins only — brag's own rule, which an
+update must not drop. `sources.md` grows to 143 lines; its test budget moves from 140 to 145 for
+one table row and one override.
+
 ## v2.11.0 — 2026-10-02
 
 **dev** — the two stack sources v2.10 deferred. `next` (Next.js's own `next-dev-loop` skill)

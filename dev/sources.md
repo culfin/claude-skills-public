@@ -38,6 +38,7 @@ upstream — nothing to watch until it gets one).
 | next | git | `$DEV_STACK_DIR/next` | `stack/INDEX.md`, `license.md` | O8, O9, O11 |
 | wordpress | git | `$DEV_STACK_DIR/wordpress` | `stack/INDEX.md`, `LICENSE` | O8, O9, O12 |
 | pg | plugin | `pg@aiguide` | `skills/design-postgres-tables/SKILL.md` | O8 |
+| brag | plugin | `brag@brag` | `skills/brag/SKILL.md`, `skills/brag/slim.md`, `skills/brag-slim/SKILL.md`, `skills/brag/references/step-1-inspect.md` | O13 |
 | svelte | plugin | `svelte@svelte` | `skills/svelte-core-bestpractices/SKILL.md`, `skills/svelte-code-writer/SKILL.md` | O8 |
 | shadcn | agents-skill | `~/.agents/skills/shadcn` | `SKILL.md` | O8 |
 | swiftui-pro | agents-skill | `~/.agents/skills/swiftui-pro` | `SKILL.md` | O8 |
@@ -51,7 +52,7 @@ upstream — nothing to watch until it gets one).
 Where each is used: superpowers — `SKILL.md` steps 4a–4d, `companion.md`, `superpowers.md`;
 design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
 `commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources —
-`stack/INDEX.md` (4a, 4c, 5c). Docs bundled in a project's `node_modules` are not sources here:
+`stack/INDEX.md` (4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs bundled in a project's `node_modules` are not sources here:
 they change with its dependencies. A new use of a source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
@@ -96,6 +97,9 @@ impossible (the source now enforces it, or `/dev`'s instruction no longer applie
   scripts inside the indexed folders may be read, never run, and the sibling triage script is not
   run. When the task itself calls for WP-CLI, nothing runs against a production site without the user's
   go-ahead. The skills' "WordPress 7.0+" assumption is checked against the project's version before a rule applies.
+- **O13** brag: offered, never started on its own; output stays local (`brag-output*/` ignored, never committed,
+  uploaded or posted); `--voice` only on request; personal data only as fictional stand-ins (the skill's own
+  rule — an update that drops it is a conflict). Its switch to `brag-slim` on some models is accepted.
 
 ## Invariants — must hold after every update
 
