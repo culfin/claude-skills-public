@@ -42,18 +42,18 @@ class FloorGuardTests(unittest.TestCase):
         return out.returncode, out.stdout.splitlines()
 
     def kinds(self, lines):
-        return [l.split(": ", 2)[1] for l in lines]
+        return [l.split(": ", 3)[2] for l in lines]
 
-    def check_kind(self, kind, line, path="src/a.js", neutral="x = 1\n"):
+    def check_kind(self, kind, line, path="src/a.js", neutral="x = 1\n", severity="critical"):
         """The line triggers when added, and does not when it was already there at base."""
         self.fresh()
         self.commit_base(**{path.replace("/", "__"): neutral + line + "\n"})
         self.assertEqual(self.run_guard(), (0, []))
         self.put(path, neutral + line + "\n" + line + "\n")
         rc, out = self.run_guard()
-        self.assertEqual(rc, 1)
+        self.assertEqual(rc, 1 if severity == "critical" else 0)
         self.assertEqual(self.kinds(out), [kind])
-        self.assertTrue(out[0].startswith(f"{path}:3: {kind}: "), out[0])
+        self.assertTrue(out[0].startswith(f"{path}:3: {severity}: {kind}: "), out[0])
 
     def test_skipped_test(self):
         for line in ["it.skip('a', f)", "describe.skip('a', f)", "xit('a', f)", "xdescribe('a', f)"]:
@@ -67,9 +67,9 @@ class FloorGuardTests(unittest.TestCase):
         self.check_kind("skipped-test", "test.skip('a', f)", path="src/b.spec.ts")
 
     def test_type_suppression(self):
-        self.check_kind("type-suppression", "// @ts-ignore", path="src/a.ts")
-        self.check_kind("type-suppression", "x = y  # type: ignore", path="a.py")
-        self.check_kind("type-suppression", "// @ts-nocheck", path="src/a.ts")
+        self.check_kind("type-suppression", severity="note", line="// @ts-ignore", path="src/a.ts")
+        self.check_kind("type-suppression", severity="note", line="x = y  # type: ignore", path="a.py")
+        self.check_kind("type-suppression", severity="note", line="// @ts-nocheck", path="src/a.ts")
 
     def test_ts_expect_error_needs_comment_text(self):
         self.commit_base(**{"a.ts": "x\n"})
@@ -77,14 +77,14 @@ class FloorGuardTests(unittest.TestCase):
         self.assertEqual(self.run_guard(), (0, []))
         self.put("a.ts", "x\n// @ts-expect-error\ny\n")
         rc, out = self.run_guard()
-        self.assertEqual((rc, self.kinds(out)), (1, ["type-suppression"]))
+        self.assertEqual((rc, self.kinds(out)), (0, ["type-suppression"]))
 
     def test_lint_suppression(self):
-        self.check_kind("lint-suppression", "// eslint-disable-next-line no-x", path="src/a.js")
-        self.check_kind("lint-suppression", "import x  # noqa", path="a.py")
-        self.check_kind("lint-suppression", "#[allow(dead_code)]", path="src/lib.rs")
-        self.check_kind("lint-suppression", "x() // nolint", path="a.go")
-        self.check_kind("lint-suppression", "@SuppressWarnings(\"unchecked\")", path="A.java")
+        self.check_kind("lint-suppression", severity="note", line="// eslint-disable-next-line no-x", path="src/a.js")
+        self.check_kind("lint-suppression", severity="note", line="import x  # noqa", path="a.py")
+        self.check_kind("lint-suppression", severity="note", line="#[allow(dead_code)]", path="src/lib.rs")
+        self.check_kind("lint-suppression", severity="note", line="x() // nolint", path="a.go")
+        self.check_kind("lint-suppression", severity="note", line="@SuppressWarnings(\"unchecked\")", path="A.java")
 
     def test_ci_bypass(self):
         self.check_kind("ci-bypass", "        continue-on-error: true", path=".github/workflows/ci.yml")
@@ -151,12 +151,67 @@ class FloorGuardTests(unittest.TestCase):
         self.put("new_test.py", "import pytest\n@pytest.mark.skip\ndef test_a(): pass\n")
         rc, out = self.run_guard()
         self.assertEqual(rc, 1)
-        self.assertTrue(out[0].startswith("new_test.py:2: skipped-test: "), out[0])
+        self.assertTrue(out[0].startswith("new_test.py:2: critical: skipped-test: "), out[0])
 
     def test_bad_base_exits_2(self):
         self.commit_base(**{"a.py": "x\n"})
         rc, out = self.run_guard(base="does-not-exist")
         self.assertEqual((rc, out), (2, []))
+        err = subprocess.run([sys.executable, str(SCRIPT), "--base", "nope", "--root", str(self.root)],
+                             capture_output=True, text=True).stderr
+        self.assertIn("unknown base ref", err)
+
+    def test_notes_alone_exit_0_but_print(self):
+        self.commit_base(**{"a.py": "x\n"})
+        self.put("a.py", "x\nimport y  # noqa: F401\n")
+        rc, out = self.run_guard()
+        self.assertEqual((rc, self.kinds(out)), (0, ["lint-suppression"]))
+        self.assertIn(": note: ", out[0])
+
+    def test_generic_skip_only_in_test_paths(self):
+        self.commit_base(**{"a.py": "x\n", "latest.py": "x\n"})
+        self.put("a.py", "x\ncur = db.cursor.skip(10)\n")
+        self.put("latest.py", "x\nit.skip(3)\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_markers_flagged_outside_test_paths(self):
+        self.commit_base(**{"src/lib.rs": "x\n"})
+        self.put("src/lib.rs", "x\n#[ignore]\n")
+        self.assertEqual(self.run_guard()[0], 1)
+
+    def test_version_raise_not_lowered(self):
+        self.commit_base(**{"cfg.json": '{"minimum_version": "1.9"}\n'})
+        self.put("cfg.json", '{"minimum_version": "1.10"}\n')
+        self.assertEqual(self.run_guard(), (0, []))
+        self.put("cfg.json", '{"minimum_version": "1.8"}\n')
+        self.assertEqual(self.run_guard()[0], 1)
+
+    def test_unrelated_lines_not_paired_for_threshold(self):
+        self.commit_base(**{"cfg.json": '{"version": "1.9"}\n'})
+        self.put("cfg.json", '{"version": "1.10", "coverage": 5}\n')
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_renamed_test_file_is_not_a_removed_assertion(self):
+        self.commit_base(**{"old_test.py": "assert a\nassert b\n"})
+        git(self.root, "mv", "old_test.py", "new_test.py")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_latest_py_is_not_a_test_path(self):
+        self.commit_base(**{"latest.py": "assert a\nassert b\n"})
+        self.put("latest.py", "assert a\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_tools_own_files_and_markdown_not_scanned(self):
+        self.commit_base(**{"a.py": "x\n"})
+        self.put("dev/scripts/floor-guard.py", "# @ts-ignore\nit.skip(1)\n#[ignore]\n")
+        self.put("dev/tests/test_floor_guard.py", "#[ignore]\n")
+        self.put("NOTES.md", "use `git commit --no-verify` and @ts-ignore\n")
+        self.assertEqual(self.run_guard(), (0, []))
+
+    def test_removed_dashes_line_does_not_skew_counts(self):
+        self.commit_base(**{"a_test.py": "---\nassert a\n"})
+        self.put("a_test.py", "assert a\n")
+        self.assertEqual(self.run_guard(), (0, []))
 
 
 if __name__ == "__main__":

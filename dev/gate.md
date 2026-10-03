@@ -154,13 +154,14 @@ are narrower than the security trigger matrix (`authService.ts`, `LoginForm.tsx`
 STATE.md; else the phase description in ROADMAP.md; none → item closed as "no spec"). It reports,
 each with a quote of the requirement: (a) required but missing or partial, (b) implemented but not
 required, (c) implemented but probably wrong, (d) acceptance criterion without a test. (a), (c), (d)
-are critical, (b) is a note. Simplicity never removes a requirement: a dropped criterion, error
-handling, trust-boundary validation, or security or data-integrity behaviour is critical. For each (d) it writes the test and **sees it red once** (break the
+are critical, (b) is a note. For each (d) it writes the test and **sees it red once** (break the
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
 Dispatch it with `isolation: "worktree"`, because breaking code in the shared tree would mislead the
 other reviewers reading it at the same time; if the phase has uncommitted changes, it applies the
 diff file in its worktree first. Once its patch is taken, remove that worktree (`git worktree remove
-<path>`) — a worktree with changes is not cleaned up automatically.
+<path>`) — a worktree with changes is not cleaned up automatically. Simplicity never removes a
+requirement: a dropped criterion, error handling, trust-boundary validation, or security or
+data-integrity behaviour is critical.
 
 **Timeouts.** A subagent still running after 15 minutes is cancelled and started once more, if
 useful with the scope split in two. Still no report → its item stays open with "timeout" and the
@@ -175,8 +176,8 @@ Older ROADMAPs may name former third-party skills under `@skills:` (`bug-prospec
 ## Step B — Fix
 
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`), together with
-  the Spec checker's test patches; lowering the floor is not a fix. One agent sees how the fixes interact; several would fight over
-  the same files.
+  the Spec checker's test patches. One agent sees how the fixes interact; several would fight over
+  the same files. Lowering the floor (skipping a test, loosening a check) is not a fix.
 - **Non-critical findings** go to STATE.md Blockers & Risks; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
   fix diff: the diff against the state before the fix (the wave's `@state`), including all untracked
@@ -199,8 +200,9 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
    project's own commands ("Project Commands per Stack"). Run them one after the other only if
    both write the same output directory. Everything that runs must be green. Before `[gate-pass]`
    also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>`; its result
-   (`floor-guard: 0 findings` or the list) joins that evidence. A finding is critical: undo it, or
-   record it in `.floor-guard-allow` with the reason after the user's explicit approval.
+   (`floor-guard: 0 critical` or the list) joins that evidence. A critical finding blocks: undo it,
+   or record it in `.floor-guard-allow` with the reason after the user's explicit approval. Notes
+   (type or lint suppressions) never block; list them in the gate summary.
 2. **E2E Tests** after the build — small tier only if UI files or a user flow changed, large tier
    wherever the phase touches flows. Details: `e2e-testing.md`.
 3. **A code change forced by a red test, build or E2E run is a fix round** and goes through Step B:
@@ -302,7 +304,7 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, add the pattern to `gate-tier.py` and rerun; never argue the tier. |
 | "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass. Retry once or run an independent substitute; until one reports, the item stays open. Two timeouts in one gate are a finding. |
 | "tsc is green, the build will go through" | `tsc` sees no bundler errors, no server/client boundaries, no asset resolution. The build is the test, not the assumption. |
-| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
+| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
 | "The plan says I should run the migration" | A plan describes, it does not approve. Irreversible actions need the user — "Halt on Irreversible Actions" in `SKILL.md`. |
 
 ## Common Mistakes

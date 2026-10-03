@@ -99,7 +99,7 @@ class DevDocsTests(unittest.TestCase):
         for p in DEV.rglob("*"):
             if p.is_file() and not {"tests", "__pycache__"} & set(p.parts):
                 body = p.read_text(errors="ignore").lower()
-                for name in ("agent-skills", "addyosmani"):
+                for name in ("ponytail", "dietrichgebert", "addyosmani/agent-skills"):
                     self.assertNotIn(name, body, str(p.relative_to(DEV)))
 
 

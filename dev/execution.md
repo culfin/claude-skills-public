@@ -2,8 +2,7 @@
 
 Read at step 4c and when resuming a `[~]` phase that has a plan or complete acceptance criteria. This
 file is the only description of how a phase gets implemented. The main session dispatches every
-implementer and every reviewer itself: in Claude Code a subagent cannot dispatch subagents, and a
-worker that reviews its own change only repeats its own conclusions.
+implementer and every reviewer itself: in Claude Code a subagent cannot dispatch subagents.
 
 ## Setup
 
@@ -14,10 +13,8 @@ worker that reviews its own change only repeats its own conclusions.
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
   this phase. Ledger, tasks JSON, wave output, briefs, reports and review packages live there as files;
-  the chat gets one status line per task (`Task 3: complete — 2 commits, review clean`). Everything
-  pasted into the chat is reread on every later turn, so hand artifacts over as paths. When the phase
-  reaches `[x]`, delete its workspace — git history is the record, and a stale ledger would make a
-  later phase skip work.
+  the chat gets one status line per task (`Task 3: complete — 2 commits, review clean`). When the phase
+  reaches `[x]`, delete its workspace.
 - **Models:** every dispatch names its model per `models.md`; an omitted model inherits the most
   expensive one.
 - **UI tasks:** pass the `design/INDEX.md` and `stack/INDEX.md` rows marked `4c` whose trigger the task
@@ -102,11 +99,10 @@ dispatching again.
 Rounds 1–2 resume the same implementer with the open findings verbatim. Round 3 dispatches a fresh
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
-commits are; a new isolated worktree would start without them. After each round, a scoped re-review:
+commits are. After each round, a scoped re-review:
 `review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`. Still
 open after round 3 → halt and report what remains (one of the run's halts). Minor findings go to the
-ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks — a
-list nobody reads is a silent discard. Never fix findings in the main session: that skips review.
+ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks. Never fix findings in the main session: that skips review.
 
 **Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
 phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)
