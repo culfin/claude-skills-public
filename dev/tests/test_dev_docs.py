@@ -22,7 +22,7 @@ class DevDocsTests(unittest.TestCase):
 
     def test_gate_fast_is_gone(self):
         for p in DEV.rglob("*.md"):
-            self.assertNotIn("@gate: fast", p.read_text(), str(p.relative_to(DEV)))
+            self.assertNotIn("@gate: " + "fast", p.read_text(), str(p.relative_to(DEV)))
 
     def test_checklist_names(self):
         g = text("gate.md")
@@ -59,6 +59,29 @@ class DevDocsTests(unittest.TestCase):
         g = text("gate.md")
         for s in ("gate-tier.py", "ci-watch.sh", "check-evidence.py"):
             self.assertIn(s, g)
+
+    def test_skill_md_has_no_confirmation_stops(self):
+        s = text("SKILL.md")
+        self.assertNotIn("AskUserQuestion: Start next phase", s)
+        self.assertIn("execution.md", s)
+        self.assertLess(len(s.splitlines()), 400)
+
+    def test_skill_md_agrees_with_gate(self):
+        s = text("SKILL.md")
+        for old in ("5a–5k", "5c-v", "[ ] /simplify", "CI status check", "Change review",
+                    "Invoke `verification-before-completion`"):
+            self.assertNotIn(old, s, old)
+
+    def test_execution_uses_scripts_and_limits(self):
+        e = text("execution.md")
+        for s in ("waves.py", "load-ok.sh", "isolation", "at most 3", "task-reviewer-prompt.md"):
+            self.assertIn(s, e)
+
+    def test_run_blocks_in_state_and_befragung(self):
+        st = text("state.md")
+        for s in ("## Handoff", "## CI in background", "Decisions:"):
+            self.assertIn(s, st, s)
+        self.assertIn("## Bundled round at run start", text("befragung.md"))
 
 
 if __name__ == "__main__":

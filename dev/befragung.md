@@ -1,4 +1,4 @@
-# Interview in rounds — step 4a, architectural phases
+# Clarification — bundled round at run start, interview in rounds for architectural phases
 
 Origin of the technique: `grilling` from github.com/mattpocock/skills (MIT). The format is our own:
 selection buttons instead of free text.
@@ -35,6 +35,21 @@ Classification, approaches, design, spec and lock remain with `superpowers:brain
    > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or
    > asks about one, ends with this URL on its own line, verbatim; status messages carry none. Copy the list
    > into the spec as the section "Decisions from the interview".
+
+## Bundled round at run start
+
+A run goes through several phases without stopping, so the questions that are already foreseeable
+are asked once, up front, instead of halting each phase for them.
+
+1. Read the remaining phases of the milestone (ROADMAP.md, their `@spec:`/`@plan:` if present, the
+   `Decisions:` already in STATE.md). Collect the decisions that will clearly be needed and that only
+   the user can make — with the same filter as above: facts are looked up, not asked.
+2. Ask them in one round: up to four independent questions per `AskUserQuestion` call, recommendation
+   first with "(Recommended)", each labelled with its phase. More than four → further calls right
+   away, still before the first phase starts. Questions with a UI/UX side follow procedure step 3.
+3. Record each answer in STATE.md under its phase as `Decisions:` (`state.md`, "Run blocks").
+4. Nothing foreseeable → no round. Questions that only appear later (from a spec, a finding) are
+   asked when they appear; an architectural phase still gets its interview, minus what is decided.
 
 ## ADRs
 

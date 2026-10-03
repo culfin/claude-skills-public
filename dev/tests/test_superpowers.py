@@ -8,6 +8,9 @@ spec = importlib.util.spec_from_file_location('check_superpowers', Path(__file__
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
 
+SDD_FILES = ['implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prompt.md',
+             'scripts/task-brief', 'scripts/review-package', 'scripts/sdd-workspace']
+
 class SuperpowersTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -19,6 +22,9 @@ class SuperpowersTests(unittest.TestCase):
         p = self.root / 'skills/brainstorming/scripts'
         p.mkdir()
         for name in ['start-server.sh', 'stop-server.sh']: (p/name).write_text('exit 0')
+        sdd = self.root / 'skills/subagent-driven-development'
+        (sdd / 'scripts').mkdir()
+        for name in SDD_FILES: (sdd / name).write_text('fixture')
     def tearDown(self): self.temp.cleanup()
     def manifest(self, name, value):
         p=self.root / name
@@ -42,6 +48,12 @@ class SuperpowersTests(unittest.TestCase):
         self.manifest('.claude-plugin/plugin.json', {'version':'6.4.1'})
         self.manifest('.codex-plugin/plugin.json', {'version':'6.3.0'})
         self.assertEqual(m.inspect(self.root)['status'],'blocked')
+    def test_execution_files_are_required(self):
+        req = m.required_paths()
+        for name in SDD_FILES:
+            self.assertIn(f'skills/subagent-driven-development/{name}', req)
+        (self.root/'skills/subagent-driven-development/scripts/review-package').unlink()
+        self.assertEqual(m.inspect(self.root)['status'], 'blocked')
     def test_bad_manifest_blocks(self):
         self.manifest('plugin.json', [])
         self.assertEqual(m.inspect(self.root)['status'],'blocked')

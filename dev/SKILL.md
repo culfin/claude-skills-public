@@ -16,11 +16,10 @@ Technical terms, skill names, file paths, YAML keys and conventional-commit pref
 
 ---
 
----
-
 # /dev — Milestone Orchestrator
 
-Manages a project's ROADMAP.md and sequences superpowers cycles for each phase. Delegates all implementation work to existing skills.
+Manages a project's ROADMAP.md and runs its phases one after another: clarify, specify, implement,
+gate. Implementation and review are delegated to subagents; the main session only steers.
 
 ## Command Router
 
@@ -47,8 +46,6 @@ Manages a project's ROADMAP.md and sequences superpowers cycles for each phase. 
 
 ---
 
----
-
 ## Files of This Skill
 
 `$DEV_DIR` is the directory of this `SKILL.md`; all paths below are relative to it. Load only what
@@ -56,20 +53,21 @@ the current step needs.
 
 | File | Holds | Read when |
 |---|---|---|
-| `gate.md` | Quality gate 5a–5k, checklist, phase types, `@gate:`, project commands per stack | Gate entry, resuming `[!]`, `/dev check` |
+| `execution.md` | How a phase is implemented: small phase, waves of parallel implementers, task reviews, merge | Step 4c; resuming a `[~]` phase with a plan or acceptance criteria |
+| `gate.md` | Quality gate: tier, review wave, fix, similar-bugs, verify, gate commit, CI in background; checklist, phase types, `@gate:`, project commands per stack | Gate entry, resuming `[!]`, before each next phase (CI status), `/dev check` |
 | `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | The router points there; Milestone End (step 7); build/tests fail without obvious cause (Debug Flow) |
 | `models.md` | Which model tier each subagent gets | Before dispatching subagents |
-| `state.md` | What STATE.md holds and when each part changes | Before writing STATE.md |
+| `state.md` | What STATE.md holds and when each part changes (handoff, decisions, CI lines) | Before writing STATE.md |
 | `companion.md` | Visual Companion: when browser vs terminal, mandatory triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
 | `runtime.md` | Host adapter: `$DEV_DIR`, tool names as capabilities, Codex vs Claude Code | Once per session, at the first explicit `/dev` run (not for the automatic one-line status) |
 | `superpowers.md` | Which superpowers install is active, static check, update path (prepares only) | Session start before the first phase step; before any plugin update |
-| `befragung.md` | Interview in rounds for architectural phases, ADRs | Step 4a, architectural phase |
-| `tech-stack-triggers.md` | Which tech, design and security sources fire when | Steps 4a, 4c and gate step 5c |
+| `befragung.md` | Bundled clarification round at run start; interview in rounds for architectural phases; ADRs | Run start; step 4a, architectural phase |
+| `tech-stack-triggers.md` | Which tech, design and security sources fire when | Steps 4a, 4c and gate Step A |
 | `roadmap-creation.md`, `dev-check.md`, `e2e-testing.md`, `debugger.md` | One flow each | As named in the router or gate |
 | `stack/INDEX.md`, `stack/docs.md` | Stack detection; which stack source or bundled docs load on which trigger; live-docs source per technology | Detection once per session (section 1); otherwise only via `tech-stack-triggers.md` — then only the matching rows |
 | `design/INDEX.md` | Which design guideline or source loads on which trigger | Only via `tech-stack-triggers.md`, `ui-review.md`, companion building block "UI decision" — then only the matching rows |
-| `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate 5b–5d, Milestone End, Pre-Release Review, `/dev ui`) |
+| `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch (gate Steps A–C, Milestone End, Pre-Release Review, `/dev ui`) |
 | `brag.md` | When the launch video (brag) is offered and how it runs | Milestone End step 7, Pre-Release Review step 6 |
 | `ui-review.md` | `/dev ui`: screenshots, design analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 | `sources.md`, `updates.md` | Contract per referenced skill (reads, overrides, invariants); `/dev updates` and its queue | `/dev updates`; when adding a use of a foreign skill |
@@ -90,11 +88,11 @@ Detect the project's tech stack once per session and auto-invoke matching skills
 
 **→ Read `tech-stack-triggers.md` in this skill directory for both trigger matrices.**
 
-Summary: Tech skills, stack sources and design sources kick in at three points — during **brainstorming (4a)**
-and **execution (4c)**, depending on `@type:`, the task and `$TECH_STACKS`, and in **gate step 5c**
-as read-only reviews, triggered by the files the phase actually changed (*Tech-Stack Review* and
-*Security Review* matrices; the list of skills and analyzers lives only there). Critical findings →
-fix **before 5d**.
+Summary: Tech skills, stack sources and design sources kick in at three points — during **clarification (4a)**
+and **execution (4c)**, depending on `@type:`, the task and `$TECH_STACKS`, and in the **gate's review
+wave (Step A)** as read-only reviews, triggered by the files the phase actually changed (*Tech-Stack
+Review* and *Security Review* matrices; the list of skills and analyzers lives only there). Critical
+findings are fixed in gate Step B.
 
 ---
 
@@ -113,48 +111,39 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 
 ```dot
 digraph session_start {
-  "Read ROADMAP.md" -> "Found?" [label=""];
+  "Read ROADMAP.md" -> "Found?";
   "Found?" -> "Parse YAML" [label="yes"];
   "Found?" -> "Suggest /dev init" [label="no, stop"];
-  "Parse YAML" -> "YAML valid?" [label=""];
+  "Parse YAML" -> "YAML valid?";
   "YAML valid?" -> "Find next phase" [label="yes"];
   "YAML valid?" -> "Show error, stop" [label="no"];
-  "Find next phase" -> "Phase [!]?" [label=""];
-  "Phase [!]?" -> "Resume Quality Gate" [label="yes — read STATE.md checklist"];
-  "Phase [!]?" -> "Phase [~]?" [label="no"];
-  "Phase [~]?" -> "Offer resume impl" [label="yes"];
-  "Phase [~]?" -> "AskUserQuestion" [label="no"];
-  "Resume Quality Gate" -> "AskUserQuestion";
-  "Offer resume impl" -> "AskUserQuestion";
+  "Find next phase" -> "Print summary";
+  "Print summary" -> "Start or resume the run";
 }
 ```
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: use Session Continuity for resume context.
+2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: start from its **Handoff** block and Session Continuity.
 3. **Detect tech stack** — check project root for stack indicators (see Tech-Stack-Aware Skills section). Store as `$TECH_STACKS`. This detection happens ONCE per session and is reused in all subsequent gates.
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
+   - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning (`gate.md`, "Tier").
 6. **Find current position:** First milestone with incomplete phase. If all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
-   Next: Phase 4 — Connections View (@type:ui @gate:fast)
+   Next: Phase 4 — Connections View (@type:ui)   [resume: gate, first open item "Spec checker"]
    Tech Stack: [nextjs, shadcn, postgres]
-   Pre-skills: [<from ROADMAP>]  Post-skills: [requesting-code-review]
    Blockers: <from STATE.md, if any>
+   CI in background: <open lines from STATE.md, if any>
    Updates: N skill updates waiting — /dev updates   (only if pending/ has files; count only)
    ```
-   Show `@gate:` only if not `full`. Show `$TECH_STACKS` only on first session start or if changed.
-   With 1 remaining phase or a plain entry without milestone context: terminal only.
-8. **AskUserQuestion** (single-select):
-   - **Start next phase (Recommended)** — "Begin Phase N: <name>" (or "Resume Implementation" if `[~]`, or "Resume Quality Gate: next step — `[ ] /simplify`" if `[!]` — show the first open `[ ]` entry from the STATE.md Gate Checklist directly in the label)
-   - **Show full status** — complete roadmap table
-   - **Add milestone/phase** — extend roadmap
-   - **Skip this phase** — skip with reason
-   - **Start Pre-Release Review** — only show if all phases of all milestones are `[x]` or `[—]`
-
----
+   Show `@gate: full` when set. Show `$TECH_STACKS` only on first session start or if changed.
+8. **Start the run — no menu.** `/dev` and `/dev next` go straight on: a `[!]` phase resumes the gate
+   at the first open checklist item, a `[~]` phase resumes per "Resume logic" (4), otherwise the next
+   phase starts. A menu here only ever got the answer "continue". Looking without starting is
+   `/dev status`; adding, skipping or reviewing have their own commands.
 
 ---
 
@@ -165,8 +154,6 @@ digraph session_start {
 **→ Read `roadmap-creation.md` in this skill directory for the full interactive flow.**
 
 Summary: Interactive AskUserQuestion flow for project goal, phase types, milestone count, skill discovery + security review, trigger configuration, preview + confirm. Creates ROADMAP.md + STATE.md and commits both.
-
----
 
 ---
 
@@ -209,6 +196,30 @@ to run it.
 
 ---
 
+## The run
+
+A run works through the phases back to back until the milestone ends or a halt applies. At its
+start, ask the bundled clarification round (`befragung.md`, "Bundled round at run start"). **The run
+halts only for:**
+
+- clarification questions only the user can answer (`befragung.md`);
+- irreversible actions (section above);
+- a gate still red after 3 fix rounds, or a task still open after its 3 fix rounds (`execution.md`);
+- a CI status `red` or `timeout` (`none` is no halt but never green; it is noted in the gate
+  summary — `gate.md`, "CI in background");
+- the context hint (below);
+- Milestone End (`commands.md`).
+
+Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
+phases. Measured over eight runs, 25–78 % of the wall clock was waiting for the user, mostly before
+a plain "continue" that decided nothing (one run: 11 pauses, 361 minutes). Whoever wants to follow along reads the spec, the plan and
+STATE.md; each phase ends with one status line in the chat.
+
+**Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
+context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
+`/dev next`; the handoff is in STATE.md." A large context is reread on every turn and was the
+biggest single cost. Both values are starting points, to be remeasured after the first runs.
+
 ---
 
 ## Phase Execution
@@ -216,41 +227,24 @@ to run it.
 ```dot
 digraph phase {
   rankdir=TB;
-  "Milestone Start?" -> "Run MS-start skills" [label="first phase"];
-  "Milestone Start?" -> "Pre-Phase" [label="not first"];
-  "Run MS-start skills" -> "Pre-Phase";
-  "Pre-Phase" -> "Mark [~], run pre-skills";
-  "Mark [~], run pre-skills" -> "Superpowers Cycle";
-  "Superpowers Cycle" -> "Mark [!], create Gate Checklist";
-  "Mark [!], create Gate Checklist" -> "QUALITY GATE";
-  "QUALITY GATE" -> "/simplify (MANDATORY)";
-  "/simplify (MANDATORY)" -> "Change review (MANDATORY)";
-  "Change review (MANDATORY)" -> "Parallel Analysis Block";
-  "Parallel Analysis Block" -> "Bug hunt (phase scope)";
-  "Parallel Analysis Block" -> "Performance review (phase scope)";
-  "Parallel Analysis Block" -> "Tech-Stack Review (conditional)";
-  "Parallel Analysis Block" -> "Security review (conditional)";
-  "Parallel Analysis Block" -> "Spec checker (5c-v)";
-  "Bug hunt (phase scope)" -> "Fix Critical Findings";
-  "Performance review (phase scope)" -> "Fix Critical Findings";
-  "Tech-Stack Review (conditional)" -> "Fix Critical Findings";
-  "Security review (conditional)" -> "Fix Critical Findings";
-  "Spec checker (5c-v)" -> "Fix Critical Findings";
-  "Fix Critical Findings" -> "Similar-bugs scan (after fixes)";
-  "Similar-bugs scan (after fixes)" -> "Typecheck + lint + tests";
-  "Typecheck + lint + tests" -> "Production Build";
-  "Production Build" -> "E2E Tests (MANDATORY)";
-  "E2E Tests (MANDATORY)" -> "Gate summary in STATE.md";
-  "Gate summary in STATE.md" -> "Gate commit";
-  "Gate commit" -> "CI status check (if configured)";
-  "CI status check (if configured)" -> "All Gate items [x]?";
-  "All Gate items [x]?" -> "Post-Phase" [label="yes"];
-  "All Gate items [x]?" -> "Fix + re-check" [label="no"];
-  "Fix + re-check" -> "QUALITY GATE";
-  "Post-Phase" -> "Run post-skills, mark [x], remove Gate Checklist";
-  "Run post-skills, mark [x], remove Gate Checklist" -> "Milestone End?" [label=""];
-  "Milestone End?" -> "Run MS-end skills" [label="all done"];
-  "Milestone End?" -> "AskUserQuestion: next" [label="more phases"];
+  "Milestone start skills (first phase)" -> "Mark [~], pre-skills";
+  "Mark [~], pre-skills" -> "Classify";
+  "Classify" -> "Small: acceptance criteria into STATE.md" [label="small"];
+  "Classify" -> "Interview, spec, plan (no approval stops)" [label="architectural"];
+  "Small: acceptance criteria into STATE.md" -> "execution.md";
+  "Interview, spec, plan (no approval stops)" -> "execution.md";
+  "execution.md" -> "Mark [!], gate tier, checklist";
+  "Mark [!], gate tier, checklist" -> "Review wave (Step A)";
+  "Review wave (Step A)" -> "Bundled fix + Fix review (Step B)" [label="critical findings"];
+  "Review wave (Step A)" -> "Verify (Step D)" [label="none"];
+  "Bundled fix + Fix review (Step B)" -> "Similar-bugs (Step C)";
+  "Similar-bugs (Step C)" -> "Verify (Step D)";
+  "Verify (Step D)" -> "Gate summary, gate commit";
+  "Gate summary, gate commit" -> "CI watcher in background";
+  "CI watcher in background" -> "Post-skills, mark [x], handoff";
+  "Post-skills, mark [x], handoff" -> "Halt?";
+  "Halt?" -> "Next phase" [label="no"];
+  "Halt?" -> "Stop with reason" [label="yes"];
 }
 ```
 
@@ -260,56 +254,73 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 ### 2. Pre-Phase
 
-1. Mark phase `[~]` in ROADMAP.md (Edit tool)
-2. Resolve pre-skills (see Skill Trigger Resolution)
-3. Dispatch pre-skills as parallel Agent subagents
+1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
+   `timeout` → halt and repair before this phase starts.
+2. Mark phase `[~]` in ROADMAP.md (Edit tool)
+3. Resolve pre-skills (see Skill Trigger Resolution)
+4. Dispatch pre-skills as parallel Agent subagents
 
-### 3. Pre-Skill → Brainstorming Handoff
+### 3. Pre-Skill Handoff
 
-If pre-skills produced output files (e.g. a handoff file in a dot-directory of the project), check for these files and pass them as context to brainstorming:
-- "The following pre-skill output is available as context: [file path]"
-- Read the file and include relevant findings in the brainstorming context
+If pre-skills produced output files (e.g. a handoff file in a dot-directory of the project), pass their paths as context to step 4a and read only the relevant findings.
 
-### 4. Superpowers Cycle
+### 4. Phase Cycle
 
 **Resume logic:**
 - Phase is `[!]` → skip directly to Quality Gate (step 5), read Gate Checklist from STATE.md to find remaining steps
-- Phase is `[~]` with `@plan:` path on disk → skip to execution (4c)
-- Phase is `[~]` with `@spec:` path on disk → skip to planning (4b)
+- Phase is `[~]` with `@plan:` path on disk, or acceptance criteria in STATE.md (small phase) → execution (4c); the ledger in the SDD workspace says which tasks are done
+- Phase is `[~]` with `@spec:` path on disk → planning (4b)
 - STATE.md has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
-- Phase is `[~]` with neither → start from brainstorming (4a); if an approved chat draft exists in STATE.md (small phase), continue from there instead of clarifying again
+- Phase is `[~]` with neither → clarification (4a)
 
-**4a. Clarification and brainstorming:**
+**4a. Clarification:**
 1. **Classify:** architectural if the phase creates a new project or subsystem, changes how components interact, or changes interfaces that others build on; `@type: migration` always. When in doubt, architectural. For `@type: docs`, no interview.
-2. **Architectural → interview in rounds per `befragung.md` (interview rounds)** (in this skill directory, incl. ADRs), then `superpowers:brainstorming` with the handoff note from `befragung.md`.
-3. **Small → `superpowers:brainstorming`** with the instruction: every question via `AskUserQuestion`, recommendation first with "(Recommended)"; look up facts yourself instead of asking. Record the approved chat draft with acceptance criteria in STATE.md under the phase — the basis for the Spec checker (5c-v) and for resuming.
+2. **Small → write the draft straight into STATE.md** under the phase as `Acceptance criteria:`
+   (format in `state.md`) — no approval round; the Spec checker and a resume read it there. Ask only
+   questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
+   "(Recommended)"; look up facts yourself instead of asking.
+3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
+   `superpowers:brainstorming` with the handoff note from `befragung.md` **and this override**: no
+   section approvals, write and commit the spec, no spec review gate (`sources.md` O14). Its
+   hand-off to `writing-plans` carries the 4b instruction. After the spec is committed: add `@spec:`
+   to ROADMAP.md.
 
-In both cases: State context: phase name, type, milestone goal, any pre-skill output. And the companion instruction: "The Visual Companion is already running (URL below). Do not offer it, use it directly for every question with a UI/UX side — and only for those: no plans, approaches, architecture diagrams or text summaries on screens; building blocks in `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or asks about one, ends with this URL on its own line, verbatim; messages without anything new to see carry no URL." Before that, ensure the companion via the "Show screen" procedure and pass along the URL. Include matching tech skills beforehand — see `tech-stack-triggers.md`, section "During Brainstorming". Brainstorming chains to `superpowers:writing-plans` → `superpowers:subagent-driven-development` internally. After spec produced: add `@spec:` to ROADMAP.md.
+In both cases, include matching tech skills beforehand (`tech-stack-triggers.md`, "During
+Brainstorming"). For questions with a UI/UX side, ensure the companion via the "Show screen"
+procedure and pass this instruction along: "The Visual Companion is already running (URL below). Do
+not offer it, use it directly for every question with a UI/UX side — and only for those: no plans,
+approaches, architecture diagrams or text summaries on screens; building blocks in
+`companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or asks
+about one, ends with this URL on its own line, verbatim; messages without anything new to see carry
+no URL."
 
-**4b. Planning (resume):** Invoke `superpowers:writing-plans`. After plan produced: add `@plan:` to ROADMAP.md.
+**4b. Planning:** `superpowers:writing-plans` with "no execution-method question; execution is
+defined by `/dev`" (`sources.md` O15). Write and commit the plan, add `@plan:` to ROADMAP.md, go on to
+4c — no plan approval.
 
-**4c. Execution (resume):** Invoke `superpowers:subagent-driven-development` with plan path. **Scope boundary (important):** SDD only performs **implementing tasks + per-task reviews**, then **STOP** — it must
-- **not** run `finishing-a-development-branch` (no merge/PR): `/dev` owns completion via its Quality Gate (Step 5) → Gate commit → any later sync/merge step;
-- **not** create a new/nested worktree — work in the **current** branch/worktree (sessions that already run in their own worktree would otherwise get project-local `.worktrees/` created by 6.x);
-- **not** run a final whole-branch review — `/dev`'s gate (Change review, Bug hunt, Security review) covers that.
-Pass this boundary explicitly when invoking SDD, plus the design rows for UI tasks (`tech-stack-triggers.md`, "During Execution").
+**4c. Execution → read `execution.md`.** It implements small phases from the acceptance criteria and
+planned phases in waves of parallel implementers, with a task review per task, and ends before any
+branch completion or whole-branch review (the gate owns those).
 
-**4d. Verification:** Invoke `verification-before-completion`.
+There is no separate verification step any more: the gate's Step D proves tests, build and E2E on
+the final state, and its evidence rules keep the principle of `verification-before-completion` —
+no claim without a command whose output was read.
 
-**4e. Gate Transition (`[~]` → `[!]`):**
+**4d. Gate Transition (`[~]` → `[!]`):**
 1. Mark phase `[!]` in ROADMAP.md (Edit tool)
-2. Create the Quality Gate Checklist in STATE.md — format and rules in `gate.md`, "Gate Checklist"
+2. Create the Quality Gate Checklist in STATE.md — tier and format in `gate.md`, "Tier" and "Gate Checklist"
 3. Update STATE.md Last activity: "Implementation complete, Quality Gate starting"
 
 The `[!]` status means: implementation is done, but the mandatory Quality Gate has not yet passed. This is the **only** path to `[x]` — a phase MUST go through `[!]` first. Direct `[~]` → `[x]` transitions are **forbidden**.
 
 ### 5. Mandatory Quality Gate
 
-**→ Read `gate.md`.** Summary: `/simplify` → Change review → parallel analyses (bugs,
-performance, tech-stack and security reviews, spec checker) → fix critical findings →
-Similar-bugs scan → typecheck + lint + tests → production build → E2E → gate summary → gate
-commit `[gate-pass]` → CI status. Every checkmark needs evidence; the phase stays `[!]` until all
-are `[x]`.
+**→ Read `gate.md`.** Summary: `gate-tier.py` decides small or large → Step A, one parallel review
+wave (Diff review, Spec checker, and per trigger Security, Tech-Stack, Performance, Accessibility,
+Design) → Step B, one bundled fix for all critical findings plus a Fix review on the fix diff, at most
+3 rounds → Step C, Similar-bugs scan when code was fixed → Step D, typecheck + lint + tests and build
+in parallel, then E2E → gate summary → gate commit `[gate-pass]` → CI watcher in background. Every
+checkmark needs evidence; the phase stays `[!]` until all are `[x]`.
 
 ### 6. Post-Phase
 
@@ -324,18 +335,17 @@ Dispatch post-skills as Agent subagents. **Parallelization:** Read-only analysis
 ### 7. Phase Completion (`[!]` → `[x]`)
 
 1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 — every Quality Gate item `[x]`, with evidence, on the current state (the gate commit keeps that state). If any unchecked → STOP, return to first unchecked step 5.
-2. **Verify CI (if applicable):** If CI status check in checklist — confirm it is `[x]` (green). If not → wait or fix CI first.
-3. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present
+2. **CI runs in background;** its status is checked before the next phase (`gate.md`, "CI in background").
+3. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present (small phases have neither)
 4. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-5. **Update STATE.md**: Current Position, Progress table, Last activity
+5. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`)
 6. Commit: `roadmap: complete Phase N — <name>`
-7. All phases done in milestone? → Milestone End (`commands.md`)
+7. All phases done in milestone? → Milestone End (`commands.md`); it waits for every open CI line
 
 ### 8. Next Action
 
-AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
-
----
+Print one status line for the phase, then continue with the next phase — unless a halt from "The
+run" applies, the context hint included.
 
 ---
 
@@ -356,8 +366,6 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 
 ---
 
----
-
 ## Error Handling
 
 | Scenario | Behavior |
@@ -367,15 +375,15 @@ AskUserQuestion: Start next phase (Recommended), Pause, Review milestone.
 | Unknown `@type:` | Warn, continue with empty skill lists. |
 | Skill not installed | Warn, skip, continue. |
 | Phase `[!]` found | Resume Quality Gate — read STATE.md checklist, continue from first unchecked item. |
-| Phase `[~]` found | Offer resume via spec/plan file detection. |
+| Phase `[~]` found | Resume per "Resume logic" (spec, plan, acceptance criteria, ledger). |
 | Phase `[—]` found | Skip in sequencing, show reason on status. |
 | All phases done in MS | Auto-trigger Milestone End. |
 | All milestones done | "Roadmap complete!" Offer add/review. |
 | `@skills` parse error | Warn, use defaults. |
-| `@gate:` conflicts with `@type:` or changed files, or unknown value | Warn and apply the override — rules in `gate.md`, "Tier". |
+| CI status `red` or `timeout` | Halt before the next phase; repair per `gate.md`, "CI in background". `none` → not a halt, never green, noted in the gate summary. |
 | `/dev check` with active phase `[~]`/`[!]` | Warn: "Phase N still active. Use `/dev next`." Stop. |
 | `/dev check` + empty `$CHECK_SCOPE` + No | Not an error — the user cancelled. Stop without action. |
 | `/dev check` + a step fails | Stop at that step, no check commit. |
 | `/dev ui` with active phase `[~]`/`[!]` | Analyse and get approval only; the rework belongs to that phase (`ui-review.md`). |
 
-**Principle:** Never block for recoverable errors. Warn and continue. Only stop for missing ROADMAP.md or broken YAML.
+**Principle:** Never block for recoverable errors. Warn and continue. Stop only for missing ROADMAP.md, broken YAML and the halts in "The run".

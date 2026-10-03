@@ -7,10 +7,15 @@ from pathlib import Path
 REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development', 'executing-plans',
             'requesting-code-review', 'verification-before-completion', 'using-git-worktrees')
 
+# Prompts and scripts execution.md hands to implementers and task reviewers.
+SDD_FILES = ('implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prompt.md',
+             'scripts/task-brief', 'scripts/review-package', 'scripts/sdd-workspace')
+
 def required_paths():
     """Files /dev needs from the plugin root (also the read paths in sources.md)."""
     return ([f'skills/{name}/SKILL.md' for name in REQUIRED]
-            + ['skills/brainstorming/scripts/start-server.sh', 'skills/brainstorming/scripts/stop-server.sh'])
+            + ['skills/brainstorming/scripts/start-server.sh', 'skills/brainstorming/scripts/stop-server.sh']
+            + [f'skills/subagent-driven-development/{name}' for name in SDD_FILES])
 
 def inspect(root):
     root = Path(root).resolve()
