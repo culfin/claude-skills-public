@@ -177,7 +177,7 @@ halts only for:**
 
 - clarification questions only the user can answer (`befragung.md`);
 - irreversible actions (section above);
-- a gate still red after 3 fix rounds, or a task still open after its 3 fix rounds (`execution.md`);
+- a gate finding still critical after 3 attempts (or 6 gate rounds in total, `gate.md` Step B), or a task still open after its 3 fix rounds (`execution.md`);
 - the context hint (below);
 - Milestone End (`commands.md`);
 - plus the gate's own stops (`gate.md`): wrong branch at the gate commit, unclear staging, no

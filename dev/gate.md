@@ -172,8 +172,11 @@ Former skill names under `@skills:` (`bug-prospector`, `security-audit`, `perfor
   files — `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)`, two
   trees, so files untracked at the wave do not show up as deleted. Add `- [ ] Fix review` (and
   `- [ ] Similar-bugs scan` if a defect was fixed) now; tick Fix review with the merged result.
-- A Fix review with a new critical finding starts the next round. **At most 3 rounds**; still
-  critical after the third → halt and report what remains (one of the run's halt points).
+- A Fix review with a new critical finding starts the next round. **The limit counts attempts per
+  finding, not rounds:** halt and report when the same critical finding — or a regression caused by
+  an earlier fix — is still open after 3 attempts (one of the run's halt points). New, different
+  findings neither reset nor use up a count; rounds that only implement a user decision, only change
+  test code, or only take along notes do not count. Backstop: halt after 6 rounds in total.
 
 No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `refactor`, see Phase Types).
 
@@ -195,7 +198,7 @@ as input, whole codebase. A confirmed twin goes back through Step B; complex one
    wherever the phase touches flows. Details: `e2e-testing.md`.
 3. **A code change forced by a red test, build or E2E run is a fix round** and goes through Step B:
    add or refresh `Fix review` (Diff review on the fix diff, plus any analysis whose area the fix
-   touches) and `Similar-bugs scan`, then rerun Step D. It counts towards the three rounds.
+   touches) and `Similar-bugs scan`, then rerun Step D. It counts as an attempt on the finding it fixes.
 
 The build is its own item — a type check misses bundler, server/client and asset errors:
 

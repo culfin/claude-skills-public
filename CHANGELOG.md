@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.0.1 — 2026-10-06
+
+**dev** — the gate's round limit counts attempts per finding, not rounds. In a real run the limit of three
+was used up by rounds that never circled one problem: notes taken along voluntarily, a regression from the
+first fix plus twins from the similar-bugs scan, a user decision, and then a test-only fix — and it stopped
+the gate on a weak E2E assertion while the product code was correct. The limit exists to catch
+non-convergence, so it now halts when the same critical finding (or a regression of an earlier fix) is
+still open after three attempts; user-decision, test-only and notes-only rounds do not count; a backstop
+halts after six rounds in total.
+
 ## v3.0.0 — 2026-10-03
 
 **dev** — leaner and faster without finding fewer real defects. Baseline, eight real runs (11.09.–02.10.2026,
