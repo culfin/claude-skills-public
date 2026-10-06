@@ -17,6 +17,7 @@ resolve; otherwise resolve the id by name.
 |---|---|---|---|---|
 | Next.js | `node_modules/next/dist/docs/` | — | https://nextjs.org/docs/llms.txt | by name |
 | React | — | — | https://react.dev/llms.txt (pages as `.md`) | by name |
+| FullCalendar | — | — | https://fullcalendar.io/docs/llms.txt (v7; pages as `.md`; read `upgrading-from-v6.md` first — most examples online are v6) | by name |
 | Tailwind CSS | — | — | — | `/tailwindlabs/tailwindcss.com` |
 | shadcn/ui | — | `npx shadcn@latest docs <component>`, skill `shadcn` | https://ui.shadcn.com/llms.txt | by name |
 | Base UI | — | — | https://base-ui.com/llms.txt | by name |
