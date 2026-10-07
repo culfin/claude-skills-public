@@ -105,7 +105,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
-   first; `done on <main>` → mark it as there, never redo it. Next free phase builds on a skipped
+   first; `done on <main>` → mark it as there, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
    one → halt and say so.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
