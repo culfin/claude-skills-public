@@ -143,8 +143,9 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
   the solution is right — otherwise the reviewer returns your conclusions.
 
 **Spec checker** — receives the diff and the requirement (`@spec:`; else the acceptance criteria in
-STATE.md; else the phase description in ROADMAP.md; none → item closed as "no spec"). It reports,
-each with a quote of the requirement: (a) required but missing or partial, (b) implemented but not
+STATE.md; else the phase description in ROADMAP.md; none → item closed as "no spec"). It numbers
+the acceptance criteria in order (C1, C2, …) and returns a verdict table first —
+`C1 | met / not met / untested | test name or file:line` — then its findings, each with a quote of the requirement: (a) required but missing or partial, (b) implemented but not
 required, (c) implemented but probably wrong, (d) acceptance criterion without a test. (a), (c), (d)
 are critical, (b) is a note. For each (d) it writes the test and **sees it red once** (break the
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
@@ -153,6 +154,11 @@ reviewers); with uncommitted phase changes it applies the diff file there first.
 taken, remove that worktree (`git worktree remove <path>`). Simplicity never removes a
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
+
+**Effect probe** (part of the Spec checker) — for at most 2 security- or contract-critical criteria
+that an existing test marks `met`: name the test that must fail without the behaviour, break the
+guarding line in its worktree (comment it out, negate it, use the default value), run only that
+test, restore. Still green → critical, the test cannot fail; no named red test → invalid, not passed.
 
 **Timeouts.** A subagent still running after 15 minutes is cancelled and started once more, if
 useful with the scope split in two. Still no report → its item stays open with "timeout" and the
@@ -227,6 +233,7 @@ Below the phase completion info in STATE.md; permanent (only the checklist is re
 - Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
+- Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none>
 - Skipped checks: <none | check — reason, one per skipped item>
 - Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```
