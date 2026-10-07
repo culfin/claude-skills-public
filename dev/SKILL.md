@@ -97,17 +97,16 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
 2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: read its top through your branch's **Handoff** block and Session Continuity, and the current phase's entry; other sections only when a step needs them.
-   **Then** `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings in the summary. `size:`, `handoff:` or `archivable:` → offer archiving (Milestone End, step 5) in the run's bundled round; never rewrite either file without the user's yes.
+   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings. `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
-   **Other sessions:** skip a phase that state-check reports `claimed` (another branch works on it)
-   unless the user picks it; `stale claim` → ask before taking it over; `done on <main>` → mark it
-   as there (`roadmap: sync Phase N from <main>`), never redo it. If the next free phase builds on a
-   skipped one, halt and say so.
+   **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
+   first; `done on <main>` → mark it as there, never redo it. Next free phase builds on a skipped
+   one → halt and say so.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
@@ -214,7 +213,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
    `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. If another session works in this repo (`git worktree list` shows more, or the user says so), bring the claim to `<main>` at once as its own tiny commit (`roadmap: claim Phase N`) through the route the project allows (PR or push).
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. Another session in this repo (`git worktree list`, or the user says so) → bring the claim to `<main>` at once as a tiny commit `roadmap: claim Phase N` (PR or push, as the project allows).
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 

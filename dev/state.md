@@ -34,8 +34,8 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 - **Session Continuity**: OVERWRITE on every session pause/end
 - **Constraints / Core Value**: IMMUTABLE after init (unless user explicitly changes)
 - **Handoff**: OVERWRITE on every phase completion — only your branch's block
-- **Size**: state, not a diary — at most ~3000 words, Handoff within the first 80 lines
-  (`state-check.py`); history belongs in commits, specs and `docs/roadmap-archive/`
+- **Size**: state, not a diary — ≤ ~3000 words, Handoff in the first 80 lines (`state-check.py`);
+  history goes to commits, specs, `docs/roadmap-archive/`
 - **CI in background**: APPEND per gate commit, update the status in place; at Milestone End, once
   every line is green (or `none`, noted in its gate summary), remove the lines of that milestone
 
@@ -66,9 +66,9 @@ Criteria complete.
 
 - **Handoff** — what the next phase needs and the context does not keep: next phase and where it
   stands, open notes, traps found on the way. At most 8 lines; details belong in the spec, the plan
-  or Blockers & Risks. **One block per branch:** with several sessions in the repo, each writes only
-  its own (Current Position as its first line) and removes it once the branch is merged — two
-  sessions never edit the same lines. A conflict in the Progress table: recompute it from ROADMAP.md.
+  or Blockers & Risks. **One block per branch** (Current Position as its first line): a session writes
+  only its own and removes it once the branch is merged, so parallel sessions never edit the same
+  lines. A Progress-table conflict: recompute it from ROADMAP.md.
 - **Decisions:** — answers from the bundled round and from later clarification, one line per phase;
   a phase with decisions does not ask them again. **Acceptance criteria:** — the draft of a small
   phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks the

@@ -119,6 +119,21 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("| Similar-bugs scan (gate Step C) | **standard** |", text("models.md"))
         self.assertIn("never their specs or plans", text("befragung.md"))
 
+    def test_v3_1_state_claims_probe_security(self):
+        s, g, st = text("SKILL.md"), text("gate.md"), text("state.md")
+        self.assertIn("state-check.py", s)
+        self.assertIn("state-check.py\" archive", text("commands.md"))
+        self.assertTrue((DEV / "scripts" / "state-check.py").exists())
+        self.assertIn("@claim:<branch>@<YYYY-MM-DD>", s)
+        self.assertIn("## Handoff — <branch>", st)
+        self.assertIn("**Effect probe**", g)
+        self.assertIn("at most 2", g)
+        self.assertIn("- Criteria:", g)
+        self.assertIn("no tests configured", g)
+        sec = text("analyzers/security.md")
+        self.assertIn("**Rate limits**", sec)
+        self.assertIn("**Row-level authorization.**", sec)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

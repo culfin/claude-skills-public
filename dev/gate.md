@@ -155,10 +155,10 @@ taken, remove that worktree (`git worktree remove <path>`). Simplicity never rem
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
 
-**Effect probe** (part of the Spec checker) — for at most 2 security- or contract-critical criteria
-that an existing test marks `met`: name the test that must fail without the behaviour, break the
-guarding line in its worktree (comment it out, negate it, use the default value), run only that
-test, restore. Still green → critical, the test cannot fail; no named red test → invalid, not passed.
+**Effect probe** (Spec checker) — for at most 2 security- or contract-critical criteria `met` by an
+existing test: name that test, break the guarding line in its worktree (comment out, negate, default
+value), run only that test, restore. Still green → critical, the test cannot fail; no named red
+test → invalid, not passed.
 
 **Timeouts.** A subagent still running after 15 minutes is cancelled and started once more, if
 useful with the scope split in two. Still no report → its item stays open with "timeout" and the
