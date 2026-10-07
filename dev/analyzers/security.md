@@ -28,7 +28,13 @@ webhooks, file uploads, queue consumers, IPC commands) and follow each input to 
    disabled TLS verification.
 7. **Files and uploads.** Type checked by content, not name; stored outside the web root or served
    without execution; size limits; names sanitised.
-8. **Dependencies used in scope.** A called library function with a known unsafe mode (e.g. YAML
+8. **Rate limits** per account and IP on login, signup, reset, OTP and verification (short codes:
+   lockout), and on endpoints whose abuse costs money or reaches real recipients (mail/SMS, LLM,
+   payment, uploads). Missing there is critical.
+9. **Row-level authorization.** Queries on user- or tenant-owned data are scoped by the session's
+   tenant/user, never by input, or guarded by a database policy (Postgres RLS — mandatory where
+   clients query the database directly). A new table for such data without either is critical.
+10. **Dependencies used in scope.** A called library function with a known unsafe mode (e.g. YAML
    `load`, `pickle`, `eval`-like template features).
 
 ## Sweep
@@ -44,6 +50,9 @@ Probe for these and judge every hit:
   `shell=True`, `eval`, `innerHTML`/`dangerouslySetInnerHTML`, unescaped template output.
 - **Secrets:** `password`, `secret`, `token`, `api_key`, private keys, `.env` values in code or logs;
   tokens in URLs.
+- **Limits and scoping:** per login/signup/reset/OTP/send/upload handler, the limiter on its path
+  (`rateLimit`, `throttle`, middleware, proxy); queries on owned tables without a tenant/user
+  filter; `CREATE TABLE` without `ENABLE ROW LEVEL SECURITY` where the project uses RLS.
 
 ## Language notes
 

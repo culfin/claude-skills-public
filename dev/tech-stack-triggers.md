@@ -1,9 +1,7 @@
 # Tech stack and security triggers
 
-Moved out of `SKILL.md` because these matrices are needed in only three places:
-during brainstorming (4a), during execution (4c) and in the gate's review wave (Step A, tagged `5c` in the index files). The **detection** itself (which stack
-is present → `$TECH_STACKS`) is section 1 of `stack/INDEX.md`; it runs once per session at the first
-explicit `/dev` run, never on the automatic one-line status.
+Read in brainstorming (4a), execution (4c) and the gate's review wave (Step A, tagged `5c` in the
+index files). **Detection** (`$TECH_STACKS`) is section 1 of `stack/INDEX.md`, once per session.
 
 **Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, consult section 2
 of `stack/INDEX.md` and load only the rows whose trigger matches: step 4a → as context before
@@ -58,6 +56,7 @@ matrix matches — the tier script's path patterns are narrower than this matrix
 | `**/auth*`, `**/login*`, `**/session*`, `**/middleware*` | Auth code changed | Security review (phase scope) |
 | `src/app/api/**`, `src/actions/**`, `**/route.ts` | API endpoints changed | Security review (phase scope) |
 | `src/db/migrations/**`, SQL, ORM schema | DB schema changed | Security review (phase scope) |
+| `**/signup*`, `**/register*`, `**/reset*`, `**/otp*`, `**/upload*`, `**/polic*` | Expensive endpoint or access policy changed | Security review (phase scope) |
 | Phase `@type: auth`, or `@type: backend` in the large tier | Phase type | Security review (phase scope) |
 
 **Performance review — only on cause.** It runs only when the changed files contain at least one of:
@@ -68,11 +67,9 @@ matrix matches — the tier script's path patterns are narrower than this matrix
 
 No cause → no Performance review item; its probes found nothing in phases without one.
 
-**Analyzers:** every analysis above and in the review wave is carried out by a subagent with the
-matching file from `analyzers/` (contract in `analyzers/CONTRACT.md`) — diff review, security, performance,
-accessibility, design detector, motion. They work for every stack; each carries short notes per language (Swift, TS/JS, Rust,
-PHP, Python, shell, SQL). A project that wants an extra, stack-specific analysis on top names it via
-`@skills:` in ROADMAP.md; `/dev` does not depend on any.
+**Analyzers:** each analysis is a subagent with its file from `analyzers/` (contract in
+`analyzers/CONTRACT.md`), for every stack, with short notes per language. Extra stack-specific
+analyses go under `@skills:` in ROADMAP.md; `/dev` depends on none.
 
 **Next.js — where the knowledge comes from.** Next.js ships its documentation with the package
 (16.3 and later), version-matched to what the project runs. A subagent reads
@@ -80,14 +77,13 @@ PHP, Python, shell, SQL). A project that wants an extra, stack-specific analysis
 app's own) and from there only the pages that match the changed files or the planned routes; it
 returns findings or a ≤ 40-line digest, never the docs themselves. No bundled docs (older Next.js,
 dependencies not installed) → fall back to an installed `next-best-practices` skill if there is
-one; neither → the item is ticked as `skipped: <reason>`. The former skill repository is frozen
-upstream, so it is a fallback only and not a tracked source.
+one; neither → the item is ticked as `skipped: <reason>`.
 
 **Rules:**
 - Tech-Stack Reviews and Security Review are **read-only analyses** — they flag problems, they do not fix automatically.
 - Only trigger when relevant files were actually changed — not blindly on every phase.
 - Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → the bundled fix (gate Step B), **before** the Similar-bugs scan (Step C): it searches for the patterns of the fixes just made, and on unfixed code it finds nothing.
-- Notices (could be better, alternative API available) → note them, continue.
+- Notices → note them, continue.
 - A tech skill (shadcn, swiftui-pro, …) that is not installed, a stack checkout missing under `$DEV_STACK_DIR` or bundled docs that are absent → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
-- Exception: Design detector and Motion review rely on the optional design sources under `$DEV_DESIGN_DIR` (README, "Design sources"). Missing sources or an unbuilt engine → the item is ticked with the evidence `skipped: <reason>` and listed under "Skipped checks" in the gate summary (`gate.md`, checklist rules) — visible, never counted as "no findings", not blocking.
+- Exception: Design detector and Motion review need the optional sources under `$DEV_DESIGN_DIR`; missing → `skipped: <reason>` (`gate.md`, evidence rules).
 - **Parallelization:** all of these are read-only and run in the one parallel review wave (gate Step A).
