@@ -85,5 +85,5 @@ one; neither → the item is ticked as `skipped: <reason>`.
 - Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → the bundled fix (gate Step B), **before** the Similar-bugs scan (Step C): it searches for the patterns of the fixes just made, and on unfixed code it finds nothing.
 - Notices → note them, continue.
 - A tech skill (shadcn, swiftui-pro, …) that is not installed, a stack checkout missing under `$DEV_STACK_DIR` or bundled docs that are absent → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
-- Exception: Design detector and Motion review need the optional sources under `$DEV_DESIGN_DIR`; missing → `skipped: <reason>` (`gate.md`, evidence rules).
-- **Parallelization:** all of these are read-only and run in the one parallel review wave (gate Step A).
+- Exception: Design detector and Motion review need the optional sources under `$DEV_DESIGN_DIR`; missing → `skipped: <reason>`, listed under "Skipped checks", never "no findings" (`gate.md`).
+- **Parallelization:** all read-only, run in the one parallel review wave (gate Step A).
