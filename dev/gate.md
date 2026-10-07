@@ -155,7 +155,7 @@ taken, remove that worktree (`git worktree remove <path>`). Simplicity never rem
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
 
-**Effect probe** (Spec checker) — for at most 2 security- or contract-critical criteria `met` by an
+**Effect probe** (Spec checker, large tier only; verdict table stays in both) — for at most 2 security- or contract-critical criteria `met` by an
 existing test: name that test, break the guarding line in its worktree (comment out, negate, default
 value), run only that test, restore. Still green → critical, the test cannot fail; no named red
 test → invalid, not passed.
@@ -233,7 +233,7 @@ Below the phase completion info in STATE.md; permanent (only the checklist is re
 - Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
-- Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none>
+- Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none | skipped (small tier)>
 - Skipped checks: <none | check — reason, one per skipped item>
 - Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```
