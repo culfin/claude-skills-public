@@ -13,36 +13,9 @@ If ROADMAP.md exists: AskUserQuestion — Overwrite (Recommended) or Cancel.
   - Medium (4-6 phases): 3, 4 (Recommended), 5 + Other
   - Large (7+ phases): 4, 5, 6+ (Recommended) + Other
 **4. Per milestone** — name/goal (free text), phases (multiSelect from types), per-phase skills (multiSelect, optional)
-**5. Skill discovery and triggers:**
-
-First, discover what skills are available and what might be missing:
-
-**5a. List installed skills** — check what's already available:
-1. Try `npx skills ls -g`
-2. If `skills` CLI is not installed: check `~/.claude/skills/` and `.claude/skills/` directories directly via Glob
-3. List skills from the Skill tool's available skills list (visible in system context)
-
-**5b. Analyze gaps** — based on the project's tech stack (from CLAUDE.md, package.json, project.yml, .csproj, etc.), identify what skill categories might be missing. For example:
-- Swift project but no `swiftui-pro`? → suggest installing
-- No testing skill for the project's test framework? → search for one
-
-**5c. Search for missing skills** — if gaps exist:
-
-1. **Try `npx skillfish find <query>`** — searches the Skill.Fish registry. Run one query per gap.
-2. **If skillfish is not installed or finds nothing:** Use WebSearch to find skills for the tech stack (e.g., "claude code skill react"), or check GitHub repos with `.claude/skills/` directories.
-3. **If no external skills found:** Skip — the built-in skills and superpowers are sufficient for most projects.
-
-**5d. Security review before installing** — for any external skill found:
-- Read the SKILL.md content via WebFetch (raw GitHub URL)
-- Check for suspicious patterns: shell commands that exfiltrate data, encoded strings, network calls to unknown hosts, file operations outside project scope
-- AskUserQuestion: "Found skill X from <source>. Install? (Recommended)" with description of what it does
-- Only install after user confirms. Install command: try `npx skills add <url> -y -g`, fallback to manual download into `~/.claude/skills/`
-
-**5e. Configure triggers** — multiSelect per trigger point:
-  - milestone-start, milestone-end, pre-release
-  - pre-phase and post-phase per type
-
-Show both installed and newly discovered skills as options.
+**5. Triggers** — offer the installed skills (the Skill tool's list; `~/.claude/skills/`,
+`.claude/skills/`) per trigger point, multiSelect: milestone-start, milestone-end, pre-release, and
+pre-/post-phase per type. `/dev` does not search for or install new skills.
 
 **Placement guidance for the user:**
 - **Read-only analysis** (reports, audits, stack-specific reviews) → safe as automatic triggers
