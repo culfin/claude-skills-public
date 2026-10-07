@@ -82,10 +82,10 @@ class StateCheckTests(unittest.TestCase):
         self.assertIn("line 102", found[0])
 
     def test_phase_claimed_by_another_branch_is_reported(self):
-        git(self.root, "branch", "sitzung/b")
-        self.write(claim3="@claim:sitzung/b@2026-10-06")
+        git(self.root, "branch", "session/b")
+        self.write(claim3="@claim:session/b@2026-10-06")
         found = self.check(branch="main")
-        self.assertEqual(found, ["claimed: Phase 3 by sitzung/b since 2026-10-06 — skip unless the user picks it"])
+        self.assertEqual(found, ["claimed: Phase 3 by session/b since 2026-10-06 — skip unless the user picks it"])
 
     def test_own_claim_is_silent(self):
         self.assertEqual(self.check(branch="main"), [])

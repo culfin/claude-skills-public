@@ -2,6 +2,37 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.0 — 2026-10-07
+
+**dev** — six changes from comparing `/dev` with a published AI-engineering checklist, each tied to a
+measured failure in real projects:
+
+- **State, not a diary.** STATE.md and ROADMAP.md had grown to tens of thousands of words (one project:
+  71k words in STATE.md, a ROADMAP.md of 120k words, the Handoff block at line ~1000) and every session start
+  read them. New `scripts/state-check.py`: warns above 3000 / 8000 words or when the Handoff is not in the
+  first 80 lines; `archive` moves a finished milestone with its gate summaries to `docs/roadmap-archive/` at
+  Milestone End (one line stays). Session Start reads STATE.md only through the Handoff and offers archiving;
+  nothing is rewritten without the user's yes.
+- **Several sessions per repo.** A second session used to take over the `[~]` phase of the first, and global
+  Handoff blocks conflicted on every merge. `[~]` now carries `@claim:<branch>@<date>`; Session Start skips
+  phases claimed by another branch, asks on stale claims (branch gone or older than 7 days), and marks phases
+  already done on the main branch instead of redoing them. The claim goes to the main branch at once; Handoff
+  blocks are per branch.
+- **Test count duty.** Test evidence must say how many tests ran (`412 passed` per suite, or `no tests
+  configured`); `check-evidence.py` rejects a missing count or a 0. Measured: about half of one project's iOS
+  runs printed no test line at all and still looked green.
+- **Effect probe.** The Spec checker breaks the guarding line of at most two security- or contract-critical
+  criteria and runs the named test; still green is critical. Measured: a suite stayed green twice with a
+  just-built security property removed. A weakness an implementer names in its own tests now starts a fix
+  round instead of being deferred as minor.
+- **Verdict per criterion.** The Spec checker numbers the criteria and returns criterion → met / not met /
+  untested with its test; the gate summary keeps one line of it.
+- **Security review:** rate limits on credential and expensive endpoints, and row-level authorization (tenant
+  scoping or RLS) — critical for a new table before data goes in.
+
+Word budget kept (required reading ≤ 9000, whole skill ≤ the v2 total): `/dev init` no longer searches for or
+installs foreign skills, and the trigger-matrix prose is shorter.
+
 ## v3.0.1 — 2026-10-06
 
 **dev** — the gate's round limit counts attempts per finding, not rounds. In a real run the limit of three

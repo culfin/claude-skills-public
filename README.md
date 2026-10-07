@@ -12,7 +12,7 @@ language you write in, and each can be installed on its own.
 
 | Skill | Command | What it does | What it changes |
 |---|---|---|---|
-| [**dev**](dev/SKILL.md) | `/dev` · `/dev next` | Takes the next roadmap phase through clarification, planning, implementation and the quality gate | code, tests, `ROADMAP.md`, `STATE.md`, commits on the current branch; never deploys or pushes to production without asking |
+| [**dev**](dev/SKILL.md) | `/dev` · `/dev next` | Takes the next roadmap phase through clarification, planning, implementation and the quality gate | code, tests, `ROADMAP.md`, `STATE.md`, `docs/roadmap-archive/` (finished milestones), commits on the current branch — plus a one-line phase-claim commit on the main branch when another session works in the repo; never deploys or pushes to production without asking |
 | | `/dev check` | Runs the quality gate on changes made outside a phase | fixes findings, one check commit |
 | | `/dev status` · `init` · `add` · `skip` · `reorder` · `pause` | Roadmap overview and maintenance | `ROADMAP.md`, `STATE.md` |
 | | `/dev debug` · `/dev review` | Systematic debugging; full pre-release review | code and tests where a fix is needed |
