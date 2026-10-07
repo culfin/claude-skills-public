@@ -49,6 +49,32 @@ class EvidenceTests(unittest.TestCase):
         self.state([f"- [x] Diff review — 0 critical @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
         self.assertEqual(self.run_check(), [])
 
+    def test_test_item_without_a_count_is_rejected(self):
+        i = self.sid()
+        self.state([f"- [x] Typecheck + lint + tests — all green @{i}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 1)
+        self.assertIn("no test count: Typecheck + lint + tests", problems[0])
+
+    def test_zero_tests_is_not_green(self):
+        i = self.sid()
+        self.state([f"- [x] Typecheck + lint + tests — 0 errors, 0 passed @{i}",
+                    f"- [x] E2E Tests — unit 12 passed, e2e 0 tests passed @{i}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 2)
+        self.assertTrue(all("no test count" in p for p in problems))
+
+    def test_counts_per_suite_and_no_tests_configured_pass(self):
+        i = self.sid()
+        self.state([f"- [x] Typecheck + lint + tests — 0 errors, vitest 412 passed, pytest 9 tests passed @{i}",
+                    f"- [x] E2E Tests — no tests configured @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_count_rule_applies_only_to_test_items(self):
+        i = self.sid()
+        self.state([f"- [x] Production Build — ok @{i}", f"- [x] Diff review — 0 critical @{i}"])
+        self.assertEqual(self.run_check(), [])
+
     def test_change_after_check_makes_it_stale(self):
         i = self.sid()
         self.state([f"- [x] Diff review — 0 critical @{i}"])

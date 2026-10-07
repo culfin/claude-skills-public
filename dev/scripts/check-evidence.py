@@ -27,6 +27,10 @@ A check whose optional source or tool is missing is closed visibly instead (gate
 Such an item is closed, needs no `@<state>`, and is printed as `skipped: <item> — <reason>` — it
 is never reported as passed. Only the checks in SKIPPABLE may be skipped this way.
 
+Test items (COUNTED) must say how many tests ran: at least one `<N> passed` with N > 0, one per
+suite when there are several (`unit 412 passed, e2e 18 passed`), or `no tests configured`. "All
+green" proves nothing when zero tests ran — a runner that finds no tests often exits 0.
+
 After a bundled fix the gate reviews only the fix diff ("Fix review"). So when a checked Fix review
 carries the current @state, the review items in REVIEW_ITEMS (diff, spec, security, ...) may keep
 an older @state; tests, build, E2E, similar-bugs scan and the Fix review itself must stay current.
@@ -54,6 +58,10 @@ ITEM = re.compile(r"^\s*- \[( |x|X)\] (.*)$")
 STATE_TAG = re.compile(r"@([0-9a-f]{7,64})\s*$")
 SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 # Checks that depend on an optional source or tool; nothing else may be closed as skipped.
+# Items whose evidence must name a test count > 0 (or "no tests configured").
+COUNTED = ("typecheck + lint + tests", "e2e tests")
+COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
+NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
 SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "tech-stack review")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff.
 REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
@@ -145,6 +153,11 @@ def check(root, state_file, before_commit=False, repair=False):
             continue
         if not evidence:
             problems.append(f"no evidence: {name} (write '— <decisive output>' after the item)")
+        elif name.lower().startswith(COUNTED) and not NO_TESTS.search(evidence):
+            counts = [int(n) for n in COUNT.findall(evidence)]
+            if not counts or min(counts) == 0:
+                problems.append(f"no test count: {name} (write '<N> passed' per suite, N > 0, "
+                                "or 'no tests configured')")
         if not tag:
             problems.append(f"no @state: {name} (append '@{current}' when checked on this state)")
         elif not current.startswith(tag.group(1)[:ID_LEN]) and not tag.group(1).startswith(current):

@@ -98,7 +98,9 @@ evidence (`Spec checker (5c-v)` → `Spec checker`); the first three become one 
 - **A checkmark carries its evidence and the state it ran on:**
   `- [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04`. The `@…` value is
   `python3 "$DEV_DIR/scripts/check-evidence.py" id`, taken when the check ran. No evidence, no
-  checkmark — "should pass" and "I checked that earlier" are not evidence.
+  checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
+  many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
+  that found no tests exits green too. `check-evidence.py` rejects a missing count or a 0.
 - **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight and
   Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
