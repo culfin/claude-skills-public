@@ -96,13 +96,18 @@ period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: start from its **Handoff** block and Session Continuity.
+2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: read its top through your branch's **Handoff** block and Session Continuity, and the current phase's entry; other sections only when a step needs them.
+   **Then** `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings in the summary. `size:`, `handoff:` or `archivable:` → offer archiving (Milestone End, step 5) in the run's bundled round; never rewrite either file without the user's yes.
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
-5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`).
+5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
+   **Other sessions:** skip a phase that state-check reports `claimed` (another branch works on it)
+   unless the user picks it; `stale claim` → ask before taking it over; `done on <main>` → mark it
+   as there (`roadmap: sync Phase N from <main>`), never redo it. If the next free phase builds on a
+   skipped one, halt and say so.
 7. **Show summary** — in the terminal only (the companion is for the user interface, not for roadmaps):
    ```
    Milestone 2: UI Shell (3/5 phases done)
@@ -209,7 +214,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
    `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. If another session works in this repo (`git worktree list` shows more, or the user says so), bring the claim to `<main>` at once as its own tiny commit (`roadmap: claim Phase N`) through the route the project allows (PR or push).
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 
@@ -270,9 +275,9 @@ A check already on the Gate Checklist is not run again, even if listed in `@skil
 ### 7. Phase Completion (`[!]` → `[x]`)
 
 1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
-2. Mark `[x]` in ROADMAP.md (replacing `[!]`), ensure `@spec:` and `@plan:` present (small phases have neither)
+2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`), ensure `@spec:` and `@plan:` present (small phases have neither)
 3. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace the **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
+4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace your branch's **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
 5. Commit: `roadmap: complete Phase N — <name>`
 6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 

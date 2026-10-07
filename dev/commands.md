@@ -8,24 +8,9 @@ Execution) stays in `SKILL.md`; the gate is in `gate.md`.
 **Triggered by:** `/dev status` or "Show full status"
 
 1. **Read STATE.md** — show Blockers & Risks (if any) and Session Continuity at the top.
-2. **Show full roadmap** — in the terminal only (the companion is for the user interface): all milestones, all phases with status icons, spec/plan links, blockers at the top:
-   ```
-   ### Blockers
-   - Windows Dashboard: placeholder only
-
-   ### Milestone 1: Foundation (3/3) — Complete
-   | # | Phase | Type | Status | Spec | Plan |
-   |---|-------|------|--------|------|------|
-   | 1 | Database Layer | backend | done | [spec] | [plan] |
-
-   ### Milestone 2: UI Shell (1/3)
-   | 1 | Navigation | ui | done | [spec] | [plan] |
-   | 2 | Connections View | ui | next | — | — |
-   | 3 | Dashboard | ui | pending | — | — |
-
-   ### Requirements: 26/30 complete
-   ### Last session: 2026-03-20 — Stopped at: ROADMAP consolidated
-   ```
+2. **Show full roadmap** — in the terminal only (the companion is for the user interface): blockers
+   first, then per milestone `### Milestone 2: UI Shell (1/3)` and a table `# | Phase | Type | Status
+   | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements and last session.
 3. **Update STATE.md** Session Continuity with current timestamp.
 
 After display: AskUserQuestion with Start/Add/Skip/Done options.
@@ -49,7 +34,11 @@ All phases `[x]` or `[—]`:
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
-5. **Update STATE.md** (Progress table, Current Position to next milestone).
+5. **Update STATE.md** (Progress table, Current Position to next milestone). **Archive:** tell the
+   user, then `python3 "$DEV_DIR/scripts/state-check.py" archive "<milestone heading>"` — the
+   milestone's ROADMAP.md section and its gate summaries move to `docs/roadmap-archive/<slug>.md`, one
+   line stays. If `state-check.py check` still reports `size:`, offer to move the narrative STATE.md
+   sections it names there too. Commit `roadmap: archive <milestone>`.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with Gate summary highlights (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
 7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
 
@@ -134,7 +123,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
    - **Web:** run `vibepolish` in launch-audit mode (findings only, no fixes) over the whole app; then a subagent reads `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` plus only the reference file of the step it performs — `audit` first, `polish` only after the user approves specific findings. **These files are used as checklists only:** the subagent applies their criteria by reading the code and the running app itself. It never runs `scripts/impeccable` or `npx impeccable` (a launcher that downloads a binary), never the `context` step that `SKILL.md` and `reference/polish.md` order, never `install`, never `hooks on` — where a file says to run one of these, skip that instruction and say so in the report. Set `IMPECCABLE_NO_TELEMETRY=1` and `DO_NOT_TRACK=1` regardless.
    - **Native (Apple/Android):** read the `## Checklist` section of the matching platform file (`design/platform-apple.md` or `design/platform-android.md`) and review the app against it.
    - Missing source (vibepolish not installed, no `$DEV_DESIGN_DIR/impeccable` checkout) → report `skipped: <reason>`, never a silent pass.
-4. **Read Gate summaries** from STATE.md and show a consolidated picture: findings and fixes across all phases, recurring patterns. None → note "No gate history available — this is the first release".
+4. **Read Gate summaries** from STATE.md and `docs/roadmap-archive/` and show a consolidated picture: findings and fixes across all phases, recurring patterns. None → note "No gate history available — this is the first release".
 5. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause
 6. **Launch video (offer only)** — if `brag.md` "When to offer" holds for this release (landing page

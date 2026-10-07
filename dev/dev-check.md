@@ -9,7 +9,7 @@ with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions
 **Triggered by:** `/dev check`
 
 **Precondition:** No active phase.
-- If ROADMAP.md exists and contains a phase with `[~]` or `[!]`: stop with "Phase N is still active (`[~]`/`[!]`). Use `/dev next` to complete the quality gate of the running phase."
+- If ROADMAP.md exists and contains a phase with `[~]` or `[!]` not claimed by another branch: stop with "Phase N is still active (`[~]`/`[!]`). Use `/dev next` to complete the quality gate of the running phase."
 - If ROADMAP.md exists and all phases are `[x]` or `[—]` (dormant): proceed normally.
 - If no ROADMAP.md: proceed, but skip STATE.md integration. Check-Commit is still created.
 

@@ -18,7 +18,7 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 | Phase completes (`[!]` → `[x]`) | Current Position, Progress table, Last activity, **remove Quality Gate Checklist section**, **replace the Handoff block** (below) |
 | Phase skipped (`[ ]` → `[—]`) | Current Position, Progress table, Last activity |
 | Last phase of a milestone `[x]` | Line `Milestone End pending: <milestone name>`; Milestone End removes it last (`commands.md`) |
-| Milestone completes | Progress table, Next milestone in Current Position |
+| Milestone completes | Progress table, Next milestone in Current Position; archive (`commands.md`, Milestone End) |
 | `/dev ui` approval while a phase is `[~]`/`[!]` | **Create or extend `## UI review — approved findings`** (below) |
 | Key decision made | Phase-specific → `Decisions:` under the phase; otherwise Constraints or a Decisions section |
 | Blocker discovered | Add to Blockers & Risks |
@@ -33,7 +33,9 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 - **Blockers & Risks**: APPEND new, REMOVE resolved
 - **Session Continuity**: OVERWRITE on every session pause/end
 - **Constraints / Core Value**: IMMUTABLE after init (unless user explicitly changes)
-- **Handoff**: OVERWRITE on every phase completion
+- **Handoff**: OVERWRITE on every phase completion — only your branch's block
+- **Size**: state, not a diary — at most ~3000 words, Handoff within the first 80 lines
+  (`state-check.py`); history belongs in commits, specs and `docs/roadmap-archive/`
 - **CI in background**: APPEND per gate commit, update the status in place; at Milestone End, once
   every line is green (or `none`, noted in its gate summary), remove the lines of that milestone
 
@@ -42,7 +44,7 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 After `/clear` the next session knows only STATE.md; three blocks carry the run:
 
 ```markdown
-## Handoff
+## Handoff — <branch>
 <!-- replaced at every phase completion; at most 8 lines; a restart works from files alone: commits done, Next, Open; approvals are only those recorded in STATE.md/ROADMAP.md -->
 Next: Phase 5 — Export (@type:backend), plan docs/plans/export.md, tasks 1–2 done (ledger)
 Open: Similar-bugs twin in src/report.ts parked (Blockers & Risks)
@@ -64,7 +66,9 @@ Criteria complete.
 
 - **Handoff** — what the next phase needs and the context does not keep: next phase and where it
   stands, open notes, traps found on the way. At most 8 lines; details belong in the spec, the plan
-  or Blockers & Risks.
+  or Blockers & Risks. **One block per branch:** with several sessions in the repo, each writes only
+  its own (Current Position as its first line) and removes it once the branch is merged — two
+  sessions never edit the same lines. A conflict in the Progress table: recompute it from ROADMAP.md.
 - **Decisions:** — answers from the bundled round and from later clarification, one line per phase;
   a phase with decisions does not ask them again. **Acceptance criteria:** — the draft of a small
   phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks the
@@ -93,6 +97,6 @@ to that phase and is stored in its own section (Current Position is overwritten)
 
 **Not for:** plan details (spec/plan files), code-level decisions (CLAUDE.md or comments), debug state
 (`.debug/`), velocity metrics. **Gate and Check summaries are permanent** — a quality log; only the
-`## Quality Gate — Phase N` checklist is removed.
+`## Quality Gate — Phase N` checklist is removed. At Milestone End they move to the archive, never deleted.
 
 ---
