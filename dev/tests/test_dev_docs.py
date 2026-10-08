@@ -139,7 +139,9 @@ class DevDocsTests(unittest.TestCase):
         def words(f):
             return len(f.read_text().split())
         hot = sum(words(DEV / f) for f in ("SKILL.md", "gate.md", "execution.md", "state.md"))
-        files = [f for f in DEV.rglob("*.md") if "tests" not in f.relative_to(DEV).parts]
+        # Hidden dirs (.pytest_cache writes a README.md) are tool artefacts, not skill text.
+        files = [f for f in DEV.rglob("*.md") if "tests" not in f.relative_to(DEV).parts
+                 and not any(p.startswith(".") for p in f.relative_to(DEV).parts)]
         sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
         total = sum(n for n, _ in sizes)
         msg = f"hot path {hot}/9000, total {total}/38189; largest: {sizes[:5]}"
