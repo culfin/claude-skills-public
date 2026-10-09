@@ -2,6 +2,15 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.2.0 — 2026-10-09
+
+**dev** — three changes from comparing `/dev` with Anthropic's `feature-dev` plugin; the plugin itself is not adopted (its five approval stops would undo v3):
+
+- **Project rules in the diff review.** The reviewer reads CLAUDE.md/AGENTS.md (root and nearest to the changed files) and reports a broken explicit rule as a finding, critical when phrased must/never/always. Nothing checked against project rules before.
+- **Milestone End fix loop is bounded.** The milestone-end analyses use the gate's attempt limit per finding. Past it, edge-case findings become notes in Blockers & Risks; critical correctness/security findings still block. Measured cause: one eval run spent 20 of 32 subagents on five rounds of ever more exotic edge cases at the milestone end.
+- **Parallel exploration before the interview.** For architectural phases in an existing codebase, 2-3 read-only explorers (cheap tier, distinct angles) each return at most 10 key files; the controller reads them before asking. Not measurable with the calculator fixture; keep only if a real-codebase fixture shows it pays.
+- Word budget kept by cuts in `commands.md` and `befragung.md` (the `befragung.md` origin note — the technique comes from `grilling` in github.com/mattpocock/skills, MIT — moved here).
+
 ## v3.1.0 — 2026-10-07
 
 **dev** — six changes from comparing `/dev` with a published AI-engineering checklist, each tied to a
