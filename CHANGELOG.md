@@ -2,6 +2,17 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.1 — 2026-10-09
+
+**dev** — the diff review now checks explicit project rules from CLAUDE.md / AGENTS.md (critical when a
+rule says must/never/always). Taken from comparing `/dev` with Anthropic's `feature-dev` plugin; the other
+ideas (parallel explorers before architectural phases, an attempt limit for the Milestone End fix loop)
+were built and measured on a larger fixture (2 runs per scenario and arm) and showed no gain — not merged.
+The rule check showed no measurable gain either (existing reviews already caught the planted violations);
+it is kept as an explicit safeguard at no extra agent cost. To pay for its words, the note on the origin
+of the interview technique moved here: `grilling` from github.com/mattpocock/skills (MIT); our format
+uses selection buttons instead of free text.
+
 ## v3.1.0 — 2026-10-07
 
 **dev** — six changes from comparing `/dev` with a published AI-engineering checklist, each tied to a
