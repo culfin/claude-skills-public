@@ -35,6 +35,7 @@ Probe the changed files for these (adapt the syntax to the languages in scope) a
   the phase, files another session left in the tree).
 - Tests: the change must not weaken a test, check or threshold to get green; each behaviour change has a test that would fail without it; tests that only assert that
   code runs, or mirror the implementation, do not count.
+- Project rules: read CLAUDE.md/AGENTS.md (root and nearest to changed files); a broken explicit rule is a finding, quoted — critical if phrased must/never/always, else note.
 - Irreversible: anything `git revert` cannot undo (migrations, data changes, deploy steps, messages
   to real recipients). For migrations: is there a rollback path, and does it work?
 
