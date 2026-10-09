@@ -1,19 +1,14 @@
 # /dev — commands besides the phase loop
 
-Read when the router in `SKILL.md` points here. The phase loop itself (Session Start, Phase
-Execution) stays in `SKILL.md`; the gate is in `gate.md`.
-
 ## Status Display
 
-**Triggered by:** `/dev status` or "Show full status"
-
 1. **Read STATE.md** — show Blockers & Risks (if any) and Session Continuity at the top.
-2. **Show full roadmap** — in the terminal only (the companion is for the user interface): blockers
+2. **Show full roadmap** — terminal only: blockers
    first, then per milestone `### Milestone 2: UI Shell (1/3)` and a table `# | Phase | Type | Status
    | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements and last session.
-3. **Update STATE.md** Session Continuity with current timestamp.
+3. **Update STATE.md** Session Continuity timestamp.
 
-After display: AskUserQuestion with Start/Add/Skip/Done options.
+Then AskUserQuestion: Start/Add/Skip/Done.
 
 ---
 
@@ -30,7 +25,7 @@ All phases `[x]` or `[—]`:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
    - **Performance review** (full mode) — the milestone's changes.
    - **Security review** (full mode) — the whole milestone scope (cross-cutting risks).
-   - Critical findings: fix before proceeding. Non-critical: STATE.md Blockers & Risks.
+   - Critical findings: fix before proceeding, attempt limit per finding as in `gate.md` Step B; past it, edge-case findings become Blockers & Risks notes, critical correctness/security findings still block. Non-critical: Blockers & Risks.
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
@@ -54,7 +49,7 @@ All phases `[x]` or `[—]`:
 2. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
-3. Show confirmation: "Session saved. Next time, run `/dev` to resume."
+3. Confirm: "Session saved. Run `/dev` to resume."
 
 ---
 
@@ -63,8 +58,7 @@ All phases `[x]` or `[—]`:
 **Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug"; and
 automatically during a phase when a build, test run or app fails or behaves unexpectedly without an obvious cause.
 An obvious fix (typo, missing import or dependency, outdated test expectation — under 2 minutes) is
-just made. Otherwise read and follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the
-fix, then back to the `[~]` phase).
+just made. Otherwise follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the fix, then back to the `[~]` phase).
 
 ---
 
@@ -76,8 +70,7 @@ fix, then back to the `[~]` phase).
 2. Update ROADMAP.md: `[—]` + `<!-- skipped: <reason> -->`
 3. **Update STATE.md**: Current Position, Progress table, Last activity.
 4. Commit.
-5. **Show the updated roadmap in the terminal**, with the skipped phase marked `[—]` and the reason.
-6. Return to Session Start.
+5. Show the updated roadmap in the terminal, skipped phase marked `[—]` with reason; return to Session Start.
 
 ---
 
@@ -87,12 +80,10 @@ fix, then back to the `[~]` phase).
 
 AskUserQuestion: Add phase (Recommended) or Add milestone.
 
-**Phase:** Which milestone → name → type → position (end or after specific phase) → extra skills → Edit ROADMAP.md → commit.
+**Phase:** milestone → name → type → position → extra skills → edit ROADMAP.md → commit.
 **Milestone:** Name/goal → phases → append to ROADMAP.md → commit.
 
-After the commit: show the updated roadmap in the terminal, the new phase/milestone marked "new".
-
-Warn if adding to a completed milestone.
+After the commit: show the updated roadmap in the terminal, marking the addition "new". Warn if the milestone is completed.
 
 ---
 
@@ -100,7 +91,7 @@ Warn if adding to a completed milestone.
 
 **Triggered by:** `/dev reorder`
 
-Only `[ ]` phases can move. `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
+Only `[ ]` phases move. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
 
 After the commit: show the updated roadmap in the terminal, the moved phase marked "moved".
 
