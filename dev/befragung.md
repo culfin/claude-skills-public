@@ -7,7 +7,7 @@ The interview replaces only the clarifying-questions step of `superpowers:brains
 1. **Read what exists:** ADRs under `docs/adr/`, existing specs from the Roadmap, the milestone goal.
    Whatever is decided there is not asked again.
 2. **Gather facts yourself.** Anything that code, configuration or documentation can answer is
-   looked up — never ask the user. In an existing codebase, first dispatch 2–3 parallel read-only explorers (cheap tier; angles: entry points and data flow, similar features and conventions, tests and integration points), each returning at most 10 key files with one-line reasons; read them before asking. Skip for new projects. If a search is still running, only the
+   looked up — never ask the user. If a search is still running, only the
    questions that depend on it wait; the rest are asked now.
 3. **Decisions in rounds** via `AskUserQuestion`: up to four mutually **independent**
    questions per round, each with 2–4 options, the recommended one first with "(Recommended)" and a

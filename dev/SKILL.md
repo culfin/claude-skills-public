@@ -236,7 +236,7 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
    (format in `state.md`), closed by the line `Criteria complete.` — no approval round; the Spec checker and a resume read it there. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
    "(Recommended)"; look up facts yourself instead of asking.
-3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
+3. **Architectural → explore first** (existing codebase, even when no interview runs): 2–3 parallel read-only explorers (cheap tier; angles: entry points and data flow, similar features and conventions, tests and integration points), each returning ≤ 10 key files with one-line reasons; read them. Then **interview in rounds per `befragung.md`** (incl. ADRs), then
    `superpowers:brainstorming` with the handoff note from `befragung.md` **and this override**: no
    section approvals, write and commit the spec, no spec review gate (`sources.md` O14). Its
    hand-off to `writing-plans` carries the 4b instruction. After the spec is committed: add `@spec:`
