@@ -1,6 +1,6 @@
 # Clarification — bundled round at run start, interview in rounds for architectural phases
 
-The interview replaces only the clarifying-questions step of `superpowers:brainstorming`; classification, approaches, design, spec and lock stay there.
+The interview replaces only the conversation of `superpowers:brainstorming`; sizing, the written design and its builder check stay there.
 
 ## Procedure
 
@@ -23,9 +23,9 @@ The interview replaces only the clarifying-questions step of `superpowers:brains
    answers, the summary explicitly names the most far-reaching of them.
 5. **Hand-off to `superpowers:brainstorming`** with this note, followed by the list:
 
-   > Clarification complete, result below. Classification: architectural. Start with the
-   > approaches; do not ask clarifying questions that are answered below. The understanding is
-   > confirmed — do not reflect it back again. The Visual Companion is already running (URL below).
+   > Clarification complete, result below. Classification: architectural — a project with a
+   > written design. Skip the opening message; ask nothing answered below. The understanding is
+   > confirmed — no playback. The Visual Companion is already running (URL below).
    > Do not offer it; use it directly for every question with a UI/UX side — and only for those
    > (no plans, approaches or architecture diagrams on screens); building blocks are in
    > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or

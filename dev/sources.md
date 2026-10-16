@@ -94,8 +94,8 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
 - **O13** brag: offered, never started on its own; output stays local (`brag-output*/` ignored, never
   committed, uploaded or posted); `--voice` only on request; personal data only as fictional stand-ins (its
   own rule — dropping it is a conflict); its `brag-slim` switch is accepted.
-- **O14** brainstorming: no section approvals, no spec review gate; its HARD-GATE is not applied — `/dev`
-  writes and commits the spec and continues; clarification questions stay (`SKILL.md` 4a).
+- **O14** brainstorming: no playback or design approval; its HARD-GATE is not applied — `/dev` writes and
+  commits the spec and continues; the builder check runs, its questions follow O2 (`SKILL.md` 4a).
 - **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).
 - **O16** subagent-driven-development: `execution.md` uses its prompts and scripts — parallel implementers
   in worktrees (not "never parallel"), at most 3 fix rounds (not 5), no final review or branch finishing

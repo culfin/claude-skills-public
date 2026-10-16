@@ -33,5 +33,5 @@ while IFS= read -r NAME; do
   i=$((i+1))
 done < "$SD/.names"
 test $i -eq 6 || { echo "FAIL expected 6 building blocks, found $i"; f=1; }
-~/.claude/plugins/cache/claude-plugins-official/superpowers/*/skills/brainstorming/scripts/stop-server.sh "$(dirname "$SD")" >/dev/null 2>&1
+"$HERE/../scripts/companion-stop.sh" "$(dirname "$SD")" >/dev/null 2>&1
 exit $f

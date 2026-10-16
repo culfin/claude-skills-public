@@ -238,9 +238,8 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
    "(Recommended)"; look up facts yourself instead of asking.
 3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
    `superpowers:brainstorming` with the handoff note from `befragung.md` **and this override**: no
-   section approvals, write and commit the spec, no spec review gate (`sources.md` O14). Its
-   hand-off to `writing-plans` carries the 4b instruction. After the spec is committed: add `@spec:`
-   to ROADMAP.md.
+   approvals, write and commit the spec (`sources.md` O14). Its hand-off to `writing-plans` carries the
+   4b instruction. After the spec is committed: add `@spec:` to ROADMAP.md.
 
 In both cases, include matching tech skills beforehand (`tech-stack-triggers.md`, "During
 Brainstorming"). For questions with a UI/UX side, ensure the companion via the "Show screen"

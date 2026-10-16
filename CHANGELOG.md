@@ -2,6 +2,23 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.2 — 2026-10-16
+
+**dev** — the hand-off to `superpowers:brainstorming` follows superpowers 7.0.0, which rebuilt that skill:
+sizes ("a project with a written design") instead of classification, an opening message that offers to
+skip the questions, playback in chunks, and a builder check (a fresh subagent reads the design and asks
+what a builder would still need) instead of the spec review gate. With the old wording, the complete
+`/dev` hand-off could be read as "quick, clear task" or as opting out of the questions — the skill would
+end without a written spec, and planning would have no input. Now the note names the size, skips the
+opening message and playback; O14 lets the builder check run, its questions go through
+`AskUserQuestion` (O2). The cost is one subagent per architectural phase; it closes gaps in the spec before
+the plan is written. The wording works with 6.4.1 too, so updating and merging can happen in either order.
+`tests/check-screens.sh` stops its server through `companion-stop.sh` (the active install, O3) instead of a
+glob over every cached version — with two versions cached, the glob passed the newer script as the old
+one's argument and the server kept running. `check-superpowers.py` no longer requires
+`verification-before-completion`: nothing in `/dev`, nor in the brainstorming, writing-plans or
+subagent-driven-development files it uses, refers to it.
+
 ## v3.1.1 — 2026-10-09
 
 **dev** — the diff review now checks explicit project rules from CLAUDE.md / AGENTS.md (critical when a
