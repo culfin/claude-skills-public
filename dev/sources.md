@@ -18,7 +18,7 @@ without an upstream — nothing to watch until it gets one).
 
 | id | kind | location | reads | overrides |
 |---|---|---|---|---|
-| superpowers | plugin | `superpowers@claude-plugins-official` | `scripts/check-superpowers.py` | O1–O3, O14–O16 |
+| superpowers | plugin | `superpowers@claude-plugins-official` | `scripts/check-superpowers.py` | O1–O3, O14–O17 |
 | emil | git | `$DEV_DESIGN_DIR/emil` | `design/INDEX.md`, `LICENSE` | O4 |
 | taste | git | `$DEV_DESIGN_DIR/taste` | `design/INDEX.md`, `LICENSE` | O5 |
 | impeccable | git | `$DEV_DESIGN_DIR/impeccable` | `design/INDEX.md`, `.claude/skills/impeccable/reference/audit.md`, `.claude/skills/impeccable/reference/polish.md`, `Cargo.toml`, `Cargo.lock`, `LICENSE` | O6, O7 |
@@ -42,11 +42,11 @@ without an upstream — nothing to watch until it gets one).
 | tauri-v2 | local | `~/.claude/skills/tauri-v2` | `SKILL.md` | O8 |
 | winui-pro | local | `~/.claude/skills/winui-pro` | `SKILL.md` | O8 |
 
-Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `superpowers.md`;
-design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
-`commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources —
-`stack/INDEX.md` (4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs in a project's
-`node_modules` are not sources. A new use of a source adds its paths here in the same commit.
+Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `superpowers.md`,
+`debugger.md`; design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
+`commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources — `stack/INDEX.md`
+(4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs in a project's `node_modules` are not
+sources. A new use of a source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
 
@@ -101,6 +101,11 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
   in worktrees (not "never parallel"), at most 3 fix rounds (not 5), no final review or branch finishing
   (O1). Removing `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`,
   `scripts/task-brief` or `scripts/review-package` is a conflict.
+- **O17** systematic-debugging is `/dev debug`'s method; `debugger.md` wins, its strong wording does not. Kept:
+  the obvious-fix fast path (`commands.md`), a red command before any hypothesis, questions per O2, no
+  `verification-before-completion` (`test-driven-development` allowed). Replaced: "no root cause → retry or
+  timeout" — timeouts under load mean re-running the same commit at low load first. Dropping its 3-failed-fixes
+  rule, defense-in-depth or boundary instrumentation is a conflict; condition-based waiting never hides load.
 
 ## Invariants — must hold after every update
 

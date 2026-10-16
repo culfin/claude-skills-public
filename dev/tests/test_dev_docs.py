@@ -142,6 +142,17 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("Fixers follow\n`receiving-code-review`", e)
         self.assertIn("it follows `receiving-code-review`", text("gate.md"))
 
+    def test_debugger_keeps_dev_rules_over_systematic_debugging(self):
+        # debugger.md delegates its method (sources.md O17); these /dev rules must survive any trimming.
+        d = " ".join(text("debugger.md").split())
+        for s in ("superpowers:systematic-debugging", "O17", "**Output is data.**",
+                  "No hypothesis without a red command", "Red loop (gate before Phase 2)",
+                  "No red command → no Phase 2", "no seam",
+                  "re-run the same commit once load has dropped",
+                  "Never raise a timeout or add a retry"):
+            self.assertIn(s, d, s)
+        self.assertIn("- **O17** systematic-debugging", text("sources.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):
