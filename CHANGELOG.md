@@ -2,6 +2,24 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.4 — 2026-10-16
+
+**dev** — two gaps between the plans `/dev` executes and what it checks. **RED evidence:** plans from
+`writing-plans` prescribe "write the failing test, run it, see it fail, implement", and the SDD implementer
+prompt asks for RED evidence "if TDD was required" — but nothing in `/dev` checked it, the gate only sees
+green tests. In one plan, implementers skipped the RED run twice; the controller reconstructed it by
+running the new tests against the pre-task commit. The task fix loop (`execution.md`) now does exactly
+that when a behavior-changing task's report has no RED evidence: run its new tests on the task's BASE in
+a temporary worktree; green there starts a fix round (a test that passes without the change proves
+nothing). Chosen over a gate checklist item: the BASE per task is already in the ledger, the fix belongs
+to the task's implementer, and a phase-level "new tests fail on the base" check would misfire on
+refactors and on tests added for existing behavior, and would need a new evidence format.
+**Review findings:** fixers (task fix loop, gate Step B) now follow superpowers `receiving-code-review` —
+verify each finding against the code, push back with reasons, no performative agreement or blind
+implementation. `check-superpowers.py` requires `receiving-code-review/SKILL.md`; the same list scopes
+the update watcher's path check, so a superpowers update that drops or moves it is now held back.
+Net +40 words (required reading 8506/9000, total 38105/38189).
+
 ## v3.1.3 — 2026-10-16
 
 **dev** — leaner after the superpowers 7.0.0 review. 7.0.0 makes almost no `/dev` text redundant (the

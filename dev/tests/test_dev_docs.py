@@ -134,6 +134,14 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("**Rate limits**", sec)
         self.assertIn("**Row-level authorization.**", sec)
 
+    def test_red_evidence_and_review_reception(self):
+        # Implementers skipped the RED run; fixers must verify findings, not just agree.
+        e = text("execution.md")
+        self.assertIn("No RED evidence", e)
+        self.assertIn("run them on its BASE in a temporary worktree", e)
+        self.assertIn("Fixers follow\n`receiving-code-review`", e)
+        self.assertIn("it follows `receiving-code-review`", text("gate.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

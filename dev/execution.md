@@ -91,15 +91,17 @@ answer and resume; `BLOCKED` → change something (context, model one tier up, s
 dispatching again.
 
 **Fix loop — at most 3 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
-Rounds 1–2 resume the same implementer with the open findings verbatim. Round 3 dispatches a fresh
+Rounds 1–2 resume the same implementer with the open findings verbatim. Fixers follow
+`receiving-code-review`: verify each finding, push back with reasons. Round 3 dispatches a fresh
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
 commits are. After each round, a scoped re-review:
 `review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`. Still
 open after round 3 → halt and report what remains (one of the run's halts). An implementer or
 reviewer naming a weakness of the task's own tests (one that cannot fail, tests a parameter instead
-of the default) starts a fix round — never `minor`. Minor findings go to the
-ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks. Never fix findings in the main session: that skips review.
+of the default) starts a fix round — never `minor`. No RED evidence (new tests failing first) in a
+behavior-changing task's report → run them on its BASE in a temporary worktree; green there
+starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks. Never fix findings in the main session: that skips review.
 
 **Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
 phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)
