@@ -43,6 +43,10 @@ class SuperpowersTests(unittest.TestCase):
         self.assertIn('skills/receiving-code-review/SKILL.md', m.required_paths())
         (self.root/'skills/receiving-code-review/SKILL.md').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')
+    def test_debugging_method_required(self):
+        self.assertIn('skills/systematic-debugging/SKILL.md', m.required_paths())
+        (self.root/'skills/systematic-debugging/SKILL.md').unlink()
+        self.assertEqual(m.inspect(self.root)['status'], 'blocked')
     def test_missing_stop_blocks(self):
         (self.root/'skills/brainstorming/scripts/stop-server.sh').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')

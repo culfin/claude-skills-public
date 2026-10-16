@@ -2,6 +2,32 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.5 — 2026-10-16
+
+**dev** — `/dev debug` takes its method from superpowers `systematic-debugging`. Until now two debugging
+procedures could run side by side without precedence: `debugger.md` and `systematic-debugging`, which
+superpowers recommends for every bug. `debugger.md` now invokes the skill and keeps only what is `/dev`'s
+own: the `.debug/` file and resume, the red command before any hypothesis (red loop), "output is data", the
+knowledge base, the rating table, the similar-bugs scan, the commit format, the return to the `[~]` phase and
+the Playwright trace. Three rules neither text had are added: several unrelated timeouts on a busy machine
+are load until the same commit, re-run once load has dropped, fails too — no raised timeout, no retry; a
+report separates proven, suspected, proposals and order; a bug that recurs on a trigger is not "fixed"
+before its next real trigger. The new override O17 in `sources.md` settles the conflicts: the obvious-fix
+fast path stays, "no root cause → add retry or timeout" is replaced, questions follow O2,
+`verification-before-completion` is not loaded (the gate holds the evidence; `test-driven-development` may
+be), and the skill's strong wording does not override a `/dev` rule. Gained from the skill: three failed
+fixes → question the architecture, defense-in-depth, instrumentation at component boundaries.
+The Dart bug patterns go (nothing else in `/dev` refers to Dart); Swift and C# stay.
+`check-superpowers.py` requires `systematic-debugging/SKILL.md` — the same list scopes the update watcher,
+so a superpowers update that drops or moves it is now held back. A test pins the red-first strings, "output
+is data", the load line and the O17 reference. The `sources.md` line cap goes from 145 to 148 for O17.
+Measured before merging on two small debugging scenarios, old vs new text, 2 runs each: a real rounding bug
+(both arms wrote a red test first, kept the `.debug/` file and returned to the phase) and three unrelated
+test timeouts on an overloaded CI runner (old: both runs rewrote the timeout guard and reported "fixed";
+new: both runs left the code unchanged, reproduced the stall, proposed re-running the same commit at low load
+and marked the cause unconfirmed until then).
+`debugger.md` 1736 → 1137 words; total 38105 → 37577/38189; required reading unchanged at 8506/9000.
+
 ## v3.1.4 — 2026-10-16
 
 **dev** — two gaps between the plans `/dev` executes and what it checks. **RED evidence:** plans from
