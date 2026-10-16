@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development', 'executing-plans',
-            'requesting-code-review', 'verification-before-completion', 'using-git-worktrees')
+            'requesting-code-review', 'using-git-worktrees')
 
 # Prompts and scripts execution.md hands to implementers and task reviewers.
 SDD_FILES = ('implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prompt.md',
