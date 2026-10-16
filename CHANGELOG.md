@@ -2,6 +2,25 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.3 — 2026-10-16
+
+**dev** — leaner after the superpowers 7.0.0 review. 7.0.0 makes almost no `/dev` text redundant (the
+overrides O1–O3, O14–O16 still hold), so the savings come from `/dev`'s own update machinery:
+`superpowers.md` drops the prepared maintenance task (the update watcher in `sources.md` / `updates.md`
+checks the same against a contract; users without the watcher lose that prompt template), shortens "no
+switching mid-phase" (already O3) and replaces the hand-made companion probe after an update with
+`tests/check-screens.sh`. `roadmap-creation.md` no longer recommends `requesting-code-review` as a
+post-phase skill — the gate's diff review already reviews the same diff. `check-superpowers.py` requires
+what `/dev` builds on instead: `brainstorming/builder-check-prompt.md` (O14) and
+`brainstorming/visual-companion.md` (`companion.md`) are in, `requesting-code-review` is out (after the
+recommendation went, only the final review that O1 skips names it). `executing-plans` and
+`using-git-worktrees` stay — every plan `writing-plans` writes names them. The same list is what the update
+watcher checks a new version for, so it now halts where `/dev` really couples. 6.4.1 has no builder-check
+prompt and is now reported `blocked`. Since `/dev` never shows the design for approval (O14), the calls
+brainstorming settles itself after the builder check would go unseen; the hand-off note now has them added
+to the phase's `Decisions:` in STATE.md.
+Net −118 words.
+
 ## v3.1.2 — 2026-10-16
 
 **dev** — the hand-off to `superpowers:brainstorming` follows superpowers 7.0.0, which rebuilt that skill:

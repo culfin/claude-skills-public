@@ -30,7 +30,8 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    > (no plans, approaches or architecture diagrams on screens); building blocks are in
    > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or
    > asks about one, ends with this URL on its own line, verbatim; status messages carry none. Copy the list
-   > into the spec as the section "Decisions from the interview".
+   > into the spec as the section "Decisions from the interview". After the builder check, add the calls
+   > you made yourself to the phase's `Decisions:` line in STATE.md.
 
 ## Bundled round at run start
 
