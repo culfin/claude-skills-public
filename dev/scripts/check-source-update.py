@@ -76,6 +76,18 @@ VERDICTS = {'fits', 'unclear', 'conflict'}
 ENTRY_FIELDS = {'source': str, 'kind': str, 'old': str, 'new': str, 'verdict': str, 'reasons': list,
                 'deterministic_findings': list, 'diff_summary': str, 'created': str, 'apply': list}
 LICENSE_RE = re.compile(r'^(UN)?(LICEN[CS]E|COPYING)([-._]\w+)*$', re.I)  # also LICENSE-MIT, UNLICENSE
+# new-hook / new-install-step in another harness's docs or manifests: reported as outside-claude-code
+# (not a hold kind) only if nothing Claude Code runs in the new tree refers to the file. Fail-closed:
+# any doubt (unparsable or unknown reference structure, unsafe path, symlink) keeps the hold kind.
+OUTSIDE_KIND, DEMOTABLE = 'outside-claude-code', ('new-hook', 'new-install-step')
+HARNESS_DIRS = {'.codex-plugin', '.cursor-plugin', '.opencode', '.kimi-plugin', '.muse-plugin',
+                '.hermes-plugin', '.devin-plugin', '.antigravity-plugin'}
+NOTES_RE = re.compile(r'^(RELEASE[-_]?NOTES|CHANGELOG)([-._][\w.-]*)?$', re.I)   # root level only
+# What Claude Code loads from a plugin tree: every text file there may name a file it runs.
+CC_DIRS, CC_FILES = ('skills', 'hooks', 'commands', 'agents', 'output-styles', '.claude-plugin'), \
+    ('.mcp.json', '.lsp.json', 'settings.json')
+META_KEYS = {'name', 'version', 'description', 'author', 'owner', 'homepage', 'repository', 'license',
+             'keywords', 'category', 'tags', 'strict', 'metadata', '$schema'}
 
 
 class UsageError(Exception):
@@ -336,6 +348,124 @@ def _scan(root, scope=None):
     return counts, hooks, oversize, targets
 
 
+def _json_strings(node, skip=()):
+    if isinstance(node, str):
+        yield node
+    elif isinstance(node, list):
+        for item in node:
+            yield from _json_strings(item)
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            if key not in skip:
+                yield from _json_strings(value)
+
+
+def _valid_hooks_file(data):
+    """hooks/hooks.json in the one shape Claude Code documents; anything else is not understood."""
+    hooks = data.get('hooks') if isinstance(data, dict) else None
+    return isinstance(hooks, dict) and all(
+        isinstance(groups, list) and all(isinstance(g, dict) and isinstance(g.get('hooks'), list)
+                                         and all(isinstance(h, dict) for h in g['hooks']) for g in groups)
+        for groups in hooks.values())
+
+
+def _path_refs(strings):
+    """Repo-relative, case-folded paths named in config strings; None if one points outside the tree."""
+    refs = set()
+    for string in strings:
+        string = re.sub(r'\$\{?CLAUDE_PLUGIN_ROOT\}?', '.', string)
+        for token in re.split(r'[\s"\'`;&|()<>=,]+', string):
+            if not token or '://' in token or token[0] in '/~$':
+                continue
+            norm = os.path.normpath(token.replace('\\', '/')).casefold()
+            if norm == '..' or norm.startswith('../'):
+                return None
+            refs.add(norm)
+    return refs
+
+
+def claude_code_refs(root):
+    """(paths, texts) that Claude Code runs or reads in the tree at root, or None when they cannot be
+    read reliably: paths = case-folded repo-relative paths named by hooks/hooks.json,
+    .claude-plugin/plugin.json and marketplace.json (component keys) and by symlink targets; texts =
+    (is_script, case-folded text) of every file Claude Code loads (CC_DIRS, CC_FILES)."""
+    root = Path(root)
+    strings, sources = [], []
+    for rel in ('hooks/hooks.json', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json'):
+        path = root / rel
+        if not (path.exists() or path.is_symlink()):
+            continue
+        if path.is_symlink() or not path.is_file():
+            return None
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return None
+        if not isinstance(data, dict):
+            return None
+        if rel == 'hooks/hooks.json':
+            if not _valid_hooks_file(data):
+                return None
+            strings += _json_strings(data)
+        elif rel.endswith('plugin.json'):
+            strings += _json_strings(data, META_KEYS)
+        else:
+            plugins = data.get('plugins', [])
+            if not isinstance(plugins, list) or not all(isinstance(p, dict) for p in plugins):
+                return None
+            for plugin in plugins:
+                strings += _json_strings(plugin, META_KEYS | {'source'})
+                src = plugin.get('source')
+                if isinstance(src, str) and os.path.normpath(src.replace('\\', '/')) != '.':
+                    strings.append(src)
+    paths = _path_refs(strings)
+    if paths is None:
+        return None
+    files, links = _walk(root)
+    real_root = os.path.realpath(root)
+    for rel, link in links.items():
+        target = os.path.realpath(link)
+        if target == real_root or target.startswith(real_root + os.sep):
+            paths.add(Path(os.path.relpath(target, real_root)).as_posix().casefold())
+    texts = [(_is_script(rel, path), _text(path).casefold()) for rel, path in files.items()
+             if rel in CC_FILES or rel.split('/')[0] in CC_DIRS]
+    return paths, texts
+
+
+def outside_claude_code(rel, root, refs):
+    """True only for a regular file under docs/, a harness manifest dir or a root-level release
+    notes/changelog file, inside the tree, reached without a symlink, and named by nothing in refs
+    (claude_code_refs: not its path or an ancestor, not its file name in any text, not one of its
+    folders as a whole name in a script)."""
+    if refs is None or not isinstance(rel, str) or '\\' in rel or rel.startswith('/'):
+        return False
+    segs = rel.split('/')
+    if any(seg in ('', '.', '..') for seg in segs):
+        return False
+    if not ((segs[0] == 'docs' or segs[0] in HARNESS_DIRS) and len(segs) > 1
+            or len(segs) == 1 and NOTES_RE.match(rel)):
+        return False
+    root = Path(root)
+    if any((root.joinpath(*segs[:i])).is_symlink() for i in range(1, len(segs) + 1)):
+        return False
+    real_root, real = os.path.realpath(root), os.path.realpath(root / rel)
+    if not real.startswith(real_root + os.sep) or not os.path.isfile(real):
+        return False
+    paths, texts = refs
+    folded = rel.casefold()
+    if any(p == '.' or folded == p or folded.startswith(p + '/') for p in paths):
+        return False
+    name = segs[-1].casefold()
+    if any(name in text for _, text in texts):
+        return False
+    # a script that names one of its folders (cd docs, docs/*) may run it, whatever the file name
+    folders = ['/'.join(segs[:i]).casefold() for i in range(1, len(segs))]
+    if not folders:
+        return True
+    folder_re = re.compile(r'(?<![\w.-])(' + '|'.join(map(re.escape, folders)) + r')/?(?![\w./-])')
+    return not any(script and folder_re.search(text) for script, text in texts)
+
+
 def _same_bytes(a, b):
     def digest(p):
         h = hashlib.sha256()
@@ -374,6 +504,17 @@ def check(source, old, new, contract):
         if so and sn > 2 * so:
             findings.append({'kind': 'size-jump', 'detail': f'{rel}: {so} -> {sn} bytes ({sn / so:.1f}x)'})
 
+    refs = []   # computed on first use
+
+    def add(kind, rel, detail):
+        if kind in DEMOTABLE:
+            if not refs:
+                refs.append(claude_code_refs(new))
+            if outside_claude_code(rel, new, refs[0]):
+                kind, detail = OUTSIDE_KIND, f'{kind} {detail} (another harness or release notes; nothing ' \
+                    'Claude Code runs in the new version refers to it)'
+        findings.append({'kind': kind, 'detail': detail})
+
     scope = scan_scope(source, contract)
     (before, hooks_old, _, links_old), (after, hooks_new, oversize, links_new) = _scan(old, scope), _scan(new, scope)
     for rel, target in sorted(links_new.items()):
@@ -391,13 +532,12 @@ def check(source, old, new, contract):
         added = sorted(entries - hooks_old.get(rel, set()))
         if added:
             event, _, hook = added[0]
-            findings.append({'kind': 'new-hook', 'detail': f'{rel}: {len(added)} new or changed hook '
-                             f'entr{"y" if len(added) == 1 else "ies"}, e.g. {event}: {hook[:120]}'})
+            add('new-hook', rel, f'{rel}: {len(added)} new or changed hook '
+                f'entr{"y" if len(added) == 1 else "ies"}, e.g. {event}: {hook[:120]}')
     for (kind, rel), lines in sorted(after.items()):
         added = sorted(lines - before.get((kind, rel), set()))   # the lines, not their number:
         if added:                                                # a swapped command is a finding
-            findings.append({'kind': kind, 'detail':
-                             f'{rel}: {len(added)} new or changed matching line(s), e.g. {added[0][:120]}'})
+            add(kind, rel, f'{rel}: {len(added)} new or changed matching line(s), e.g. {added[0][:120]}')
 
     lo, ln = _licenses(old), _licenses(new)
     for name in sorted(set(lo) | set(ln)):

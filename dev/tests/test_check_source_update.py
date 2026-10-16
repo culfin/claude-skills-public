@@ -224,6 +224,139 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.write(self.new, 'hooks/hooks.json', '{"hooks": {"PreToolUse": [ broken')
         self.assertEqual(self.kinds(), ['new-hook'])
 
+    # --- other harnesses' docs and manifests (outside-claude-code) ---
+    AGY = 'Run `agy plugin install https://example.org/x` to add it as an Antigravity plugin.\n'
+    INSTALL = '#!/bin/sh\nnpx some-tool install\n'
+
+    def outside(self):
+        return [f for f in self.run_check()['findings'] if f['kind'] == 'outside-claude-code']
+
+    def test_install_step_in_other_harness_docs_is_reported_but_not_held(self):
+        self.write(self.new, 'docs/porting-to-a-new-harness.md', '# Porting\n\n' + self.AGY)
+        self.assertEqual(self.kinds(), ['outside-claude-code'])
+        self.assertIn('new-install-step', self.outside()[0]['detail'])
+        self.assertIn('docs/porting-to-a-new-harness.md', self.outside()[0]['detail'])
+        self.assertNotIn('outside-claude-code', m.HOLD_KINDS)
+
+    def test_release_notes_and_harness_manifests_are_not_held(self):
+        self.write(self.new, 'RELEASE-NOTES.md', '# 7.0\n\n- ' + self.AGY + '- `"hooks": {` now has a command\n')
+        self.write(self.new, 'CHANGELOG.md', '- `agy plugin install` works\n')
+        self.write(self.new, '.antigravity-plugin/plugin.json', json.dumps(
+            {'hooks': {'SessionStart': [{'hooks': [{'type': 'command', 'command': 'agy-start'}]}]}}))
+        self.write(self.new, '.codex-plugin/install.md', self.AGY)
+        for root in (self.old, self.new):   # a script Claude Code runs that names none of them
+            self.write(root, 'hooks/session-start', '#!/bin/sh\necho "see docs/alpha/plan.md"\n')
+        self.assertEqual(set(self.kinds()), {'outside-claude-code'})
+        details = ' '.join(f['detail'] for f in self.outside())
+        for expected in ('new-hook RELEASE-NOTES.md', 'new-install-step RELEASE-NOTES.md',
+                         'new-install-step CHANGELOG.md', 'new-hook .antigravity-plugin/plugin.json',
+                         'new-install-step .codex-plugin/install.md'):
+            self.assertIn(expected, details)
+
+    def test_the_same_text_elsewhere_stays_held(self):
+        for rel in ('skills/a/references/porting.md', 'skills/docs/x.md', 'notes/RELEASE-NOTES.md',
+                    'README.md', 'hooks/README.md', 'commands/x.md', 'sub/.codex-plugin/x.md'):
+            with self.subTest(rel=rel):
+                self.write(self.new, rel, self.AGY)
+                self.assertEqual(self.kinds(), ['new-install-step'])
+                (self.new / rel).unlink()
+
+    def test_docs_file_referenced_by_what_claude_code_runs_stays_held(self):
+        hook = lambda cmd: json.dumps({'hooks': {'SessionStart': [{'hooks': [{'type': 'command', 'command': cmd}]}]}})
+        cases = {
+            'hooks.json command': ('hooks/hooks.json', hook('"${CLAUDE_PLUGIN_ROOT}/docs/setup.sh" start')),
+            'hooks.json with ..': ('hooks/hooks.json', hook('bash ${CLAUDE_PLUGIN_ROOT}/hooks/../docs/./setup.sh')),
+            'hooks.json other case': ('hooks/hooks.json', hook('sh ./Docs/Setup.sh')),
+            'hook script': ('hooks/run-hook.cmd', '#!/bin/sh\nexec "$(dirname "$0")/../docs/setup.sh"\n'),
+            'plugin.json commands dir': ('.claude-plugin/plugin.json', json.dumps({'name': 'x', 'commands': './docs'})),
+            'plugin.json inline hook': ('.claude-plugin/plugin.json', json.dumps({'name': 'x', 'hooks': json.loads(hook('docs/setup.sh'))['hooks']})),
+            'plugin.json mcp server': ('.claude-plugin/plugin.json', json.dumps({'mcpServers': {'s': {'command': 'node', 'args': ['${CLAUDE_PLUGIN_ROOT}/docs/setup.sh']}}})),
+            'marketplace source': ('.claude-plugin/marketplace.json', json.dumps({'plugins': [{'name': 'x', 'source': './docs'}]})),
+            'marketplace hooks': ('.claude-plugin/marketplace.json', json.dumps({'plugins': [{'name': 'x', 'source': './', 'hooks': './docs/setup.sh'}]})),
+            'SKILL.md path': ('skills/a/SKILL.md', SKILL + '\nRun `docs/setup.sh` first.\n'),
+            'skill script, relative': ('skills/a/scripts/go.sh', '#!/bin/sh\nsh "$(dirname "$0")/../../../docs/setup.sh"\n'),
+            'skill script, basename only': ('skills/a/scripts/go.sh', '#!/bin/sh\ncd docs && sh setup.sh\n'),
+            'skill script, folder glob': ('skills/a/scripts/go.sh', '#!/bin/sh\nfor f in "$ROOT"/docs/*; do sh "$f"; done\n'),
+            'hook script, folder': ('hooks/session-start', '#!/bin/sh\ncd "$ROOT/docs" && sh ./*\n'),
+        }
+        for label, (rel, text) in cases.items():
+            with self.subTest(label=label):
+                for root in (self.old, self.new):
+                    self.write(root, rel, text)
+                self.write(self.new, 'docs/setup.sh', self.INSTALL)
+                self.assertEqual(self.kinds(), ['new-install-step'])
+                for root in (self.old, self.new):
+                    (root / rel).unlink()
+                    if rel == 'skills/a/SKILL.md':
+                        self.write(root, rel, SKILL)
+                (self.new / 'docs/setup.sh').unlink()
+
+    def test_a_folder_named_in_skill_prose_is_not_a_reference(self):
+        self.write(self.new, 'skills/a/SKILL.md', SKILL + '\nWrite the plan under `docs/`, see docs/plans/x.md.\n')
+        self.write(self.old, 'skills/a/SKILL.md', SKILL + '\nWrite the plan under `docs/`, see docs/plans/x.md.\n')
+        self.write(self.new, 'docs/porting.md', self.AGY)
+        self.assertEqual(self.kinds(), ['outside-claude-code'])
+
+    def test_docs_file_reached_through_a_symlink_stays_held(self):
+        for root in (self.old, self.new):
+            (root / 'docs').mkdir()
+            os.symlink('../../docs/setup.sh', root / 'skills/a/setup.sh')
+        self.write(self.new, 'docs/setup.sh', self.INSTALL)
+        self.assertEqual(self.kinds(), ['new-install-step'])
+
+    def test_hooks_json_change_stays_held(self):
+        self.write(self.new, 'hooks/hooks.json', json.dumps({'hooks': {'SessionStart': [
+            {'hooks': [{'type': 'command', 'command': 'agy plugin install x'}]}]}}))
+        self.assertEqual(sorted(self.kinds()), ['new-hook', 'new-install-step'])
+        self.write(self.new, '.claude-plugin/plugin.json', '{"name": "x", "hooks": "./docs/h.json"}')
+        self.write(self.new, 'skills/a/SKILL.md', SKILL + self.AGY)
+        self.assertNotIn('outside-claude-code', self.kinds())
+
+    def test_unreliable_references_keep_every_finding_held(self):
+        hook = {'hooks': {'SessionStart': [{'hooks': [{'type': 'command', 'command': 'echo hi'}]}]}}
+        cases = {
+            'malformed hooks.json': ('hooks/hooks.json', '{"hooks": {"SessionStart": [ broken'),
+            'hooks is a list': ('hooks/hooks.json', json.dumps({'hooks': [hook['hooks']]})),
+            'group without hooks list': ('hooks/hooks.json', json.dumps({'hooks': {'Stop': [{'command': 'x'}]}})),
+            'hook not an object': ('hooks/hooks.json', json.dumps({'hooks': {'Stop': [{'hooks': ['x']}]}})),
+            'reference escapes the tree': ('hooks/hooks.json', json.dumps({'hooks': {'Stop': [{'hooks': [
+                {'type': 'command', 'command': '${CLAUDE_PLUGIN_ROOT}/../elsewhere/run.sh'}]}]}})),
+            'malformed plugin.json': ('.claude-plugin/plugin.json', '{"name": '),
+            'plugin.json not an object': ('.claude-plugin/plugin.json', '["x"]'),
+            'malformed marketplace.json': ('.claude-plugin/marketplace.json', '{'),
+            'marketplace plugins not a list': ('.claude-plugin/marketplace.json', json.dumps({'plugins': {'x': {}}})),
+        }
+        for label, (rel, text) in cases.items():
+            with self.subTest(label=label):
+                for root in (self.old, self.new):
+                    self.write(root, rel, text)
+                self.write(self.new, 'docs/porting.md', self.AGY)
+                self.assertEqual(self.kinds(), ['new-install-step'])
+                for root in (self.old, self.new):
+                    (root / rel).unlink()
+                (self.new / 'docs/porting.md').unlink()
+
+    def test_unsafe_paths_are_never_outside_claude_code(self):
+        refs = m.claude_code_refs(self.new)
+        self.assertIsNotNone(refs)
+        self.write(self.new, 'docs/ok.md', 'x\n')
+        self.assertTrue(m.outside_claude_code('docs/ok.md', self.new, refs))
+        for rel in ('docs/../hooks/hooks.json', '../docs/ok.md', '/docs/ok.md', 'docs/./ok.md', 'docs//ok.md',
+                    'docs\\..\\hooks\\x', ''):
+            with self.subTest(rel=rel):
+                self.assertFalse(m.outside_claude_code(rel, self.new, refs))
+        outside = Path(self.temp.name) / 'outside'
+        self.write(outside, 'x.md', 'x\n')
+        os.symlink(outside / 'x.md', self.new / 'docs/link.md')
+        os.symlink(outside, self.new / 'docs/dir')
+        self.assertFalse(m.outside_claude_code('docs/link.md', self.new, refs))
+        self.assertFalse(m.outside_claude_code('docs/dir/x.md', self.new, refs))
+        self.assertFalse(m.outside_claude_code('docs/ok.md', self.new, None))
+
+    def test_contract_names_the_non_holding_kind(self):
+        text = ' '.join((DEV / 'sources.md').read_text().split())
+        self.assertIn('`outside-claude-code`', text)
+
     def test_missing_index_next_to_contract_is_usage_error(self):
         self.contract.write_text(CONTRACT.replace('`SKILL.md`, `skills/a/SKILL.md`', '`design/INDEX.md`'))
         run = subprocess.run([sys.executable, str(SCRIPT), '--source', 'demo', '--old', str(self.old),

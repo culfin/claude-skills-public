@@ -2,6 +2,28 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.6 — 2026-10-16
+
+**dev** — the update check no longer holds a source for install or hook text in another harness's
+documentation. `new-hook` and `new-install-step` are matched line by line in every text file; superpowers
+7.0.0 was held back for `agy plugin install` (Antigravity) in `RELEASE-NOTES.md`, in two design/plan files
+under `docs/superpowers/` and in `docs/porting-to-a-new-harness.md` — nothing Claude Code executes had
+changed. `check-source-update.py` now reports such a finding as `outside-claude-code` (shown, not a hold
+kind) only when both hold: the file is under `docs/`, a root-level `RELEASE-NOTES*`/`CHANGELOG*` or another
+harness's manifest folder (`.codex-plugin`, `.cursor-plugin`, `.opencode`, `.kimi-plugin`, `.muse-plugin`,
+`.hermes-plugin`, `.devin-plugin`, `.antigravity-plugin`), and nothing Claude Code runs or reads in the new
+tree names it — not `hooks/hooks.json` (any command or path), not the component keys of
+`.claude-plugin/plugin.json` and `marketplace.json` (a path or a folder above it), not a symlink, not its
+file name in any file under `skills/`, `hooks/`, `commands/`, `agents/`, `output-styles/`,
+`.claude-plugin/`, and not one of its folders named as a whole by a script there. The decision sits in the
+checker, fail-closed: a malformed or unexpectedly shaped `hooks.json`, `plugin.json` or `marketplace.json`,
+a reference that leaves the tree, a path with `..`, `.` or an absolute start, or a symlink on the way keeps
+the hold kind. Chosen over a path allowlist in the update watcher, which a security review rejected: two
+validators that disagree about one path fail open. Changes in `hooks/hooks.json`, `.claude-plugin/` and
+`skills/` hold as before. 6.4.1 → 7.0.0 now yields six `outside-claude-code` findings and no hold kind.
+Known limit: a folder named only in skill prose (not a script) is not a reference — skills often tell the
+agent to write into `docs/`. `sources.md` names the kind in the same 148 lines.
+
 ## v3.1.5 — 2026-10-16
 
 **dev** — `/dev debug` takes its method from superpowers `systematic-debugging`. Until now two debugging

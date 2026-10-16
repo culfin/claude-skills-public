@@ -130,17 +130,17 @@ An update that would flip one of these is a contradiction (verdict `conflict`), 
 `python3 "$DEV_DIR/scripts/check-source-update.py" --source <id> --old <dir> --new <dir>` compares
 two trees of one source. Finding kinds: `missing-read-path`, `frontmatter-switch-changed`
 (`disable-model-invocation`, `user-invocable`, `allowed-tools` in a read file), `new-hook` (in JSON:
-any added or changed hook entry, compared entry by entry; elsewhere also unquoted YAML or
-front-matter `hooks:` / hook-event keys), `new-settings-json`, `new-pipe-to-shell`,
-`new-install-step`, `new-network-access` (scripts and JSON only), `license-changed`, `size-jump`
-(a read file more than doubled), `symlink` (a new or retargeted symlink; links are never followed
-or scanned). Pattern kinds are searched in **every non-binary text file** (any extension); "new"
-means a matching line not in that file before — lines are compared, not counted. Findings are
-input for the review against overrides and invariants, not a verdict —
-except the hold kinds: `missing-read-path`, `new-hook`, `new-settings-json`, `new-pipe-to-shell`,
-`new-install-step`, `license-changed`, `symlink` and `scan-incomplete` (a new or changed text file
-too large to scan; only `.git` is skipped). These always hold the update for the user's decision,
-whatever the review says (`--hold-kinds`).
+any added or changed hook entry; elsewhere also unquoted YAML or front-matter `hooks:` / hook-event
+keys), `new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `new-network-access` (scripts
+and JSON only), `license-changed`, `size-jump` (a read file more than doubled), `symlink` (a new or
+retargeted symlink; never followed or scanned), `outside-claude-code` (`new-hook`/`new-install-step`
+in `docs/`, root release notes or another harness's manifest folder, named by nothing Claude Code
+runs; any doubt keeps the hold kind). Pattern kinds are searched in **every non-binary text file**;
+"new" means a matching line not in that file before. Findings are input for the review against
+overrides and invariants — except the hold kinds: `missing-read-path`, `new-hook`,
+`new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `license-changed`, `symlink` and
+`scan-incomplete` (a new or changed text file too large to scan; only `.git` is skipped). These
+always hold the update for the user's decision, whatever the review says (`--hold-kinds`).
 A source under `$DEV_STACK_DIR` is scanned only where `/dev` reads it: the folder of each
 `stack/INDEX.md` read path, its other read paths and root licence files (`--scope --source <id>`
 prints them; unchanged there = unchanged for `/dev`). Inside that scope every symlink is a
