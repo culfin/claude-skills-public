@@ -26,7 +26,6 @@ pre-/post-phase per type. `/dev` does not search for or install new skills.
 
 The gate's checks (`gate.md`) and the mandatory milestone-end and pre-release analyses (`commands.md`) are not configured here; `@gate: full` forces the large tier. List only additional, optional skills:
 
-- Post-phase any: `requesting-code-review`
 - Post-phase UI (web): `playwright-cli` (for interactive browser testing beyond E2E)
 - Post-phase UI (native): `writing-clearly-and-concisely`
 
