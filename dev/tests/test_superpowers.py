@@ -19,9 +19,8 @@ class SuperpowersTests(unittest.TestCase):
             p = self.root / 'skills' / role / 'SKILL.md'
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text('fixture')
-        p = self.root / 'skills/brainstorming/scripts'
-        p.mkdir()
-        for name in ['start-server.sh', 'stop-server.sh']: (p/name).write_text('exit 0')
+        (self.root / 'skills/brainstorming/scripts').mkdir()
+        for name in m.BRAINSTORMING_FILES: (self.root / 'skills/brainstorming' / name).write_text('exit 0')
         sdd = self.root / 'skills/subagent-driven-development'
         (sdd / 'scripts').mkdir()
         for name in SDD_FILES: (sdd / name).write_text('fixture')
@@ -35,9 +34,11 @@ class SuperpowersTests(unittest.TestCase):
         self.assertEqual(result['status'], 'files-present')
         self.assertEqual(result['runtimeCompatibility'], 'not-tested')
         self.assertEqual(result['freshness'], 'not-checked')
-    def test_missing_review_blocks(self):
-        (self.root/'skills/requesting-code-review/SKILL.md').unlink()
+    def test_missing_builder_check_blocks(self):
+        (self.root/'skills/brainstorming/builder-check-prompt.md').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')
+    def test_unused_review_skill_not_required(self):
+        self.assertNotIn('skills/requesting-code-review/SKILL.md', m.required_paths())
     def test_missing_stop_blocks(self):
         (self.root/'skills/brainstorming/scripts/stop-server.sh').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')

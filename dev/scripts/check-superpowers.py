@@ -4,8 +4,13 @@ import argparse
 import json
 from pathlib import Path
 
+# executing-plans and using-git-worktrees are named in every plan writing-plans writes (header, context).
 REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development', 'executing-plans',
-            'requesting-code-review', 'using-git-worktrees')
+            'using-git-worktrees')
+
+# Builder check (sources.md O14), companion protocol (companion.md) and the companion scripts.
+BRAINSTORMING_FILES = ('builder-check-prompt.md', 'visual-companion.md',
+                       'scripts/start-server.sh', 'scripts/stop-server.sh')
 
 # Prompts and scripts execution.md hands to implementers and task reviewers.
 SDD_FILES = ('implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prompt.md',
@@ -14,7 +19,7 @@ SDD_FILES = ('implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prom
 def required_paths():
     """Files /dev needs from the plugin root (also the read paths in sources.md)."""
     return ([f'skills/{name}/SKILL.md' for name in REQUIRED]
-            + ['skills/brainstorming/scripts/start-server.sh', 'skills/brainstorming/scripts/stop-server.sh']
+            + [f'skills/brainstorming/{name}' for name in BRAINSTORMING_FILES]
             + [f'skills/subagent-driven-development/{name}' for name in SDD_FILES])
 
 def inspect(root):
