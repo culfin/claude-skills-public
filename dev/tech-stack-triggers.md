@@ -1,7 +1,7 @@
 # Tech stack and security triggers
 
-Read in brainstorming (4a), execution (4c) and the gate's review wave (Step A, tagged `5c` in the
-index files). **Detection** (`$TECH_STACKS`) is section 1 of `stack/INDEX.md`, once per session.
+`5c` in the index files = the gate's review wave (Step A). **Detection** (`$TECH_STACKS`) is section 1
+of `stack/INDEX.md`, once per session.
 
 **Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, consult section 2
 of `stack/INDEX.md` and load only the rows whose trigger matches: step 4a → as context before
@@ -17,6 +17,7 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
 - If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
 - If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
+- If phase `@type:` is `ui` or `landing` and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" below
 
@@ -65,7 +66,7 @@ matrix matches — the tier script's path patterns are narrower than this matrix
 - list rendering of unbounded data (no pagination, no virtualization);
 - new endpoints that return collections.
 
-No cause → no Performance review item; its probes found nothing in phases without one.
+No cause → no Performance review item.
 
 **Analyzers:** each analysis is a subagent with its file from `analyzers/` (contract in
 `analyzers/CONTRACT.md`), for every stack, with short notes per language. Extra stack-specific
@@ -80,10 +81,8 @@ dependencies not installed) → fall back to an installed `next-best-practices` 
 one; neither → the item is ticked as `skipped: <reason>`.
 
 **Rules:**
-- Tech-Stack Reviews and Security Review are **read-only analyses** — they flag problems, they do not fix automatically.
-- Only trigger when relevant files were actually changed — not blindly on every phase.
+- Tech-Stack Reviews and Security Review are **read-only** — they flag, never fix.
 - Critical findings (wrong RSC boundary, missing DB index on an FK, unsafe threading, SQL injection, auth bypass) → the bundled fix (gate Step B), **before** the Similar-bugs scan (Step C): it searches for the patterns of the fixes just made, and on unfixed code it finds nothing.
 - Notices → note, continue.
 - A tech skill (shadcn, swiftui-pro, …) that is not installed, a stack checkout missing under `$DEV_STACK_DIR` or bundled docs that are absent → warn, tick its item as `skipped: <reason>`; it is an extra on top of the analyzers. The analyzers themselves are always there.
 - Exception: Design detector and Motion review need the optional sources under `$DEV_DESIGN_DIR`; missing → `skipped: <reason>`, listed under "Skipped checks", never "no findings" (`gate.md`).
-- **Parallelization:** all read-only, run in the one review wave (gate Step A).

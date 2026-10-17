@@ -2,6 +2,21 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.1.7 — 2026-10-17
+
+**dev** — a `ui` or `landing` phase now invokes the optional skill `ux-ui-design` when it is among the
+available skills. In a probe it did not load by itself: `/dev next` in a `ui` phase loaded it in 1 of 3
+runs, an implementer brief in 1 of 3, a repeat of the first case in 0 of 3. Implementers in particular
+load only what their dispatch names, and a phase that already has a spec skips 4a and goes straight to
+planning and execution. So the line sits in two places, each keyed to the phase type and the skill being
+listed: 4a invokes it before designing (`tech-stack-triggers.md`), and in 4c whoever writes the UI code
+invokes it first, which the dispatch says (`execution.md`, "UI tasks") — that also covers an orchestrator
+that implements a small phase itself. Not installed → nothing changes. Same probe afterwards (`/dev next`,
+`ui` phase with a spec): loaded in 3 of 3 runs, each time in the implementer whose dispatch named it. Paid for by dropping repeated
+sentences in `tech-stack-triggers.md` (when it is read — the `SKILL.md` index says so; "only trigger on
+changed files" and "parallelization", which the review-wave heading and the read-only rule already say)
+the history clause of the performance rule, and the read-when line of `execution.md`; the skill text shrinks by 7 words overall.
+
 ## v3.1.6 — 2026-10-16
 
 **dev** — the update check no longer holds a source for install or hook text in another harness's
