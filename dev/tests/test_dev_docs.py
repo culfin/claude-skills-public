@@ -153,6 +153,13 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(s, d, s)
         self.assertIn("- **O17** systematic-debugging", text("sources.md"))
 
+    def test_ux_ui_design_named_for_ui_phases(self):
+        # Probe: the optional skill did not load in /dev UI phases, and implementers never load it unnamed.
+        t = " ".join(text("tech-stack-triggers.md").split())
+        e = " ".join(text("execution.md").split())
+        self.assertIn("`ux-ui-design` is among the available skills → invoke it before designing", t)
+        self.assertIn("whoever writes the UI code invokes `ux-ui-design` first; the dispatch says so", e)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):
