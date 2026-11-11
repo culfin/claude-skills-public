@@ -242,6 +242,14 @@ class DevDocsTests(unittest.TestCase):
     def test_no_debug_auto_trigger_and_check_precondition_single_home(self):
         self.assertNotIn("unexplained build/test failure", text("commands.md") + text("SKILL.md"))
 
+    def test_orca_flow(self):
+        r = text("runtime.md")
+        self.assertIn("git rev-parse --show-toplevel", r)
+        self.assertIn('--display-name "phase-', r)
+        self.assertIn("context full; next:", r)
+        self.assertNotIn("STATE stay the truth", r)
+        self.assertIn("ROADMAP.md and the phase file stay the truth", r)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

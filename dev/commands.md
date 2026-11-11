@@ -53,6 +53,7 @@ All phases `[x]` or `[—]`:
    progress) and the next action, with today's date.
 2. **Commit and push:** commit the phase file as `roadmap: pause Phase N [skip ci]` and push the
    branch if it has a remote; `[skip ci]` keeps the push from cancelling a running CI run.
+   Orca mode: then the card `--unread --comment "paused: <next action>"` (`runtime.md`, "Orca").
 3. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
