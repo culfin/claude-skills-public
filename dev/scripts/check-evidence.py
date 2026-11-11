@@ -62,11 +62,12 @@ SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 COUNTED = ("typecheck + lint + tests", "e2e tests")
 COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
 NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
-SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "tech-stack review")
+SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "tech-stack review",
+             "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff.
 REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
                 "performance review", "accessibility review", "design detector", "motion review",
-                "taste pre-flight")
+                "taste pre-flight", "second opinion")
 
 
 def state_id(root):

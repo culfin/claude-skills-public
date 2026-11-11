@@ -16,6 +16,7 @@ Read before dispatching any subagent (implementation, gate, Milestone End, Pre-R
 | Fix agent (gate Steps B and D) | **standard**; **capable** from round 3 |
 | Fix review (gate Step B) | **standard** |
 | Similar-bugs scan (gate Step C) | **standard** |
+| Second opinion (gate Step A, Orca worker of another agent) | that agent's default; `--model` only if the user named one |
 | Taste subagent (4a landing digest, Taste pre-flight, `/dev ui`), impeccable subagent (pre-release audit/polish) | **standard** |
 | Configured skills (pre/post-phase, milestone start, pre-release) | **standard** unless the skill says otherwise |
 | Milestone End and pre-release full scans (Bug hunt, Performance review, Security review, Dead-code scan) | **capable** |
