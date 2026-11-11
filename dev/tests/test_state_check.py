@@ -129,6 +129,125 @@ class StateCheckTests(unittest.TestCase):
         found = self.check(branch="work", main="main")
         self.assertIn("claimed on main: Phase 4 by other since 2026-10-07 — skip unless the user picks it", found)
 
+    def claim_on(self, branch, phase="4", who="other", when="2026-10-07", date=None):
+        """Commit a claim for `phase` on `branch` (created from main), then return to main."""
+        git(self.root, "checkout", "-qb", branch, "main")
+        (self.root / "ROADMAP.md").write_text(
+            (self.root / "ROADMAP.md").read_text().replace(
+                f"- [ ] Phase {phase} — Export @type:backend",
+                f"- [~] Phase {phase} — Export @type:backend @claim:{who}@{when}"))
+        env = None
+        if date:
+            import os
+            env = {**os.environ, "GIT_COMMITTER_DATE": date, "GIT_AUTHOR_DATE": date}
+        subprocess.run(["git", "-C", str(self.root), "commit", "-qam", f"claim {phase}"],
+                       check=True, capture_output=True, env=env)
+        git(self.root, "checkout", "-q", "main")
+
+    def test_claim_on_another_branch_is_reported(self):
+        self.claim_on("session/b", who="session/b", when="2026-10-06", date="2026-10-06T10:00:00")
+        found = self.check(branch="main", main="main")
+        self.assertIn("claimed on session/b: Phase 4 by session/b since 2026-10-06 — skip unless the user picks it",
+                      found)
+
+    def test_claim_on_a_branch_is_seen_from_a_second_worktree(self):
+        self.claim_on("session/b", who="session/b", when="2026-10-06", date="2026-10-06T10:00:00")
+        wt = self.root / ".worktrees" / "c"
+        git(self.root, "worktree", "add", "-q", "-b", "session/c", str(wt), "main")
+        found = sc.check(wt, main="main", branch="session/c", today=TODAY)
+        self.assertIn("claimed on session/b: Phase 4 by session/b since 2026-10-06 — skip unless the user picks it",
+                      found)
+
+    def test_claim_on_a_branch_older_than_scan_days_is_ignored(self):
+        self.claim_on("session/old", who="session/old", when="2026-09-01", date="2026-09-01T10:00:00")
+        found = self.check(branch="main", main="main")
+        self.assertFalse(any(f.startswith("claimed on") for f in found), found)
+
+    def test_own_branch_and_own_claims_are_not_reported(self):
+        self.claim_on("work", who="work", date="2026-10-06T10:00:00")
+        self.claim_on("session/x", who="work", date="2026-10-06T10:00:00")
+        found = self.check(branch="work", main="main")
+        self.assertFalse(any(f.startswith("claimed on") for f in found), found)
+
+    def test_claim_is_reported_once_main_first(self):
+        git(self.root, "checkout", "-qb", "work")
+        git(self.root, "checkout", "-q", "main")
+        (self.root / "ROADMAP.md").write_text(
+            (self.root / "ROADMAP.md").read_text().replace("- [ ] Phase 4 — Export @type:backend",
+                                                           "- [~] Phase 4 — Export @type:backend @claim:other@2026-10-07"))
+        git(self.root, "commit", "-qam", "roadmap: claim Phase 4")
+        git(self.root, "branch", "copy")
+        git(self.root, "checkout", "-q", "work")
+        found = [f for f in self.check(branch="work", main="main") if f.startswith("claimed on")]
+        self.assertEqual(found, ["claimed on main: Phase 4 by other since 2026-10-07 — skip unless the user picks it"])
+
+    def test_handoff_of_a_gone_branch_is_orphan(self):
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff — `feature/gone`\nNext: x\n")
+        found = self.check(main="main")
+        self.assertEqual(found, ["orphan handoff: '## Handoff — `feature/gone`' — branch feature/gone is gone "
+                                 "or merged; remove the block"])
+
+    def test_handoff_of_a_merged_branch_is_orphan(self):
+        git(self.root, "checkout", "-qb", "done")
+        (self.root / "x.txt").write_text("x\n")
+        git(self.root, "add", "x.txt")
+        git(self.root, "commit", "-qm", "work")
+        git(self.root, "checkout", "-q", "main")
+        git(self.root, "merge", "-q", "--no-ff", "-m", "merge", "done")
+        git(self.root, "checkout", "-qb", "work")
+        (self.root / "STATE.md").write_text("# State\n\n### Handoff: done (Phase 3)\nNext: x\n")
+        found = self.check(branch="work", main="main")
+        self.assertIn("orphan handoff: '### Handoff: done (Phase 3)' — branch done is gone or merged; "
+                      "remove the block", found)
+
+    def test_handoff_of_a_live_branch_or_without_name_is_silent(self):
+        git(self.root, "checkout", "-qb", "live")
+        (self.root / "x.txt").write_text("x\n")
+        git(self.root, "add", "x.txt")
+        git(self.root, "commit", "-qm", "work")
+        git(self.root, "checkout", "-q", "main")
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff - live\nNext: x\n\n## Handoff\nNext: y\n")
+        self.assertEqual(self.check(main="main"), [])
+
+    def test_long_handoff_limit(self):
+        for n, expect in ((8, False), (9, True)):
+            body = "".join(f"- line {i}\n\n" for i in range(n))
+            (self.root / "STATE.md").write_text(f"# State\n\n## Handoff — main\n{body}### Sub\nmore\n\n## Next\nz\n")
+            found = [f for f in self.check() if f.startswith("long handoff:")]
+            if n == 8:
+                # the ### Sub section belongs to the handoff: 8 + heading + 1 line = 10
+                self.assertEqual(found, ["long handoff: '## Handoff — main' has 10 lines (limit 8) — "
+                                         "keep only position, next step, open points"])
+            body = "".join(f"- line {i}\n" for i in range(n))
+            (self.root / "STATE.md").write_text(f"# State\n\n## Handoff — main\n{body}\n## Next\nz\n")
+            found = [f for f in self.check() if f.startswith("long handoff:")]
+            self.assertEqual(bool(found), expect, found)
+            if expect:
+                self.assertEqual(found, [f"long handoff: '## Handoff — main' has {n} lines (limit 8) — "
+                                         "keep only position, next step, open points"])
+
+    def test_checkout_behind_its_upstream_is_reported(self):
+        remote = self.root.parent / (self.root.name + "-remote.git")
+        git(self.root, "init", "-q", "--bare", str(remote))
+        self.addCleanup(lambda: subprocess.run(["rm", "-rf", str(remote)]))
+        git(self.root, "remote", "add", "origin", str(remote))
+        git(self.root, "push", "-q", "-u", "origin", "main")
+        self.assertEqual(self.check(main="origin/main"), [])
+        (self.root / "x.txt").write_text("x\n")
+        git(self.root, "add", "x.txt")
+        git(self.root, "commit", "-qm", "a")
+        (self.root / "y.txt").write_text("y\n")
+        git(self.root, "add", "y.txt")
+        git(self.root, "commit", "-qm", "b")
+        git(self.root, "push", "-q", "origin", "main")
+        git(self.root, "reset", "-q", "--hard", "HEAD~2")
+        found = self.check(main="origin/main")
+        self.assertIn("behind: main is 2 commits behind origin/main — pull before trusting ROADMAP/STATE here",
+                      found)
+
+    def test_no_upstream_is_silent(self):
+        self.assertFalse(any(f.startswith("behind:") for f in self.check()))
+
     def test_archive_moves_milestone_and_its_gate_summaries(self):
         (self.root / "STATE.md").write_text(
             "# State\n\n## Handoff\nNext: Phase 3\n\n### Gate summary — Phase 1: Database\n- Tier: small\n\n"

@@ -70,7 +70,7 @@ No cause → no Performance review item.
 
 **Analyzers:** each analysis is a subagent with its file from `analyzers/` (contract in
 `analyzers/CONTRACT.md`), for every stack, with short notes per language. Extra stack-specific
-analyses go under `@skills:` in ROADMAP.md; `/dev` depends on none.
+analyses go into `defaults.phase-types` in ROADMAP.md; `/dev` depends on none.
 
 **Next.js — where the knowledge comes from.** Next.js ships its documentation with the package
 (16.3 and later), version-matched to what the project runs. A subagent reads

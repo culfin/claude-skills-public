@@ -168,7 +168,7 @@ phase stays `[!]`; Step D may go on meanwhile. Only an independent substitute co
 another subagent with the same analyzer file, or an equivalent tool the project already uses —
 never the implementer reviewing its own change.
 
-Former skill names under `@skills:` (`bug-prospector`, `security-audit`, `performance-check`,
+Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-audit`, `performance-check`,
 `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`) mean the matching analyzer.
 
 ## Step B — Fix

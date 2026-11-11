@@ -1,7 +1,7 @@
 # STATE.md — what it holds and when it changes
 
 Read on every `/dev` run that writes STATE.md — the project's persistent state across sessions
-(progress, requirements, constraints, risks, continuity). Every `/dev` run and `/dev status` reads it.
+(position, requirements, constraints, risks, handoffs). Every `/dev` run and `/dev status` reads it.
 
 ### When to Update STATE.md
 
@@ -15,25 +15,23 @@ Read on every `/dev` run that writes STATE.md — the project's persistent state
 | Gate summary written | **Append Gate summary** under `### Gate summary — Phase N` in STATE.md (permanent — never removed) |
 | Gate commit, CI watcher started | Line `- <sha> — Phase N <name>: pending` under `## CI in background`; replace `pending` with the status file's line whenever it is read (`gate.md`, "CI in background") |
 | `/dev check` completed | **Append Check summary** under `## Context` in STATE.md (permanent — never removed) |
-| Phase completes (`[!]` → `[x]`) | Current Position, Progress table, Last activity, **remove Quality Gate Checklist section**, **replace the Handoff block** (below) |
-| Phase skipped (`[ ]` → `[—]`) | Current Position, Progress table, Last activity |
+| Phase completes (`[!]` → `[x]`) | Current Position, Last activity, **remove Quality Gate Checklist section**, **replace the Handoff block** (below) |
+| Phase skipped (`[ ]` → `[—]`) | Current Position, Last activity |
 | Last phase of a milestone `[x]` | Line `Milestone End pending: <milestone name>`; Milestone End removes it last (`commands.md`) |
-| Milestone completes | Progress table, Next milestone in Current Position; archive (`commands.md`, Milestone End) |
+| Milestone completes | Next milestone in Current Position; archive (`commands.md`, Milestone End) |
 | `/dev ui` approval while a phase is `[~]`/`[!]` | **Create or extend `## UI review — approved findings`** (below) |
 | Key decision made | Phase-specific → `Decisions:` under the phase; otherwise Constraints or a Decisions section |
 | Blocker discovered | Add to Blockers & Risks |
 | Blocker resolved | Remove from Blockers & Risks |
-| Session ends (user pauses) | Session Continuity: Last session, Stopped at, Resume hint |
+| Session ends (user pauses) | Your Handoff block: where it stopped, the next action |
 | `/dev init` | Create fresh STATE.md |
 
 ### Update Rules
 
 - **Current Position**: OVERWRITE on every phase transition
-- **Progress table**: OVERWRITE milestone row when phase count changes
 - **Blockers & Risks**: APPEND new, REMOVE resolved
-- **Session Continuity**: OVERWRITE on every session pause/end
 - **Constraints / Core Value**: IMMUTABLE after init (unless user explicitly changes)
-- **Handoff**: OVERWRITE on every phase completion — only your branch's block
+- **Handoff**: OVERWRITE on every phase completion and pause — only your branch's block
 - **Size**: state, not a diary — ≤ ~3000 words, Handoff in the first 80 lines (`state-check.py`);
   history goes to commits, specs, `docs/roadmap-archive/`
 - **CI in background**: APPEND per gate commit, update the status in place; at Milestone End, once
@@ -68,7 +66,7 @@ Criteria complete.
   stands, open notes, traps found on the way. At most 8 lines; details belong in the spec, the plan
   or Blockers & Risks. **One block per branch** (Current Position as its first line): a session writes
   only its own and removes it once the branch is merged, so parallel sessions never edit the same
-  lines. A Progress-table conflict: recompute it from ROADMAP.md.
+  lines. Progress is never stored: it is counted from ROADMAP.md.
 - **Decisions:** — answers from the bundled round and from later clarification, one line per phase;
   a phase with decisions does not ask them again. **Acceptance criteria:** — the draft of a small
   phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks the

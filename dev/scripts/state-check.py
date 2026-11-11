@@ -21,6 +21,16 @@
 - `done on <main>:` the phase is `[x]`/`[—]` in ROADMAP.md on the main branch but not here —
   finished elsewhere, mark it instead of redoing it. `claimed on <main>:` the main branch shows a
   claim by another branch for a phase that is still `[ ]` here. Needs a current `git fetch`.
+- `claimed on <ref>:` the same for every other local branch and every `origin/*` branch (not the
+  own one) whose last commit is at most CLAIM_SCAN_DAYS days old. Claims live as a commit on the
+  claiming branch; worktrees of one repo share their local branches, so every session on this
+  machine sees them without a commit on main. Each phase is reported once, main first.
+- `orphan handoff:` a `Handoff — <branch>` heading in STATE.md whose branch exists neither locally
+  nor on origin, or is already merged into the main branch: remove the block.
+- `long handoff:` a Handoff section with more than HANDOFF_LINES non-empty lines — a handoff keeps
+  position, next step and open points; the diary belongs in the commits.
+- `behind:` the current branch is behind its upstream — ROADMAP.md and STATE.md here are outdated;
+  pull first (counts against the last fetch, `check` fetches nothing).
 
 `archive` moves one milestone whose phases are all `[x]`/`[—]` to
 `docs/roadmap-archive/<slug>.md` next to ROADMAP.md: its full ROADMAP.md section plus the
@@ -40,9 +50,12 @@ STATE_LIMIT = 3000
 ROADMAP_LIMIT = 8000
 HANDOFF_TOP = 80
 STALE_DAYS = 7
+CLAIM_SCAN_DAYS = 14
+HANDOFF_LINES = 8
 PHASE = re.compile(r"^\s*- \[(.)\]\s+(Phase\s+(\d[\w.]*))(.*)$")
 CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
 HANDOFF = re.compile(r"^#{2,3}\s+(handoff|session continuity)\b", re.I)
+HANDOFF_BRANCH = re.compile(r"^#{2,3}\s+handoff\s*[—:-]\s*(\S+)", re.I)
 GATE_SUMMARY = re.compile(r"^#{2,4}\s+Gate[- ]summary\b.*?\bPhase\s+(\d[\w.]*)", re.I)
 DONE, ACTIVE = "xX—", "~!"
 
@@ -115,6 +128,47 @@ def branch_exists(root, name):
                (f"refs/heads/{name}", f"refs/remotes/origin/{name}"))
 
 
+def is_ancestor(root, a, b):
+    return git(root, "merge-base", "--is-ancestor", a, b) is not None
+
+
+def handoffs(lines):
+    """[(heading line, number of non-empty body lines)] for every Handoff section, fences ignored."""
+    out, fence = [], False
+    heads = []
+    for i, line in enumerate(lines):
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else re.match(r"^(#+)\s", line)
+        if m:
+            heads.append((i, len(m.group(1))))
+    for k, (i, lvl) in enumerate(heads):
+        if not HANDOFF.match(lines[i]):
+            continue
+        end = next((j for j, l in heads[k + 1:] if l <= lvl), len(lines))
+        out.append((lines[i].strip(), sum(1 for l in lines[i + 1:end] if l.strip())))
+    return out
+
+
+def recent_refs(root, today):
+    """[(short name, commit)] of local and origin branches with a commit in the last CLAIM_SCAN_DAYS days."""
+    raw = git(root, "for-each-ref", "--format=%(refname) %(objectname) %(committerdate:short)",
+              "refs/heads", "refs/remotes/origin") or ""
+    out = []
+    for line in raw.splitlines():
+        name, sha, date = line.split()
+        if name == "refs/remotes/origin/HEAD":
+            continue
+        try:
+            if (today - datetime.date.fromisoformat(date)).days > CLAIM_SCAN_DAYS:
+                continue
+        except ValueError:
+            continue
+        short = name.removeprefix("refs/heads/").removeprefix("refs/remotes/")
+        out.append((short, sha))
+    return out
+
+
 def check(root, main=None, branch=None, today=None):
     root = Path(root)
     roadmap, state = root / "ROADMAP.md", root / "STATE.md"
@@ -139,7 +193,26 @@ def check(root, main=None, branch=None, today=None):
     for n, line in enumerate(stext.splitlines(), 1):
         if HANDOFF.match(line) and n > HANDOFF_TOP:
             out.append(f"handoff: '{line.strip()}' at line {n} — move it into the first {HANDOFF_TOP} lines")
+    for head, n in handoffs(stext.splitlines()):
+        if n > HANDOFF_LINES:
+            out.append(f"long handoff: '{head}' has {n} lines (limit {HANDOFF_LINES}) — "
+                       "keep only position, next step, open points")
     branch = branch if branch is not None else (git(root, "branch", "--show-current") or "")
+    ref = main_ref(root, main)
+    if ref and not git(root, "rev-parse", "--verify", "-q", ref):
+        ref = None
+    main_names = {ref, ref.removeprefix("origin/")} if ref else set()
+    for line in stext.splitlines():
+        m = HANDOFF_BRANCH.match(line)
+        if not m:
+            continue
+        b = m.group(1).strip("`")
+        if not b or b == branch or b in main_names:
+            continue
+        refs = [r for r in (f"refs/heads/{b}", f"refs/remotes/origin/{b}")
+                if git(root, "rev-parse", "--verify", "-q", r)]
+        if not refs or (ref and all(is_ancestor(root, r, ref) for r in refs)):
+            out.append(f"orphan handoff: '{line.strip()}' — branch {b} is gone or merged; remove the block")
     own = phases(rtext)
     for pid, (st, who, when) in own.items():
         if st not in ACTIVE:
@@ -154,18 +227,33 @@ def check(root, main=None, branch=None, today=None):
             out.append(f"stale claim: Phase {pid} by {who} since {when} ({age} days); ask before taking it over")
         elif who != branch:
             out.append(f"claimed: Phase {pid} by {who} since {when} — skip unless the user picks it")
-    ref = main_ref(root, main)
-    if ref and git(root, "rev-parse", "--verify", "-q", ref):
-        prefix = git(root, "rev-parse", "--show-prefix") or ""
-        theirs = git(root, "show", f"{ref}:{prefix}ROADMAP.md")
+    prefix = git(root, "rev-parse", "--show-prefix") or ""
+    scan = []
+    if ref:
+        scan.append((ref, git(root, "rev-parse", ref)))
+    skip = {ref, branch, f"origin/{branch}"}
+    scan += [(name, sha) for name, sha in recent_refs(root, today) if name not in skip]
+    seen_sha, reported = set(), set()
+    for name, sha in scan:
+        if sha in seen_sha:
+            continue
+        seen_sha.add(sha)
+        theirs = git(root, "show", f"{sha}:{prefix}ROADMAP.md")
         for pid, (st, who, when) in phases(theirs or "").items():
             mine = own.get(pid)
             if not mine:
                 continue
-            if st in DONE and mine[0] not in DONE:
+            if name == ref and st in DONE and mine[0] not in DONE:
                 out.append(f"done on {ref}: Phase {pid} [{st}] — mark it here, do not redo it")
-            elif st in ACTIVE and who and who != branch and mine[0] == " ":
-                out.append(f"claimed on {ref}: Phase {pid} by {who} since {when} — skip unless the user picks it")
+            elif st in ACTIVE and who and who != branch and mine[0] == " " and pid not in reported:
+                reported.add(pid)
+                out.append(f"claimed on {name}: Phase {pid} by {who} since {when} — skip unless the user picks it")
+    upstream = git(root, "rev-parse", "--abbrev-ref", "@{u}")
+    if upstream:
+        n = int(git(root, "rev-list", "--count", "HEAD..@{u}") or 0)
+        if n:
+            out.append(f"behind: {branch or 'HEAD'} is {n} commits behind {upstream} — "
+                       "pull before trusting ROADMAP/STATE here")
     return out
 
 
