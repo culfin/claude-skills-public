@@ -180,7 +180,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("Decisions:", block)
         self.assertNotIn("## Decisions", st)
         self.assertIn("  - Decisions: <answers> (<YYYY-MM-DD>)", st)
-        self.assertIn("## Old format (projects without `.dev/`)", st)
+        self.assertIn("## Old format (not migrated)", st)
         self.assertIn("`- <sha> — Phase N <name>`, without status", st)
         ci = block.split("## CI", 1)[1].split("##", 1)[0]
         self.assertRegex(ci, r"\n- [0-9a-f]{7,40}\n", ci)  # SHA only, never a status
@@ -211,15 +211,15 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("Milestone End (it runs once)", cj)
         self.assertNotIn("phase file `Branch:` = current", cj)
         self.assertNotIn("closed phase", " ".join(st.split()))
-        self.assertIn("the migrating session uses the new format from it on", " ".join(st.split()))
+        self.assertIn("the migrating session uses the new one from its `migrate` commit on", " ".join(st.split()))
         sk = text("SKILL.md")
         # v4: the handling of each state-check finding lives in commands.md, "State findings".
         cm = text("commands.md")
         self.assertIn('"State findings" — `behind:` first, `migrate:` next', sk)
-        self.assertIn("`git ls-tree -d origin/<main> -- <prefix>.dev`", cm)
-        self.assertIn("Listed (the project agreed) → run `migrate` for the own claim's parts without asking", cm)
+        self.assertIn("`git cat-file -e origin/<main>:<prefix>.dev/.gitkeep`", cm)
+        self.assertIn("Present (the project agreed) → run `migrate` for the own claim's parts without asking", cm)
         self.assertLess(cm.index("`behind:` first"), cm.index("`migrate:` next"))
-        self.assertIn("No `.dev/` on `origin/<main>`", sk)
+        self.assertIn("No marker `<prefix>.dev/.gitkeep` on `origin/<main>`", sk)
         self.assertIn("STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts", cm)
         self.assertIn("save (unless already there) and delete as the finding says", cm)
         self.assertIn("state-check.py migrate", st)
@@ -297,6 +297,34 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("Only Diff review, Typecheck + lint + tests, Gate summary", g)
         self.assertIn("| Any — `gate-tier.py` names `ops files` or `dependency manifest` |", t)
         self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)
+
+    def test_v4_final_review_migration_marker(self):
+        # Final review v4: one migration criterion (marker on <main>), no rebase of a pushed branch,
+        # the full override range and the companion check after a superpowers update.
+        j = lambda rel: " ".join(text(rel).split())
+        marker = "`<prefix>.dev/.gitkeep`"
+        for rel in ("SKILL.md", "state.md", "commands.md"):
+            self.assertIn(marker, j(rel), rel)
+            self.assertNotIn("No `.dev/` on", j(rel), rel)
+            self.assertNotIn("ls-tree -d", j(rel), rel)
+        self.assertIn("`git cat-file -e origin/<main>:<prefix>.dev/.gitkeep`", j("state.md"))
+        self.assertIn("without `origin`, the local `<main>` stands for `origin/<main>`", j("state.md"))
+        self.assertIn(".dev/.gitkeep", j("roadmap-creation.md"))
+        completion = text("SKILL.md").split("### 7. Phase Completion", 1)[1].split("### 8.", 1)[0]
+        self.assertNotIn("git rebase", completion)
+        self.assertNotIn("origin/main", text("SKILL.md"))
+        self.assertIn("git show origin/<main>:<prefix>ROADMAP.md", completion)
+        c = j("commands.md")
+        self.assertIn("not pushed → `git rebase origin/<main>`, pushed → `git merge origin/<main>`; never a force-push", c)
+        self.assertIn("cherry-pick", c)
+        self.assertIn("SHAs in the gate files of all milestones since the last release tag", c)
+        self.assertIn("`- CI: none`", c)
+        self.assertIn("`- CI: none`", j("ci.md"))
+        self.assertIn("phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace", j("state.md"))
+        self.assertNotIn("1 phase = 1 branch", j("state.md"))
+        self.assertIn("O8–O12", text("stack/INDEX.md"))
+        self.assertNotIn("O8–O9)", text("stack/INDEX.md"))
+        self.assertIn("tests/check-screens.sh", text("updates.md").split("5. **Apply**", 1)[1].split("6. **Reject", 1)[0])
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

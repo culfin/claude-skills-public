@@ -56,4 +56,7 @@ Write ROADMAP.md to project root.
 None.
 ```
 
-Commit both ROADMAP.md and STATE.md together.
+**8. Marker** — create the empty file `.dev/.gitkeep` next to ROADMAP.md: the project uses phase
+files from the start (`state.md`, "Old format").
+
+Commit ROADMAP.md, STATE.md and `.dev/.gitkeep` together.

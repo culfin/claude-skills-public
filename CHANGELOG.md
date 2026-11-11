@@ -6,19 +6,34 @@ Why things changed, not just what. Rules in the skills stay free of history; it 
 
 **dev** — Orca-first phase model. Breaking: per-phase state moves out of the shared `STATE.md`.
 
-**Phase model.** One phase = one Orca workspace = one branch = one file `.dev/phase-<N>.md`; gate results
-are kept for good in `docs/gates/`; `STATE.md` holds only what is shared. Why: parallel sessions merged
+**Phase model.** A phase has exactly one branch at a time; in Orca its workspace carries the display name
+`phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace. Its state lives in one file
+`.dev/phase-<N>.md`; gate results are kept for good in `docs/gates/`; `STATE.md` holds only what is shared. Why: parallel sessions merged
 into one `STATE.md`. A simulated double merge gave 3–4 conflict hunks with the shared file and 0 with one
 file per phase; in one project, 30 of 44 merges had hunks from both sides. RED on v3.3.0 (two sessions
 finishing in parallel): one of two rewrote the shared sections, both flagged a contradiction in the skill.
 GREEN (2 of 2): `STATE.md` untouched, only the own phase file and gate file change. `state-check.py
-migrate` moves a session's own parts; a project counts as migrated when `.dev/` exists on `origin/<main>`.
+migrate` moves a session's own parts; a project counts as migrated when the marker `.dev/.gitkeep` is on
+`origin/<main>` (`/dev init` and `migrate` create it): a bare `.dev/` was never committed when nothing moved, so
+"migrated" never held. `migrate` appends nothing twice (rerun after a rebase conflict) and, before the
+marker exists, `migrate:` also counts other sessions' parts. A pushed branch takes `origin/<main>` by merge,
+never by rebase; the migration commit reaches main by cherry-pick from a fresh branch, without the claim.
+Decisions are one line under the phase in ROADMAP.md, visible to every session; deferred minors stay in
+`docs/gates/phase-<N>.md` until Milestone End gathers them (no shared-file write per phase); the `/dev check`
+summary goes to `docs/gates/check-<date>-<branch>.md`. `check-evidence.py` counts only phase files, the
+marker and `docs/gates/` as bookkeeping, so tools kept under `.dev/` stay code under review.
 
 **CI status never in tracked files.** Three review rounds on "who owns this CI line" ended with the
 rule: status lives only in `<git-common-dir>/dev-ci/<sha>`, shared by all worktrees; ownership is derived
 from `git diff --name-only origin/<main>...HEAD`. `ci-watch.sh` follows a run cancelled by a descendant
 commit (cancel-in-progress). No `[skip ci]` on bookkeeping commits: GitHub then also skips the PR checks of
 the head commit.
+
+**Session Start** runs `git fetch` and `state-check.py check` before reading any roadmap or phase file, so
+it never works on a state another session already changed. An unknown `@type:` is reported once instead
+of silently dropping type hints. A post-skill `requesting-code-review` is not run again: the gate's Diff
+review covers it. `check-superpowers.py` checks two skills fewer (`executing-plans`, `using-git-worktrees`),
+which `/dev` no longer calls.
 
 **Orca flow.** Orca mode only when the workspace path equals the resolved session path exactly; sessions in
 `<repo>/.worktrees/` wrote the main workspace's card (RED 2 of 2). Display name `phase-<N>-<slug>`. A pause
@@ -39,10 +54,10 @@ unified. In `ui` phases `ux-ui-design` replaces the overlapping design sources (
 onboarding, ux-writing): equally complete, about 2,500–4,000 fewer words read, no contradiction
 (density critique stays).
 
-**Breaking / migration.** A project without `.dev/` on `origin/<main>` keeps the old format until the
-user agrees; `check` then reports `migrate:`, and the migration lands at once as its own small PR to main.
-Other sessions migrate their own phase at their next start. Global instructions that demand a claim PR to
-main contradict the skill since v3.3 and should be dropped.
+**Breaking / migration.** A project without the marker `.dev/.gitkeep` on `origin/<main>` (no `origin`:
+the local main) keeps the old format until the user agrees; `check` then reports `migrate:`, and the
+migration lands at once as its own small PR to main. Other sessions migrate their own phase at their next
+start.
 
 ## v3.3.0 — 2026-11-11
 

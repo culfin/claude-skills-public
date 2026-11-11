@@ -23,7 +23,7 @@ Session Start, step 1: each finding of `state-check.py check`, handled before RO
 
 - `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
 - `behind:` first → `git pull --ff-only` (a dirty or diverged tree: say so and stop).
-- `migrate:` next, before any other finding. `origin/<main>` decides: `git ls-tree -d origin/<main> -- <prefix>.dev` (`<prefix>`: ROADMAP.md's directory). Listed (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then `git rebase origin/<main>`; STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts, continue. Not listed: offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` and bring that commit to `<main>` at once (own small PR or push, as the project allows) before the phase goes on.
+- `migrate:` next, before any other finding. The marker `<prefix>.dev/.gitkeep` on `origin/<main>` decides (`state.md`, "Old format"): `git cat-file -e origin/<main>:<prefix>.dev/.gitkeep` (`<prefix>`: ROADMAP.md's directory). Present (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then bring in `origin/<main>`: branch not pushed → `git rebase origin/<main>`, pushed → `git merge origin/<main>`; never a force-push. STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts (it appends nothing twice), continue. Absent (until then `migrate:` counts every session's parts): offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` (it creates the marker) and bring that commit to `<main>` at once: cherry-pick it onto a branch from `origin/<main>` — never the working branch with its claim — then own small PR or push, as the project allows, before the phase goes on.
 - `orphan phase file:` → phase done: save (unless already there) and delete as the finding says, in the next commit. Still `[~]`/`[!]`, branch gone: ask the user — take over, or discard (Position, criteria → `## Abandoned` there; delete the file; phase back to `[ ]`, no `@claim:`).
 - `phase file missing:` → create it now: `Branch:`, `## Position`, `Phase base:` (parent of the phase's `roadmap: claim` commit).
 - `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
@@ -37,7 +37,8 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
 
 0. **Wait for background CI** — every SHA under `## CI` in `docs/gates/phase-<N>.md` of this
    milestone, status and repair per `ci.md`: wait until none is
-   `pending`; `red`/`timeout` → repair it first, whoever's phase it was; `none` stays.
+   `pending`; `red`/`timeout` → repair it first, whoever's phase it was; `none` stays, recorded as
+   a line `- CI: none` in that `docs/gates/phase-<N>.md`.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
@@ -143,7 +144,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 **Triggered by:** `/dev review`
 
-**Precondition:** wait for and repair the release's CI SHAs as in Milestone End step 0, then continue.
+**Precondition:** wait for and repair the release's CI SHAs (the SHAs in the gate files of all milestones since the last release tag) as in Milestone End step 0, then continue.
 
 1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see `models.md`):
    - **Bug hunt** (full mode) — entire codebase, 7 lenses.

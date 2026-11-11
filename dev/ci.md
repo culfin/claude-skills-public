@@ -9,7 +9,8 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
 
 1. **CI must see the commit** through the route the project already allows (push of the phase
    branch, PR update, workflow dispatch). No authorized route → halt once per run, name the blocker,
-   note the answer (a route, or `no CI this run`) under the phase file's `## CI` and follow it.
+   note the answer (a route, or `no CI this run`) under the phase file's (or check file's; old
+   format: STATE.md) `## CI` and follow it.
    Never push to a protected or production branch for this.
 2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add the SHA to
    the phase file:
@@ -37,7 +38,7 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
      (`gh run view <id> --log-failed`) and repair (below). A `timeout` from missing `jq` or failing
      `gh` (`gh auth status`) is a tooling problem: report it, never repair.
    - `none` → no run of this SHA appeared (a `paths`/`on:` filter can exclude a commit on purpose).
-     Not a halt and never green.
+     Not a halt and never green: add a line `- CI: none` to `docs/gates/phase-<N>.md`.
    - `pending` → go on between phases; at Milestone End, wait for it.
 
 ## Repairing a red CI SHA

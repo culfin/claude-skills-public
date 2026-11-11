@@ -2,9 +2,11 @@
 
 Formats only; each step says what it writes.
 
-**1 phase = 1 branch = 1 file `.dev/phase-<N>.md`** next to ROADMAP.md (`<N>` verbatim:
-3, 6a, 4.1). Created at the claim, committed with the phase (never git-ignored),
-deleted at phase completion. Only the claiming branch writes it. After `/clear` the position comes from here alone.
+A phase has exactly one branch at a time; in Orca its workspace carries the display name
+`phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace. **Its file
+`.dev/phase-<N>.md`** lies next to ROADMAP.md (`<N>` verbatim: 3, 6a, 4.1): created at the claim,
+committed with the phase (never git-ignored), deleted at completion, written only by the claiming
+branch. After `/clear` the position comes from here alone.
 
 ## Phase file
 
@@ -32,7 +34,7 @@ Next: Step B fix dispatch with the build error, then Step D again
 - Task 2: date parser accepts `2026-13-01` without an error
 ```
 
-- **Branch:** line 1, the only line a takeover (new workspace, new branch) replaces.
+- **Branch:** line 1, the only line a takeover replaces.
 - **Position:** one line — step, next action, date; every step overwrites it. Progress is counted
   from ROADMAP.md, never stored.
 - **Phase base:** `git rev-parse HEAD` at the claim, kept on a takeover; the gate diffs against it.
@@ -81,15 +83,17 @@ Milestone End pending: <milestone name>
 under another session's claim. 4a reads it, a later round extends it; it stays
 after the phase and moves with it.
 
-## Old format (projects without `.dev/`)
+## Old format (not migrated)
 
-Without `.dev/` on `origin/<main>`, **all** phases keep the old format until the user agrees to
-`state-check.py migrate`; that commit goes to `<main>` at once, the migrating session uses the new
-format from it on, and each other session then migrates its own parts (`SKILL.md`, Session Start). No phase file is created. Every write a step makes to
-`.dev/phase-<N>.md` goes to the same-named place in STATE.md, reads too (`### Phase N` under `## Phases`,
-`## Quality Gate — Phase N`, `## Handoff — <branch>` with the position first); CI lines read
-`- <sha> — Phase N <name>`, without status, under `## CI in background`. The Gate summary stays in STATE.md
-(`### Gate summary — Phase N`); a takeover replaces the `## Handoff — <branch>` heading instead of
-`Branch:`; minors go to Blockers & Risks — in the old format only.
+Migrated ⇔ the empty marker `<prefix>.dev/.gitkeep` is on `origin/<main>` (`git cat-file -e
+origin/<main>:<prefix>.dev/.gitkeep`, `<prefix>`: ROADMAP.md's directory; without `origin`, the local
+`<main>` stands for `origin/<main>` everywhere). Until the user agrees to `state-check.py migrate`
+(`commands.md`, "State findings"), **all** phases keep the old format; the migrating session uses the
+new one from its `migrate` commit on. Every write a step makes to `.dev/phase-<N>.md` goes to the
+same-named place in STATE.md, reads too (`### Phase N` under `## Phases`, `## Quality Gate — Phase N`,
+`## Handoff — <branch>`, position first); CI lines `- <sha> — Phase N <name>`, without status, under `## CI in background`, read there by
+Milestone End step 0 and the repair checklist. Gate summary (`### Gate summary — Phase N`) and minors
+(Blockers & Risks) stay in STATE.md; completion removes the phase's Quality Gate, `### Phase N` and
+Handoff from it. A takeover replaces the `## Handoff — <branch>` heading instead of `Branch:`.
 
 **Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.

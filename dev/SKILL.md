@@ -57,7 +57,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings;
    any finding → handle it per `commands.md`, "State findings" — `behind:` first, `migrate:` next.
    Then read ROADMAP.md.
-2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` on `origin/<main>` → old format for every phase (`state.md`, "Old format").
+2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No marker `<prefix>.dev/.gitkeep` on `origin/<main>` → old format for every phase (`state.md`, "Old format").
 3. **Detect tech stack** once per session: the project root against section 1 of `stack/INDEX.md`,
    ids stored as `$TECH_STACKS` (e.g. `[nextjs, shadcn, postgres]`); `nextjs`, `shadcn` and `svelte`
    also count as **web**, `ios` as **Apple** (`design/INDEX.md` platform rows match on these).
@@ -68,7 +68,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    - A `@type:` that `gate.md` does not name and `defaults.phase-types` has no key for → report once per type: `unknown @type: <t> — planning uses no type hints; the gate still reads the diff`.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!", offer `/dev add` or `/dev review`.
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
-   first; `done on <main>` → mark it as there, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
+   first; `done on <main>` → mark it, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
    one → halt and say so.
 7. **Show summary** in the terminal (never the companion):
    ```
@@ -147,7 +147,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 ### 2–3. Pre-Phase and pre-skill handoff
 
 1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Read the gate files' `## Minor (deferred)` too, as traps for this phase.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit these at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs. Orca mode: name and mark this workspace's card, never create one (`runtime.md`, "Orca").
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch. Orca mode: name and mark this workspace's card, never create one (`runtime.md`, "Orca").
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types (planning hints; gate additions that never remove a check) and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
 
@@ -204,7 +204,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 3. **Gate record:** append the phase file's `## CI` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` (it holds the Gate summary); STATE.md stays untouched.
 4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
 5. Commit all of it at once: `roadmap: complete Phase N — <name>`
-6. After `git fetch` and `git rebase origin/main`: every phase of the milestone `[x]`/`[—]` → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
+6. `git fetch`, then read `git show origin/<main>:<prefix>ROADMAP.md`: every phase of the milestone `[x]`/`[—]` there, this one counted as done → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 
 ### 8. Next Action
 
