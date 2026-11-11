@@ -78,6 +78,7 @@ Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet
 - [ ] Design detector
 - [ ] Motion review
 - [ ] Taste pre-flight
+- [ ] Second opinion: <agent>     <!-- defaults.second-opinion set; runtime.md "Orca" -->
 <!-- Steps B and C, added only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
@@ -101,8 +102,8 @@ evidence (`Spec checker (5c-v)` → `Spec checker`); the first three become one 
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too. `check-evidence.py` rejects a missing count or a 0.
-- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight and
-  Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
+- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight,
+  Second opinion and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
   `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a tech skill not installed):
   `- [x] Design detector — skipped: engine not built`. Such an item does not block the phase, never
@@ -135,6 +136,7 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
+| Second opinion: `<agent>` | `analyzers/diff-review.md`, run by that agent as an Orca worker (`runtime.md`, "Orca") | either tier, `defaults.second-opinion` set |
 
 **Two dispatch rules decide the hit rate:**
 - **Prompt for refutation.** "Find what is wrong with this change" finds more than "check this

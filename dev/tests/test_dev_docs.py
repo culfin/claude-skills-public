@@ -31,7 +31,8 @@ class DevDocsTests(unittest.TestCase):
                      "Gate summary (STATE.md)", "Gate commit"):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
-                     "Accessibility review", "Design detector", "Motion review", "Taste pre-flight"):
+                     "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
+                     "Second opinion: <agent>"):
             self.assertIn(f"- [ ] {name}", g)
         for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check"):
             self.assertNotIn(old, g)

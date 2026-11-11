@@ -2,6 +2,23 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.2.0 — 2026-11-11
+
+**dev** — Orca mode (`runtime.md`, "Orca"): when the session runs in an Orca workspace, `/dev` binds
+its state to Orca and leaves everything else to Orca's own `orca-cli` and `orchestration` skills, which
+advise their own subagents over Orca workers for work inside a task. Probed first with five scenarios,
+two runs each, on the unchanged skill: a halt for the user was already made visible (comment and unread
+dot, 2 of 2, from `orca-cli`), and a parallel phase was already handed off to its own workspace (2 of 2)
+— neither got a rule. What failed: the card status never followed the phase (0 of 2 set `in-progress`
+or `in-review`), a `defaults.second-opinion` key was ignored (2 of 2), and `/dev` started as an Orca
+worker asked its coordinator to approve a migration on a shared database (2 of 2). Now a table maps
+phase events to the workspace card (written, never read to decide; ROADMAP/STATE stay the truth); the
+gate gains the optional item `Second opinion: <agent>`, a read-only Diff review run by another agent
+(e.g. Codex) as an Orca worker, skippable when not in Orca or the agent is missing (`check-evidence.py`
+accepts the skip); and a worker asks the user in its own session for every approval and halt, and never
+asks for or accepts one through the coordinator. Same scenarios afterwards: 8 of 8 runs as intended,
+and a ninth in which the coordinator claimed the owner had approved. `SKILL.md` is unchanged.
+
 ## v3.1.7 — 2026-10-17
 
 **dev** — a `ui` or `landing` phase now invokes the optional skill `ux-ui-design` when it is among the
