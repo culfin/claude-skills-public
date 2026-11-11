@@ -2,6 +2,23 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v3.3.0 — 2026-11-11
+
+**dev** — claims without a commit to main, and STATE.md cleanup findings. Measured across 14 projects:
+every repository always has several worktrees, so the claim rule ("another session → bring the claim to
+main") fired every time — about 40 claim PRs a month, each with a CI run. Yet `state-check.py` only
+read the main branch: in a probe with two workspaces it reported `ok` while the other workspace had
+claimed the phase on its own branch (2 of 2 runs), and both runs then opened a PR to main for their own
+claim. Now `check` reads ROADMAP.md on every local and origin branch with a commit in the last 14 days
+(`claimed on <branch>:`); worktrees share their refs, so a claim is a commit on one's own branch, pushed
+with it. New findings: `orphan handoff:` (the block's branch is gone or merged — 5 of 6 branch blocks
+measured were), `long handoff:` (over 8 lines, the limit `state.md` already set), `behind:` (main
+checkouts lagged up to 446 commits). Same probe afterwards: 2 of 2 runs skipped the claimed phase,
+removed the orphan block and committed the claim on their branch without a PR. Removed as unused:
+`@skills:` overrides (0 of 10 roadmaps), the Progress table (derived from ROADMAP.md, a merge-conflict
+source), Session Continuity (dated in 4 of 16 files; the branch's Handoff block now holds a pause).
+`SKILL.md` shrinks by 2 words.
+
 ## v3.2.0 — 2026-11-11
 
 **dev** — Orca mode (`runtime.md`, "Orca"): when the session runs in an Orca workspace, `/dev` binds

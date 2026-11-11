@@ -45,13 +45,6 @@ Next phase: Phase 1 — <phase name>
 Status: Starting
 Last activity: <today's date> — project initialized
 
-## Progress
-
-| Milestone | Progress | Status |
-|-----------|------------|--------|
-| 1. <Name> | 0/N | Not started |
-| ... | | |
-
 ## Core Value
 
 <one sentence from the project goal>
@@ -68,11 +61,9 @@ Last activity: <today's date> — project initialized
 
 None.
 
-## Session Continuity
+## Handoff — <branch>
 
-Last session: <today's date>
-Stopped at: project initialized
-Resume: `/dev next` to start the first phase
+Next: Phase 1 — <phase name>; `/dev next` starts it (<today's date>)
 ```
 
 Commit both ROADMAP.md and STATE.md together.

@@ -96,11 +96,11 @@ period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (derive progress, position, session info). If present: read its top through your branch's **Handoff** block and Session Continuity, and the current phase's entry; other sections only when a step needs them.
-   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings. `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
+2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (position, your Handoff block). If present: read its top through your branch's **Handoff** block (older files: also Session Continuity) and the current phase's entry; other sections only when a step needs them.
+   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings. `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes. `behind:` → `git pull --ff-only` first (a dirty or diverged tree: say so and stop). `orphan handoff:`, `long handoff:` → remove or shorten that block in the phase's next STATE.md commit.
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
-5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@skills:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
+5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
@@ -135,15 +135,8 @@ Creates and commits ROADMAP.md + STATE.md through an interactive question flow.
 
 ## Skill Trigger Resolution
 
-1. Read `@type:` from phase (e.g., `ui`)
-2. Look up `defaults.phase-types.<type>.pre` and `.post` from frontmatter
-3. Apply phase overrides:
-   - `@skills:+pre[a]` → append to pre defaults
-   - `@skills:+post[a]` → append to post defaults
-   - `@skills:pre[a]` (no `+`) → replace pre defaults
-   - `@skills:post[a]` (no `+`) → replace post defaults
-4. Multiple combine: `@skills:+pre[a] @skills:+post[b]`
-5. Unknown type → warn, continue with empty lists
+Pre- and post-skills of a phase are `defaults.phase-types.<@type>.pre` and `.post` from the
+frontmatter; an unknown type → warn, continue with empty lists.
 
 Built-in phase types and the `@gate:` annotation (both shape the gate) are in `gate.md`.
 
@@ -213,7 +206,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
    `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. Another session in this repo (`git worktree list`, or the user says so) → bring the claim to `<main>` at once as a tiny commit `roadmap: claim Phase N` (PR or push, as the project allows).
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. Commit both at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 
@@ -268,14 +261,14 @@ build and E2E on the final state.
 
 Only with every Gate Checklist item `[x]` (else return to the first open one). Dispatch post-skills as
 subagents on the gate-verified state — read-only analyses in parallel, code-changing ones after them.
-A check already on the Gate Checklist is not run again, even if listed in `@skills:post[]`.
+A check already on the Gate Checklist is not run again, even if a post-skill lists it.
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 
 1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`), ensure `@spec:` and `@plan:` present (small phases have neither)
 3. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-4. **Update STATE.md**: Current Position, Progress table, Last activity, and replace your branch's **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
+4. **Update STATE.md**: Current Position, Last activity, and replace your branch's **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
 5. Commit: `roadmap: complete Phase N — <name>`
 6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 
@@ -296,7 +289,7 @@ run" applies, the context hint included.
    - **Pause phase** (Recommended) — save progress in STATE.md, keep phase `[~]`/`[!]`, resume later with `/dev next`
    - **Skip phase** — mark `[—]` with reason, move to next phase
    - **Do something else** — pause via STATE.md, then handle the user's new request outside `/dev`
-3. Pause and "something else": record what was in progress in STATE.md Session Continuity; status and checked gate items stay intact.
+3. Pause and "something else": record what was in progress in your branch's Handoff block; status and checked gate items stay intact.
 4. "Something else": do NOT resume on your own — only an explicit `/dev` or `/dev next` does.
 
 ---
@@ -311,4 +304,4 @@ run" applies, the context hint included.
 | `/dev check` + a step fails | Stop at that step, no check commit. |
 | `/dev ui` with active phase `[~]`/`[!]` | Analyse and get approval only; the rework belongs to that phase (`ui-review.md`). |
 
-**Principle:** Never block for recoverable errors (unknown `@type:`, a skill not installed, an `@skills` parse error): warn and continue. Stop only for missing ROADMAP.md, broken YAML and the halts in "The run".
+**Principle:** Never block for recoverable errors (unknown `@type:`, a skill not installed, a malformed `defaults` entry): warn and continue. Stop only for missing ROADMAP.md, broken YAML and the halts in "The run".

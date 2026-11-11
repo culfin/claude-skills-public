@@ -7,11 +7,10 @@ Execution) stays in `SKILL.md`; the gate is in `gate.md`.
 
 **Triggered by:** `/dev status` or "Show full status"
 
-1. **Read STATE.md** — show Blockers & Risks (if any) and Session Continuity at the top.
+1. **Read STATE.md** — show Blockers & Risks (if any) and your branch's Handoff block at the top.
 2. **Show full roadmap** — in the terminal only (the companion is for the user interface): blockers
    first, then per milestone `### Milestone 2: UI Shell (1/3)` and a table `# | Phase | Type | Status
-   | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements and last session.
-3. **Update STATE.md** Session Continuity with current timestamp.
+   | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements.
 
 After display: AskUserQuestion with Start/Add/Skip/Done options.
 
@@ -34,7 +33,7 @@ All phases `[x]` or `[—]`:
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
-5. **Update STATE.md** (Progress table, Current Position to next milestone). **Archive:** tell the
+5. **Update STATE.md** (Current Position to next milestone). **Archive:** tell the
    user, run `python3 "$DEV_DIR/scripts/state-check.py" archive "<milestone heading>"` (moves the
    milestone and its gate summaries to `docs/roadmap-archive/`), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
@@ -47,10 +46,8 @@ All phases `[x]` or `[—]`:
 
 **Triggered by:** `/dev pause`
 
-1. **Update STATE.md** Session Continuity:
-   - `Last session`: today's date
-   - `Stopped at`: current phase name + what was in progress
-   - `Resume`: specific next action
+1. **Update your branch's Handoff block** in STATE.md: where it stopped (phase, what was in
+   progress) and the next action, with today's date.
 2. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
@@ -74,7 +71,7 @@ fix, then back to the `[~]` phase).
 
 1. Show phase to skip. AskUserQuestion: Skip with reason (Other for free text), Cancel.
 2. Update ROADMAP.md: `[—]` + `<!-- skipped: <reason> -->`
-3. **Update STATE.md**: Current Position, Progress table, Last activity.
+3. **Update STATE.md**: Current Position, Last activity.
 4. Commit.
 5. **Show the updated roadmap in the terminal**, with the skipped phase marked `[—]` and the reason.
 6. Return to Session Start.
