@@ -249,6 +249,24 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("context full; next:", r)
         self.assertNotIn("STATE stay the truth", r)
         self.assertIn("ROADMAP.md and the phase file stay the truth", r)
+        self.assertIn("\n### Orca workers\n", r)
+        hint = text("SKILL.md").split("**Context hint.**", 1)[1].split("\n\n", 1)[0]
+        self.assertIn('As an Orca worker: `runtime.md`, "Orca workers" instead.', hint)
+        self.assertIn("orca orchestration send --type worker_done --outcome succeeded --task-id <task> "
+                      "--dispatch-id <dispatch>", r)
+        self.assertIn("nothing to save", r)
+
+    def test_bookkeeping_commits_skip_ci(self):
+        sk = text("SKILL.md")
+        for msg in ("roadmap: claim Phase N [skip ci]", "roadmap: complete Phase N — <name> [skip ci]",
+                    "roadmap: migrate state to phase files [skip ci]"):
+            self.assertIn(msg, sk)
+        self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
+        self.assertIn("never carries `[skip ci]`", text("gate.md"))
+        for p in DEV.rglob("*.md"):
+            for line in p.read_text().splitlines():
+                for m in re.findall(r"`([^`]*\[gate-pass\][^`]*)`", line):
+                    self.assertNotIn("skip ci", m, str(p.relative_to(DEV)))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).

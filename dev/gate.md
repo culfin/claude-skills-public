@@ -258,6 +258,10 @@ edit an `@…` value by hand. It checks consistency, not truth — reading the e
 
 If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
 
+**Bookkeeping commits skip CI:** `roadmap: claim`, `roadmap: complete`, `roadmap: pause` and
+`roadmap: migrate` end in `[skip ci]` — pushed without it, one cancels the gate commit's running CI
+(cancel-in-progress), which then counts as not green. A `[gate-pass]` commit never carries `[skip ci]`.
+
 1. **CI must see the commit** through the route the project already allows (push of the phase
    branch, PR update, workflow dispatch). No authorized route → halt once per run, name the blocker,
    note the answer (a route, or `no CI this run`) under the phase file's `## CI` and follow it.
