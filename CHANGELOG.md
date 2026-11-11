@@ -2,6 +2,48 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.0.0 — 2026-11-11
+
+**dev** — Orca-first phase model. Breaking: per-phase state moves out of the shared `STATE.md`.
+
+**Phase model.** One phase = one Orca workspace = one branch = one file `.dev/phase-<N>.md`; gate results
+are kept for good in `docs/gates/`; `STATE.md` holds only what is shared. Why: parallel sessions merged
+into one `STATE.md`. A simulated double merge gave 3–4 conflict hunks with the shared file and 0 with one
+file per phase; in one project, 30 of 44 merges had hunks from both sides. RED on v3.3.0 (two sessions
+finishing in parallel): one of two rewrote the shared sections, both flagged a contradiction in the skill.
+GREEN (2 of 2): `STATE.md` untouched, only the own phase file and gate file change. `state-check.py
+migrate` moves a session's own parts; a project counts as migrated when `.dev/` exists on `origin/<main>`.
+
+**CI status never in tracked files.** Three review rounds on "who owns this CI line" ended with the
+rule: status lives only in `<git-common-dir>/dev-ci/<sha>`, shared by all worktrees; ownership is derived
+from `git diff --name-only origin/<main>...HEAD`. `ci-watch.sh` follows a run cancelled by a descendant
+commit (cancel-in-progress). No `[skip ci]` on bookkeeping commits: GitHub then also skips the PR checks of
+the head commit.
+
+**Orca flow.** Orca mode only when the workspace path equals the resolved session path exactly; sessions in
+`<repo>/.worktrees/` wrote the main workspace's card (RED 2 of 2). Display name `phase-<N>-<slug>`. A pause
+commits and pushes. A worker at the context stop sends `worker_done` with a status instead of "/clear"
+(RED: one run chose `ask`, both printed a useless "/clear").
+
+**Gate depth from the diff.** Ops, dependency and DB paths set the tier to large and trigger the
+Security review, for any phase type; a type can only add reviewers. RED: an `infra` phase changing a
+workflow got small and no Security review (2 of 2); GREEN: large plus Security review (2 of 2).
+
+**Slimmer.** The hot path, now including `models.md`, shrinks from 9,046 to at most 7,500 words
+(enforced by test). `ci.md` is new; router and file table are one table. Loading scenarios before and
+after behave the same (4 of 4).
+
+**Cleanup.** The `next` source and `brag` are removed. The automatic debug flow is gone: 0 uses, and in a
+failing-gate probe it sent the agent into the debugger instead of Step B. The `/dev ui` model tier is
+unified. In `ui` phases `ux-ui-design` replaces the overlapping design sources (forms, states,
+onboarding, ux-writing): equally complete, about 2,500–4,000 fewer words read, no contradiction
+(density critique stays).
+
+**Breaking / migration.** A project without `.dev/` on `origin/<main>` keeps the old format until the
+user agrees; `check` then reports `migrate:`, and the migration lands at once as its own small PR to main.
+Other sessions migrate their own phase at their next start. Global instructions that demand a claim PR to
+main contradict the skill since v3.3 and should be dropped.
+
 ## v3.3.0 — 2026-11-11
 
 **dev** — claims without a commit to main, and STATE.md cleanup findings. Measured across 14 projects:
