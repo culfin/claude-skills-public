@@ -3,7 +3,7 @@
 
     state-check.py check [--root DIR] [--main REF] [--branch NAME]
     state-check.py archive "<milestone>" [--root DIR] [--dry-run]
-    state-check.py migrate [--root DIR] [--dry-run]
+    state-check.py migrate [--root DIR] [--branch NAME] [--dry-run]
 
 `check` is read-only. It prints one line per finding and exits 1 if there is any, 0 if none,
 2 on a usage error (no ROADMAP.md). Findings:
@@ -34,7 +34,8 @@
 - `orphan phase file:` a phase file whose branch exists neither locally nor on origin, or whose
   phase is `[x]`/`[—]` in ROADMAP.md on the main branch (after a squash merge the branch is no
   ancestor of main, so only the ROADMAP tells): archive its gate summary and delete it.
-- `phase file missing:` a `[~]`/`[!]` phase claimed by the current branch has no phase file.
+- `phase file missing:` a `[~]`/`[!]` phase claimed by the current branch has no phase file
+  (only once `.dev/` exists next to ROADMAP.md; before that the project is old and `migrate:` applies).
 - `branch mismatch:` the phase file names another branch than the claim in ROADMAP.md.
 - `migrate:` STATE.md still holds phase sections (Quality Gate, `### Phase N` under `## Phases`,
   Gate summary, CI lines `- <sha> — Phase N …`) — see `migrate`.
@@ -58,8 +59,11 @@ phase claimed `@claim:<branch>@…` in ROADMAP.md) go to `.dev/phase-<N>.md`; `G
 goes to `docs/gates/phase-<N>.md`; CI lines `- <sha> — Phase N <name>: <status>` go to the phase
 file, for `[x]`/`[—]` phases to the gate file, as do the Quality Gate and `### Phase N` sections of
 such phases; `## Current Position`, `## Progress` and `## Session Continuity` go to
-`docs/roadmap-archive/state-<date>.md`. A part whose phase is open and unclaimed (or a handoff
-without a claimed phase) stays in STATE.md and is printed as `kept:`. Existing targets are
+`docs/roadmap-archive/state-<date>.md`. Only parts of the phase claimed by the current branch
+(`--branch` overrides it, as for `check`) go to a phase file; parts of a phase claimed by another
+branch, of an open unclaimed phase, or a handoff without a claimed phase stay in STATE.md and are
+printed as `kept: … (claimed by <b>)` / `kept: … (no claimed phase)`. The `[~]`/`[!]` phase claimed
+by the current branch always gets `.dev/phase-<N>.md` (`Branch: <branch>`), even with nothing to move. Existing targets are
 extended, never overwritten; nothing is deleted. `--dry-run` prints the moves and writes nothing.
 """
 import argparse
@@ -200,22 +204,28 @@ def _pid(text):
     return text.rstrip(".")
 
 
-def plan_migration(slines, own, today):
-    """([(line indexes, heading, target, branch)], [kept heading]) for the phase-owned parts of STATE.md.
+def plan_migration(slines, own, today, branch):
+    """([(line indexes, heading, target, branch)], [(kept heading, reason)]) for STATE.md's phase parts.
+
+    Only parts of phases claimed by `branch` (the current one) move to a phase file; parts of
+    phases claimed by another branch stay (`claimed by <b>`). Gate summaries and parts of
+    `[x]`/`[—]` phases belong to no branch and go to docs/gates/.
 
     target is a path relative to ROADMAP.md's folder; branch is the `Branch:` line of a new phase
     file (None for gate and archive files). Each line belongs to at most one move."""
     claimed = {who: pid for pid, (st, who, _) in own.items() if who and st in ACTIVE}
+    current = branch
     owner = [None] * len(slines)
     moves, kept = [], []
 
     def phase_target(pid):
+        """(target, Branch line) or (None, reason it stays)."""
         st, who, _ = own.get(pid, (None, None, None))
         if st and st in DONE:
             return f"docs/gates/phase-{pid}.md", None
-        if who:
+        if who and who == current:
             return f".dev/phase-{pid}.md", who
-        return None, None
+        return None, f"claimed by {who}" if who else "no claimed phase"
 
     def take(a, b, head, target, branch):
         # a part nested in it that an earlier rule already moved keeps its own target
@@ -238,31 +248,30 @@ def plan_migration(slines, own, today):
     for a, b, m in sorted(candidates, key=lambda c: c[0]):
         if not m or owner[a] is not None:
             continue
-        target, branch = phase_target(_pid(m.group(1)))
+        target, why = phase_target(_pid(m.group(1)))
         if target:
-            take(a, b, slines[a].strip(), target, branch)
+            take(a, b, slines[a].strip(), target, why)
         else:
-            kept.append(slines[a].strip())
+            kept.append((slines[a].strip(), why))
     for lvl in (2, 3):
         for a, b in sections(slines, lvl):
             if not HANDOFF.match(slines[a]) or ARCHIVED.match(slines[a]) or owner[a] is not None:
                 continue
             m = HANDOFF_BRANCH.match(slines[a])
             pid = claimed.get(m.group(1).strip("`")) if m else None
-            if pid:
-                take(a, b, slines[a].strip(), f".dev/phase-{pid}.md", own[pid][1])
+            if pid and own[pid][1] == current:
+                take(a, b, slines[a].strip(), f".dev/phase-{pid}.md", current)
             else:
-                kept.append(slines[a].strip())
+                kept.append((slines[a].strip(), f"claimed by {own[pid][1]}" if pid else "no claimed phase"))
     for i, line in enumerate(slines):
         m = CI_LINE.match(line)
         if not m or owner[i] is not None:
             continue
-        pid = _pid(m.group(1))
-        target, branch = phase_target(pid)
+        target, why = phase_target(_pid(m.group(1)))
         if target:
-            take(i, i + 1, line.strip(), target, branch)
+            take(i, i + 1, line.strip(), target, why)
         else:
-            kept.append(line.strip())
+            kept.append((line.strip(), why))
     for a, b in sections(slines, 2):
         if ARCHIVED.match(slines[a]) and owner[a] is None:
             take(a, b, slines[a].strip(), f"docs/roadmap-archive/state-{today.isoformat()}.md", None)
@@ -388,10 +397,11 @@ def check(root, main=None, branch=None, today=None):
         who = own.get(pid, (None, None))[1]
         if who and who != b:
             out.append(f"branch mismatch: {f['path']} says {b}, claim says {who}")
-    for pid, (st, who, _) in own.items():
+    # Without .dev/ the project predates phase files: `migrate:` shows the way, not a missing file.
+    for pid, (st, who, _) in own.items() if (root / ".dev").is_dir() else ():
         if st in ACTIVE and who and branch and who == branch and pid not in files:
             out.append(f"phase file missing: Phase {pid} [{st}] claimed by this branch has no .dev/phase-{pid}.md")
-    k = len(phase_moves(plan_migration(stext.splitlines(), own, today)[0]))
+    k = len(phase_moves(plan_migration(stext.splitlines(), own, today, branch)[0]))
     if k:
         out.append(f"migrate: STATE.md holds {k} phase sections — run state-check.py migrate --dry-run")
     upstream = git(root, "rev-parse", "--abbrev-ref", "@{u}")
@@ -460,25 +470,34 @@ def archive(root, name, dry_run=False, today=None):
     return 0
 
 
-def migrate(root, dry_run=False, today=None):
+def migrate(root, dry_run=False, today=None, branch=None):
     root = Path(root)
     state = root / "STATE.md"
-    if not state.is_file():
-        print("migrate: no STATE.md — nothing to move")
-        return 0
     today = today or datetime.date.today()
+    branch = branch if branch is not None else (git(root, "branch", "--show-current") or "")
     own = phases((root / "ROADMAP.md").read_text(encoding="utf-8"))
-    slines = state.read_text(encoding="utf-8").splitlines()
-    moves, kept = plan_migration(slines, own, today)
+    # The active phase claimed by this branch always gets its phase file, even with nothing to move.
+    create = [f".dev/phase-{pid}.md" for pid, (st, who, _) in own.items()
+              if st in ACTIVE and branch and who == branch and not (root / ".dev" / f"phase-{pid}.md").is_file()]
+    slines = state.read_text(encoding="utf-8").splitlines() if state.is_file() else []
+    moves, kept = plan_migration(slines, own, today, branch)
+    create = [c for c in create if c not in {m[2] for m in moves}]
     parts = {}
     for idx, head, target, branch in moves:
         chunk = "\n".join(slines[i] for i in idx).strip("\n")
         print(f"{'would move' if dry_run else 'moved'}: '{head}' → {target} ({words(chunk)} words)")
         parts.setdefault(target, [branch, []])[1].append(chunk)
-    for head in kept:
-        print(f"kept: '{head}' (no claimed phase)")
+    for rel in create:
+        print(f"{'would create' if dry_run else 'created'}: {rel} (Branch: {branch})")
+    for head, why in kept:
+        print(f"kept: '{head}' ({why})")
     print(f"migrate: {len(moves)} moves, {len(kept)} kept" + (" — dry run, nothing written" if dry_run else ""))
-    if dry_run or not moves:
+    if dry_run:
+        return 0
+    for rel in create:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(f"Branch: {branch}\n", encoding="utf-8")
+    if not moves:
         return 0
     for target, (branch, chunks) in parts.items():
         f = root / target
@@ -511,6 +530,7 @@ def main():
     m_ = sub.add_parser("migrate")
     m_.add_argument("--root", default=".")
     m_.add_argument("--dry-run", action="store_true")
+    m_.add_argument("--branch")
     a = p.parse_args()
     if not (Path(a.root) / "ROADMAP.md").is_file():
         print(f"no ROADMAP.md in {a.root}", file=sys.stderr)
@@ -518,7 +538,7 @@ def main():
     if a.cmd == "archive":
         return archive(a.root, a.milestone, a.dry_run)
     if a.cmd == "migrate":
-        return migrate(a.root, a.dry_run)
+        return migrate(a.root, a.dry_run, branch=a.branch)
     found = check(a.root, a.main, a.branch)
     for line in found:
         print(line)

@@ -64,10 +64,10 @@ class StateCheckTests(unittest.TestCase):
         head = f"Branch: {branch}\n" if branch is not None else ""
         (d / f"phase-{pid}.md").write_text(head + body)
 
-    def migrate(self, root=None, dry_run=False):
+    def migrate(self, root=None, dry_run=False, branch=None):
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            rc = sc.migrate(root or self.root, dry_run=dry_run, today=TODAY)
+            rc = sc.migrate(root or self.root, dry_run=dry_run, today=TODAY, branch=branch)
         return rc, buf.getvalue().splitlines()
 
     def check(self, branch="main", main=None):
@@ -449,12 +449,60 @@ class StateCheckTests(unittest.TestCase):
         self.assertNotIn("Gate summary", (self.root / ".dev/phase-3.md").read_text())
         self.assertEqual((self.root / "STATE.md").read_text(), "# State\n\n## Blockers & Risks\nNone.\n")
 
+    def test_legacy_project_without_dev_dir_has_no_missing_finding(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff — main\nNext: x\n\n"
+                                            "## Quality Gate — Phase 3: Login\n- [ ] a\n")
+        self.assertEqual(self.check(), ["migrate: STATE.md holds 1 phase sections — run state-check.py migrate --dry-run"])
+
+    def test_migrate_creates_phase_file_for_own_claim_without_parts(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Blockers & Risks\nNone.\n")
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse((self.root / ".dev").exists())
+        self.assertIn("would create: .dev/phase-3.md (Branch: main)", out)
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text(), "Branch: main\n")
+        self.assertIn("created: .dev/phase-3.md (Branch: main)", out)
+        self.assertEqual(self.check(), [])
+        # an existing phase file is left as it is
+        (self.root / ".dev/phase-3.md").write_text("Branch: main\n\n## Handoff\nNext: z\n")
+        self.migrate()
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text(), "Branch: main\n\n## Handoff\nNext: z\n")
+
+    def test_migrate_leaves_foreign_claims_in_state(self):
+        git(self.root, "branch", "session/b")
+        self.write(claim3="@claim:session/b@2026-10-06")
+        legacy = ("# State\n\n## Handoff — session/b\nNext: Step B.\n\n"
+                  "## Quality Gate — Phase 3: Login\n- [ ] a\n\n"
+                  "## CI in background\n- 1a2b3c4 — Phase 3 Login: in_progress\n- 9f8e7d6 — Phase 1 Database: success\n\n"
+                  "### Gate summary — Phase 1: Database\n- Tier: small\n")
+        (self.root / "STATE.md").write_text(legacy)
+        rc, out = self.migrate(branch="main")
+        self.assertEqual(rc, 0)
+        self.assertFalse((self.root / ".dev/phase-3.md").exists())
+        state = (self.root / "STATE.md").read_text()
+        for part in ("## Handoff — session/b", "## Quality Gate — Phase 3: Login", "- 1a2b3c4 — Phase 3 Login"):
+            self.assertIn(part, state)
+        self.assertNotIn("Gate summary", state)
+        self.assertNotIn("9f8e7d6", state)
+        gate = (self.root / "docs/gates/phase-1.md").read_text()
+        self.assertIn("- 9f8e7d6 — Phase 1 Database: success", gate)
+        for head in ("## Handoff — session/b", "## Quality Gate — Phase 3: Login",
+                     "- 1a2b3c4 — Phase 3 Login: in_progress"):
+            self.assertIn(f"kept: '{head}' (claimed by session/b)", out)
+        # check on main does not push the foreign phase's parts into migrate:
+        self.assertFalse(any(f.startswith("migrate:") for f in self.check()), self.check())
+
     def test_migrate_handoff_follows_claim(self):
         git(self.root, "branch", "session/b")
         self.write(claim3="@claim:session/b@2026-10-06")
         (self.root / "STATE.md").write_text("# State\n\n## Handoff — session/b\nNext: Step B.\n\n"
                                             "## Handoff — feature/none\nNext: y.\n")
-        rc, out = self.migrate()
+        rc, out = self.migrate(branch="session/b")
         self.assertEqual(rc, 0)
         phase = (self.root / ".dev/phase-3.md").read_text()
         self.assertEqual(phase.splitlines()[0], "Branch: session/b")
@@ -499,7 +547,8 @@ class StateCheckTests(unittest.TestCase):
 
     def test_cli_migrate_dry_run(self):
         (self.root / "STATE.md").write_text(self.LEGACY)
-        r = subprocess.run([sys.executable, str(SCRIPT), "migrate", "--root", str(self.root), "--dry-run"],
+        r = subprocess.run([sys.executable, str(SCRIPT), "migrate", "--root", str(self.root), "--dry-run",
+                            "--branch", "main"],
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn(".dev/phase-3.md", r.stdout)
