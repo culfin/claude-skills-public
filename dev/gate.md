@@ -36,7 +36,7 @@ python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tas
 ```
 
 `<phase base>` is the `Phase base:` line in the phase file, written when it started; a CI repair
-never changes it (none, from before v3 → the commit before its first task commit). `*.md` files
+never changes it (none recorded → the parent of the phase's `roadmap: claim` commit). `*.md` files
 do not count towards the size, only towards sensitive paths. Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
 Exit 2 means git failed — fix the base ref, never guess a tier.
 

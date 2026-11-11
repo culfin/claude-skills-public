@@ -167,13 +167,19 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`.dev/phase-<N>.md`", st)
         block = st.split("## Phase file", 1)[1].split("```markdown", 1)[1].split("```", 1)[0]
         self.assertTrue(block.lstrip().startswith("Branch: "), block[:40])
-        for s in ("## Position", "Phase base:", "Decisions:", "Acceptance criteria:",
+        for s in ("## Position", "Phase base:", "Acceptance criteria:",
                   "## Quality Gate — Phase", "## CI", "## Handoff", "## Minor (deferred)"):
             self.assertIn(s, block, s)
         shared = st.split("## STATE.md — shared", 1)[1]
         for s in ("## Core Value", "## Constraints", "## Requirements", "## Blockers & Risks",
                   "Milestone End pending:"):
             self.assertIn(s, shared, s)
+        self.assertNotIn("Decisions:", block)
+        self.assertNotIn("## Decisions", st)
+        self.assertIn("  - Decisions: <answers> (<YYYY-MM-DD>)", st)
+        self.assertIn("## Old format (projects without `.dev/`)", st)
+        self.assertIn("- <sha> — Phase N <name>: <status>", st)
+        self.assertIn('"Old format"', text("SKILL.md"))
         self.assertIn("docs/gates/phase-<N>.md", st)
         self.assertIn("state-check.py migrate", st)
         for p in DEV.rglob("*.md"):
@@ -187,7 +193,9 @@ class DevDocsTests(unittest.TestCase):
                         "branch mismatch:"):
             self.assertIn(finding, s, finding)
         self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
-        self.assertIn("docs/gates/check-<YYYY-MM-DD>.md", text("dev-check.md"))
+        self.assertIn("docs/gates/check-<YYYY-MM-DD>-<short sha>.md", text("dev-check.md"))
+        self.assertIn("`## Abandoned`", s)
+        self.assertNotIn("before v3 →", text("gate.md"))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).

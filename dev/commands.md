@@ -34,9 +34,12 @@ All phases `[x]` or `[—]`:
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
+   Gather the `## Minor (deferred)` lines from `docs/gates/phase-<N>.md` of this milestone into
+   STATE.md Blockers & Risks (`- Phase N: …`).
 5. **Archive:** tell the
    user, run `python3 "$DEV_DIR/scripts/state-check.py" archive "<milestone heading>"` (moves the
-   milestone and its gate summaries to `docs/roadmap-archive/`), commit `roadmap: archive <milestone>`.
+   milestone from ROADMAP.md and old gate summaries from STATE.md to `docs/roadmap-archive/`;
+   `docs/gates/` stays where it is, on purpose), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with highlights of their `docs/gates/` summaries (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
 7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
@@ -55,7 +58,8 @@ All phases `[x]` or `[—]`:
 3. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
-4. Show confirmation: "Session saved. Next time, run `/dev` to resume."
+4. Show confirmation: "Session saved. Next time, run `/dev` to resume." — plus every path
+   `git status --porcelain` still lists, named as uncommitted (lost if the workspace is deleted).
 
 ---
 

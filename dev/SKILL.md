@@ -95,12 +95,13 @@ period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there.
+2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` → old format for every phase (`state.md`, "Old format").
    Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings:
    - `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
-   - `migrate:` → offer in the bundled round to show `state-check.py migrate --dry-run`; only after the user's yes run `migrate` and commit `roadmap: migrate state to phase files`. Until then a running phase goes on in the old format.
+   - `migrate:` → offer in the bundled round to show `state-check.py migrate --dry-run`; only after the user's yes run `migrate` and commit `roadmap: migrate state to phase files`. Until then all phases stay in the old format.
    - `behind:` → `git pull --ff-only` first (a dirty or diverged tree: say so and stop).
-   - `orphan phase file:` → copy its Gate summary to `docs/gates/phase-<N>.md` unless it is there, delete the file in the next commit. `phase file missing:` → create it now (`Branch:` + `## Position`).
+   - `orphan phase file:` → phase done: copy its `## Handoff` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` unless there, delete the file in the next commit. Phase still `[~]`/`[!]` with its branch gone: ask the user — take over, or discard (Position, criteria → `docs/gates/phase-<N>.md` under `## Abandoned`, then delete).
+   - `phase file missing:` → create it now: `Branch:`, `## Position`, `Phase base:` (parent of the phase's `roadmap: claim` commit).
    - `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
    - `orphan handoff:`, `long handoff:` (old format) → remove or shorten that block in the next STATE.md commit.
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
@@ -194,7 +195,7 @@ details are in the spec, the plan and `docs/gates/phase-<N>.md`.
 
 **Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
 context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
-`/dev next`; ROADMAP.md says where it goes on." — a large context is reread on every turn.
+`/dev next`; the position is in `## Position` of the phase file." — a large context is reread on every turn.
 
 ---
 
@@ -210,8 +211,8 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 ### 2. Pre-Phase
 
-1. **CI status first:** read the open `## CI` lines of the last completed phase — its phase file, or once that is gone `docs/gates/phase-<N>.md` (`gate.md`, "CI in background"). `red` or `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim and the phase file's `Branch:` line); create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`, moving the phase's line from STATE.md `## Decisions` into it (`state.md`). Commit these at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
+1. **CI status first:** read every open `## CI` line in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases (`gate.md`, "CI in background"). `red` or `timeout` → halt and repair before this phase starts.
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit these at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 
@@ -228,7 +229,7 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
 - The phase file has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
 - Phase is `[~]` with neither, or with criteria lacking that last line → clarification (4a)
 
-**4a. Clarification:**
+**4a. Clarification:** read the phase's `Decisions:` line in ROADMAP.md first; new answers extend it (`state.md`).
 1. **Classify:** architectural if the phase creates a new project or subsystem, changes how components interact, or changes interfaces that others build on; `@type: migration` always. When in doubt, architectural. For `@type: docs`, no interview.
 2. **Small → write the draft straight into the phase file** as `Acceptance criteria:`
    (format in `state.md`), closed by the line `Criteria complete.` — no approval round; the Spec checker and a resume read it there. Ask only
@@ -272,10 +273,10 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 
 1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check` (reads the phase file) must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`), ensure `@spec:` and `@plan:` present (small phases have neither)
-3. **Gate record:** `docs/gates/phase-<N>.md` holds the Gate summary (written by the gate); append the phase file's `## CI` lines to it.
-4. **Minors:** lines under `## Minor (deferred)` → STATE.md Blockers & Risks (only if there are any). Then delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
+3. **Gate record:** `docs/gates/phase-<N>.md` holds the Gate summary (written by the gate); append the phase file's `## CI` and `## Minor (deferred)` to it. STATE.md stays untouched.
+4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
 5. Commit all of it at once: `roadmap: complete Phase N — <name>`
-6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
+6. Milestone done? After `git fetch` and `git rebase origin/main`, only if every phase of the milestone in ROADMAP.md is `[x]`/`[—]`, write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 
 ### 8. Next Action
 
