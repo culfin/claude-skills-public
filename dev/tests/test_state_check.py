@@ -46,6 +46,7 @@ class StateCheckTests(unittest.TestCase):
         self.write(claim3="@claim:main@2026-10-06")
         (self.root / "STATE.md").write_text("# State\n\n## Handoff — main\nNext: Phase 3\n")
         self.phase_file("3", "main")
+        (self.root / ".dev" / ".gitkeep").write_text("")  # marker: the project is migrated
         git(self.root, "add", "-A")
         git(self.root, "commit", "-qm", "init")
 
@@ -572,6 +573,59 @@ class StateCheckTests(unittest.TestCase):
         self.assertEqual(sc.migrate(app, today=TODAY), 0)
         self.assertTrue((app / "docs/gates/phase-1.md").is_file())
         self.assertFalse((self.root / "docs").exists())
+
+    # --- marker .dev/.gitkeep (migrated <=> on <main>) ---
+
+    def test_migrate_always_creates_the_marker(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        self.write(claim3="")  # no claim, nothing to move
+        (self.root / "STATE.md").write_text("# State\n\n## Blockers & Risks\nNone.\n")
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse((self.root / ".dev").exists())
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertEqual((self.root / ".dev/.gitkeep").read_text(), "")
+        self.assertIn("created: .dev/.gitkeep", out)
+
+    def test_marker_decides_phase_file_missing(self):
+        (self.root / ".dev" / "phase-3.md").unlink()
+        (self.root / ".dev" / ".gitkeep").unlink()
+        self.assertFalse(any(f.startswith("phase file missing") for f in self.check()), self.check())
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        self.assertIn("phase file missing: Phase 3 [~] claimed by this branch has no .dev/phase-3.md", self.check())
+
+    def test_migrate_finding_counts_unclaimed_parts_until_the_marker_exists(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Phases\n\n### Phase 4: Export\nNot started.\n\n"
+                                            "## Handoff — feature/none\nNext: y.\n")
+        # Phase 4 is unclaimed (kept by migrate); the handoff is left to `orphan handoff:`
+        self.assertIn("migrate: STATE.md holds 1 phase sections — run state-check.py migrate --dry-run", self.check())
+        # the marker on <main> alone counts as migrated
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "marker")
+        git(self.root, "checkout", "-qb", "work")
+        git(self.root, "rm", "-q", ".dev/.gitkeep")
+        git(self.root, "commit", "-qm", "drop marker here")
+        found = sc.check(self.root, main="main", branch="work", today=TODAY)
+        self.assertFalse(any(f.startswith("migrate:") for f in found), found)
+
+    def test_migrate_twice_after_rebase_conflict_adds_nothing_twice(self):
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        self.migrate()
+        files = {p: (self.root / p).read_text() for p in
+                 (".dev/phase-3.md", "docs/gates/phase-1.md", "docs/roadmap-archive/state-2026-10-07.md")}
+        state = (self.root / "STATE.md").read_text()
+        # STATE.md conflict: <main>'s old STATE.md is taken, migrate runs again
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        for p, before in files.items():
+            self.assertEqual((self.root / p).read_text(), before, p)
+        self.assertEqual((self.root / "STATE.md").read_text(), state)
 
     def test_cli_migrate_dry_run(self):
         (self.root / "STATE.md").write_text(self.LEGACY)

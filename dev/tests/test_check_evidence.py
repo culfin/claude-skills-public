@@ -340,6 +340,17 @@ class EvidenceTests(unittest.TestCase):
         (self.root / "docs" / "gates" / "phase-3.md").write_text("gate record\n")
         self.assertEqual(self.sid(), before)
 
+    def test_code_under_dev_is_not_bookkeeping(self):
+        # Only phase files, the marker and gate records are bookkeeping; tools a project keeps in
+        # .dev/ are code under review.
+        before = self.sid()
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        self.assertEqual(self.sid(), before)
+        (self.root / ".dev" / "tools").mkdir()
+        (self.root / ".dev" / "tools" / "x.sh").write_text("echo hi\n")
+        self.assertNotEqual(self.sid(), before)
+
     def test_monorepo_subdir(self):
         app = self.root / "apps" / "web"
         self.claim(app, "3")

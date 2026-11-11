@@ -36,10 +36,12 @@
   ancestor of main, so only the ROADMAP tells): save its Handoff and Minor sections to
   docs/gates/phase-<N>.md, then delete it (an abandoned phase: ask the user first).
 - `phase file missing:` a `[~]`/`[!]` phase claimed by the current branch has no phase file
-  (only once `.dev/` exists next to ROADMAP.md; before that the project is old and `migrate:` applies).
+  (only once the project is migrated; before that `migrate:` applies). Migrated means the marker
+  `.dev/.gitkeep` next to ROADMAP.md exists here or on the main branch.
 - `branch mismatch:` the phase file names another branch than the claim in ROADMAP.md.
 - `migrate:` STATE.md still holds phase sections (Quality Gate, `### Phase N` under `## Phases`,
-  Gate summary, CI lines `- <sha> — Phase N …`) — see `migrate`.
+  Gate summary, CI lines `- <sha> — Phase N …`) — see `migrate`. Until the project is migrated
+  this counts parts of every phase; after that only those `migrate` would move for this branch.
 - `behind:` the current branch is behind its upstream — ROADMAP.md and STATE.md here are outdated;
   pull first (counts against the last fetch, `check` fetches nothing).
 
@@ -64,8 +66,11 @@ such phases; `## Current Position`, `## Progress` and `## Session Continuity` go
 (`--branch` overrides it, as for `check`) go to a phase file; parts of a phase claimed by another
 branch, of an open unclaimed phase, or a handoff without a claimed phase stay in STATE.md and are
 printed as `kept: … (claimed by <b>)` / `kept: … (no claimed phase)`. The `[~]`/`[!]` phase claimed
-by the current branch always gets `.dev/phase-<N>.md` (`Branch: <branch>`), even with nothing to move. Existing targets are
-extended, never overwritten; nothing is deleted. `--dry-run` prints the moves and writes nothing.
+by the current branch always gets `.dev/phase-<N>.md` (`Branch: <branch>`), even with nothing to
+move, and the marker `.dev/.gitkeep` (empty) is always created. Existing targets are extended,
+never overwritten; a part whose text is already in its target is not appended again, only removed
+from STATE.md (a rerun after a rebase conflict). Nothing is deleted. `--dry-run` prints the moves
+and writes nothing.
 """
 import argparse
 import datetime
@@ -91,6 +96,7 @@ PHASE_IN_HEAD = r"\bPhase\s+(\d[0-9A-Za-z.]*)"
 QUALITY_GATE = re.compile(r"^##\s+Quality Gate\b.*?" + PHASE_IN_HEAD)
 PHASE_HEAD = re.compile(r"^###\s+Phase\s+(\d[0-9A-Za-z.]*)")
 CI_LINE = re.compile(r"^\s*- [0-9a-f]{7,40} — Phase\s+(\d[0-9A-Za-z.]*)")
+MARKER = ".dev/.gitkeep"
 ARCHIVED = re.compile(r"^##\s+(current position|progress|session continuity)\b", re.I)
 
 
@@ -199,6 +205,13 @@ def phase_files(root):
         out[m.group(1)] = {"path": f".dev/{f.name}", "branch": b.group(1).strip("`") if b else None,
                            "sections": [lines[s].strip() for s, _ in sections(lines, 2)]}
     return out
+
+
+def migrated(root, ref, prefix):
+    """The marker `.dev/.gitkeep` next to ROADMAP.md exists in this checkout or on `ref` (main)."""
+    if (Path(root) / MARKER).is_file():
+        return True
+    return bool(ref) and git(root, "cat-file", "-e", f"{ref}:{prefix}{MARKER}") is not None
 
 
 def _pid(text):
@@ -399,11 +412,14 @@ def check(root, main=None, branch=None, today=None):
         who = own.get(pid, (None, None))[1]
         if who and who != b:
             out.append(f"branch mismatch: {f['path']} says {b}, claim says {who}")
-    # Without .dev/ the project predates phase files: `migrate:` shows the way, not a missing file.
-    for pid, (st, who, _) in own.items() if (root / ".dev").is_dir() else ():
+    # Without the marker the project predates phase files: `migrate:` shows the way, not a missing file.
+    done = migrated(root, ref, prefix)
+    for pid, (st, who, _) in own.items() if done else ():
         if st in ACTIVE and who and branch and who == branch and pid not in files:
             out.append(f"phase file missing: Phase {pid} [{st}] claimed by this branch has no .dev/phase-{pid}.md")
-    k = len(phase_moves(plan_migration(stext.splitlines(), own, today, branch)[0]))
+    moves, kept = plan_migration(stext.splitlines(), own, today, branch)
+    # Before the migration every session's parts count, so the first one sees them all.
+    k = len(phase_moves(moves)) + (0 if done else sum(1 for h, _ in kept if not HANDOFF.match(h)))
     if k:
         out.append(f"migrate: STATE.md holds {k} phase sections — run state-check.py migrate --dry-run")
     upstream = git(root, "rev-parse", "--abbrev-ref", "@{u}")
@@ -491,13 +507,17 @@ def migrate(root, dry_run=False, today=None, branch=None):
         parts.setdefault(target, [mbranch, []])[1].append(chunk)
     for rel in create:
         print(f"{'would create' if dry_run else 'created'}: {rel} (Branch: {branch})")
+    if not (root / MARKER).is_file():
+        print(f"{'would create' if dry_run else 'created'}: {MARKER}")
     for head, why in kept:
         print(f"kept: '{head}' ({why})")
     print(f"migrate: {len(moves)} moves, {len(kept)} kept" + (" — dry run, nothing written" if dry_run else ""))
     if dry_run:
         return 0
+    (root / MARKER).parent.mkdir(parents=True, exist_ok=True)
+    if not (root / MARKER).is_file():
+        (root / MARKER).write_text("", encoding="utf-8")
     for rel in create:
-        (root / rel).parent.mkdir(parents=True, exist_ok=True)
         (root / rel).write_text(f"Branch: {branch}\n", encoding="utf-8")
     if not moves:
         return 0
@@ -510,7 +530,9 @@ def migrate(root, dry_run=False, today=None, branch=None):
                 old = f"Branch: {mbranch}"
             elif target.startswith("docs/roadmap-archive/"):
                 old = f"# STATE.md — archived {today.isoformat()}"
-        f.write_text("\n\n".join(([old] if old else []) + chunks) + "\n", encoding="utf-8")
+        new = [c for c in chunks if c.strip() not in old]  # already there: a rerun, not appended again
+        if new:
+            f.write_text("\n\n".join(([old] if old else []) + new) + "\n", encoding="utf-8")
     taken = {i for idx, *_ in moves for i in idx}
     keep = [l for i, l in enumerate(slines) if i not in taken]
     text = re.sub(r"\n{3,}", "\n\n", "\n".join(keep)).strip("\n")

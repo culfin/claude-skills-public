@@ -6,7 +6,8 @@ Every checked item must name its evidence and the state of the code it was check
     - [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04
 
 `@<state>` is the git tree id of the working tree (tracked + untracked, .gitignore respected,
-without the bookkeeping the gate itself writes: STATE.md, ROADMAP.md, .dev/** and docs/gates/**), printed by `check-evidence.py id`.
+without the bookkeeping the gate itself writes: STATE.md, ROADMAP.md, .dev/phase-*.md, the
+marker .dev/.gitkeep and docs/gates/**; anything else under .dev/ is code), printed by `check-evidence.py id`.
 It does not change when that exact content is committed, so a gate commit that contains the checked
 content keeps every item valid — and any edit to the code after a check makes that item stale.
 
@@ -56,8 +57,8 @@ from pathlib import Path
 ID_LEN = 12
 # Files the gate itself writes while checking; they are bookkeeping, not the code under review.
 BOOKKEEPING = ("STATE.md", "ROADMAP.md")
-# Directories of bookkeeping files (phase files, gate records), likewise wherever the app lives.
-BOOKKEEPING_DIRS = (".dev", "docs/gates")
+# Phase files, the migration marker and gate records, likewise wherever the app lives.
+BOOKKEEPING_GLOBS = (".dev/phase-*.md", ".dev/.gitkeep", "docs/gates/**")
 # Same syntax as scripts/state-check.py.
 PHASE = re.compile(r"^\s*- \[(.)\]\s+(Phase\s+(\d[\w.]*))(.*)$")
 CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
@@ -94,7 +95,7 @@ def state_id(root):
         # docs/gates/ next to the app (e.g. apps/web/), not at the root.
         run("rm", "--cached", "-q", "--ignore-unmatch", "--",
             *(f":(glob)**/{name}" for name in BOOKKEEPING),
-            *(f":(glob)**/{d}/**" for d in BOOKKEEPING_DIRS))
+            *(f":(glob)**/{g}" for g in BOOKKEEPING_GLOBS))
         return run("write-tree")[:ID_LEN]
 
 
