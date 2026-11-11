@@ -219,7 +219,7 @@ class DevDocsTests(unittest.TestCase):
         for finding in ("migrate:", "orphan phase file:", "phase file missing:", "phase file invalid:",
                         "branch mismatch:"):
             self.assertIn(finding, s, finding)
-        self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
+        self.assertIn("roadmap: pause Phase N`", text("commands.md"))
         self.assertIn("docs/gates/check-<YYYY-MM-DD>-<branch slug>.md", text("dev-check.md"))
         self.assertNotIn("never collide", text("dev-check.md"))
         self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
@@ -256,17 +256,13 @@ class DevDocsTests(unittest.TestCase):
                       "--dispatch-id <dispatch>", r)
         self.assertIn("nothing to save", r)
 
-    def test_bookkeeping_commits_skip_ci(self):
-        sk = text("SKILL.md")
-        for msg in ("roadmap: claim Phase N [skip ci]", "roadmap: complete Phase N — <name> [skip ci]",
-                    "roadmap: migrate state to phase files [skip ci]"):
-            self.assertIn(msg, sk)
-        self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
-        self.assertIn("never carries `[skip ci]`", text("gate.md"))
-        for p in DEV.rglob("*.md"):
-            for line in p.read_text().splitlines():
-                for m in re.findall(r"`([^`]*\[gate-pass\][^`]*)`", line):
-                    self.assertNotIn("skip ci", m, str(p.relative_to(DEV)))
+    def test_no_commit_example_skips_ci(self):
+        # [skip ci] on a PR's head commit also skips its pull_request checks; ci-watch follows
+        # a cancelled gate run to its descendant instead (2026-11-11).
+        for p in list(DEV.rglob("*.md")) + list((DEV / "scripts").rglob("*")):
+            if p.is_file() and "tests" not in p.relative_to(DEV).parts:
+                self.assertNotIn("skip ci", p.read_text(errors="ignore"), str(p.relative_to(DEV)))
+        self.assertIn("via <sha>", text("gate.md"))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
