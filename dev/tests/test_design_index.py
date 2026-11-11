@@ -97,9 +97,21 @@ def test_skipped_check_rule_is_the_same_everywhere():
 
 def test_ux_ui_design_replaces_overlapping_design_rows():
     text = (DEV / "tech-stack-triggers.md").read_text()
-    line = next(l for l in text.splitlines() if "ux-ui-design" in l and "available" in l)
+    line = next(l for l in text.splitlines() if "`@type:` is `ui` → consult" in l)
     for name in ("forms", "states", "onboarding", "ux-writing"):
         assert name in line
     assert "not loaded" in line and "density-critique" in line
-    assert "stay" in line.split("density-critique")[1][:80]
-    assert "not available" in line
+    assert "stay" in line.rsplit("density-critique", 1)[1][:80]
+    assert "without `ux-ui-design`" in line and "available" in line
+
+
+def test_ux_ui_design_rule_is_scoped_to_ui_phases():
+    text = (DEV / "tech-stack-triggers.md").read_text()
+    ui = next(l for l in text.splitlines() if "`@type:` is `ui` → consult `design/INDEX.md`" in l)
+    for name in ("forms", "states", "onboarding", "ux-writing", "density-critique", "available"):
+        assert name in ui
+    assert "(landing phases and `/dev ui` load them as before)" in ui
+    ux = next(l for l in text.splitlines() if "ux-ui-design" in l and "invoke it before designing" in l)
+    assert "not loaded" not in ux and "INDEX.md" not in ux
+    review = (DEV / "ui-review.md").read_text()
+    assert "4a ui: forms" in review and "4a ui: error, empty, loading states" in review
