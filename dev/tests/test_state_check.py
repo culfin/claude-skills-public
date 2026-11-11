@@ -473,6 +473,18 @@ class StateCheckTests(unittest.TestCase):
         self.migrate()
         self.assertEqual((self.root / ".dev/phase-3.md").read_text(), "Branch: main\n\n## Handoff\nNext: z\n")
 
+    def test_migrate_create_with_other_moves_keeps_own_branch(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n### Gate summary — Phase 1: Database\n- Tier: small\n")
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertIn("created: .dev/phase-3.md (Branch: main)", out)
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text().splitlines()[0], "Branch: main")
+        self.assertTrue((self.root / "docs/gates/phase-1.md").is_file())
+        found = self.check()
+        self.assertFalse(any(f.startswith(("phase file invalid", "phase file missing")) for f in found), found)
+
     def test_migrate_leaves_foreign_claims_in_state(self):
         git(self.root, "branch", "session/b")
         self.write(claim3="@claim:session/b@2026-10-06")

@@ -483,10 +483,10 @@ def migrate(root, dry_run=False, today=None, branch=None):
     moves, kept = plan_migration(slines, own, today, branch)
     create = [c for c in create if c not in {m[2] for m in moves}]
     parts = {}
-    for idx, head, target, branch in moves:
+    for idx, head, target, mbranch in moves:
         chunk = "\n".join(slines[i] for i in idx).strip("\n")
         print(f"{'would move' if dry_run else 'moved'}: '{head}' → {target} ({words(chunk)} words)")
-        parts.setdefault(target, [branch, []])[1].append(chunk)
+        parts.setdefault(target, [mbranch, []])[1].append(chunk)
     for rel in create:
         print(f"{'would create' if dry_run else 'created'}: {rel} (Branch: {branch})")
     for head, why in kept:
@@ -499,13 +499,13 @@ def migrate(root, dry_run=False, today=None, branch=None):
         (root / rel).write_text(f"Branch: {branch}\n", encoding="utf-8")
     if not moves:
         return 0
-    for target, (branch, chunks) in parts.items():
+    for target, (mbranch, chunks) in parts.items():
         f = root / target
         f.parent.mkdir(parents=True, exist_ok=True)
         old = f.read_text(encoding="utf-8").rstrip("\n") if f.is_file() else ""
         if not old:
-            if branch:
-                old = f"Branch: {branch}"
+            if mbranch:
+                old = f"Branch: {mbranch}"
             elif target.startswith("docs/roadmap-archive/"):
                 old = f"# STATE.md — archived {today.isoformat()}"
         f.write_text("\n\n".join(([old] if old else []) + chunks) + "\n", encoding="utf-8")
