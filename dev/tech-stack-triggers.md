@@ -19,7 +19,7 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
 - If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
 - If phase `@type:` is `landing` → a subagent reads taste v2 (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
-- If phase `@type:` is `ui` or `landing` and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks"
+- If phase `@type:` is `ui` or `landing` and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks". When `ux-ui-design` is available, the design rows `forms`, `states`, `onboarding` and `ux-writing` are not loaded, because it covers them; `density-critique`, the platform rows and emil stay. When it is not available, everything loads as before (`design/INDEX.md` follows this sentence)
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" below
 

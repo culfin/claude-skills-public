@@ -93,3 +93,13 @@ def test_skipped_check_rule_is_the_same_everywhere():
     for check in ("design detector", "motion review", "taste pre-flight", "tech-stack review"):
         assert f'"{check}"' in script, check
         assert check in gate.lower(), check
+
+
+def test_ux_ui_design_replaces_overlapping_design_rows():
+    text = (DEV / "tech-stack-triggers.md").read_text()
+    line = next(l for l in text.splitlines() if "ux-ui-design" in l and "available" in l)
+    for name in ("forms", "states", "onboarding", "ux-writing"):
+        assert name in line
+    assert "not loaded" in line and "density-critique" in line
+    assert "stay" in line.split("density-critique")[1][:80]
+    assert "not available" in line
