@@ -180,7 +180,12 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("## Old format (projects without `.dev/`)", st)
         self.assertIn("- <sha> — Phase N <name>: <status>", st)
         self.assertIn('"Old format"', text("SKILL.md"))
-        self.assertIn("docs/gates/phase-<N>.md", st)
+        self.assertIn("docs/gates/phase-<N>.md` — line 1 `Branch: <branch>`", st)
+        g = text("gate.md")
+        gate_block = g.split("## Gate summary", 1)[1].split("```markdown", 1)[1].split("```", 1)[0]
+        self.assertTrue(gate_block.lstrip().startswith("Branch: "), gate_block[:40])
+        self.assertIn("A line belongs to the `Branch:` of its file", g)
+        self.assertIn("`.dev/` exists (the project agreed): run `migrate` for the own claim's parts without asking", text("SKILL.md"))
         self.assertIn("state-check.py migrate", st)
         for p in DEV.rglob("*.md"):
             if "tests" in p.relative_to(DEV).parts:
@@ -197,9 +202,11 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("never collide", text("dev-check.md"))
         self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
         self.assertIn("never\nunder another session's claim", st)
-        self.assertIn("roadmap: migrate state to phase files` to `<main>` at once", s)
-        self.assertIn("another session's → halt and tell the user", s)
-        self.assertIn("another session's lines are read only", text("gate.md"))
+        self.assertIn("bring that commit to `<main>` at once", s)
+        self.assertIn("by owner (`gate.md`", s)
+        self.assertIn("of another live branch: read only", text("gate.md"))
+        self.assertIn("as traps for this phase", s)
+        self.assertIn("appends to the file", text("dev-check.md"))
         self.assertIn("`## Abandoned`", s)
         self.assertNotIn("before v3 →", text("gate.md"))
 

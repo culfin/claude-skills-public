@@ -57,7 +57,7 @@ Step A runs as one parallel wave of Agent subagents (15-minute timeout). Any ste
 - Skipped checks: <none | check — reason>
 ```
 
-Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. Check summaries are permanent — never removed.
+Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. A second check that day on that branch appends to the file. Permanent — never removed.
 
 **4. Post-check summary** — after the check commit, show a summary of what ran:
 

@@ -21,10 +21,9 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 
 All phases `[x]` or `[—]`:
 
-0. **Wait for background CI.** Read the `## CI` lines in `docs/gates/phase-<N>.md` of this
-   milestone's phases and update them from their status files (`gate.md`, "CI in background"); wait
-   until none is `pending` (restart a dead watcher). `red` or `timeout` → repair first (`gate.md`,
-   "Repairing a red CI"); `none` stays as noted; the lines stay.
+0. **Wait for background CI** — the `## CI` lines in `docs/gates/phase-<N>.md` of this milestone, by
+   owner (`gate.md`, "CI in background"): wait only for own and taken-over lines until none is
+   `pending` (restart a dead watcher); `red`/`timeout` → repair first; `none` stays.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
@@ -51,7 +50,7 @@ All phases `[x]` or `[—]`:
 **Triggered by:** `/dev pause`
 
 1. **Write `## Handoff`** in the phase file (`state.md`): where it stopped (step, what was in
-   progress) and the next action, with today's date; `## Position` says the same in one line.
+   progress) and the next action, with today's date.
 2. **Commit and push:** commit the phase file as `roadmap: pause Phase N [skip ci]` and push the
    branch if it has a remote — a deleted workspace keeps only what is committed and pushed, and
    `[skip ci]` keeps the push from cancelling a running CI run (cancel-in-progress).
