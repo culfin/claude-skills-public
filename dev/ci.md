@@ -27,7 +27,9 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    `→ repaired in <sha>` is not a status. No status file, or `pending`, and no watcher
    (`pgrep -f "ci-watch.sh <sha>"`) → start it again (step 2). **Who repairs:** a SHA is **own** if
    the file it stands in (`.dev/phase-<N>.md` or `docs/gates/phase-<N>.md`) appears in
-   `git diff --name-only origin/<main>...HEAD`. The session repairs own SHAs, only reports others;
+   `git diff --name-only origin/<main>...HEAD`; old format (STATE.md `## CI in background`): a line is
+   own if its `Phase N` is claimed by this branch in ROADMAP.md; any other line: report only. The
+   session repairs own SHAs, only reports others;
    Milestone End and Pre-Release Review (one session; Milestone End also starts on its own after the
    last phase) repair every `red`/`timeout` SHA of the milestone or release.
    - `green <ids>`, or the line says `→ repaired in` → done.

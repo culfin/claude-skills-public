@@ -1,7 +1,7 @@
 # Quality Gate
 
-Read on gate entry (`[~]` → `[!]`), when resuming `[!]`, and from `dev-check.md`; CI after the gate
-commit: `ci.md`. The gate cannot be skipped or configured away; it scales with risk (tier).
+Read on gate entry (`[~]` → `[!]`), when resuming `[!]`, and from `dev-check.md`; CI: `ci.md`.
+The gate cannot be skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
 
@@ -135,7 +135,7 @@ belong to this wave, `5g` to E2E.
 |---|---|---|
 | Diff review | `analyzers/diff-review.md` | always |
 | Spec checker | the prompt below | always |
-| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`; full scope for `auth`/`security`/`data` |
+| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`, or a gate addition by type; full scope for `auth`/`security`/`data` |
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
@@ -239,7 +239,7 @@ value by hand. It checks consistency, not truth — reading the evidence stays y
 - First `git branch --show-current` and `git status --porcelain`. Wrong branch → stop and ask.
 - Stage the phase's paths explicitly, `.dev/phase-<N>.md` and `docs/gates/phase-<N>.md` included,
   never `git add -A` or `git add .`. Changes to files the phase did not touch (a parallel session, tools rewriting files) stay out; unclear → ask.
-- Then CI in background: `ci-watch.sh` on the gate commit (`ci.md`).
+- Then `ci-watch.sh` on the gate commit (`ci.md`).
 
 ---
 

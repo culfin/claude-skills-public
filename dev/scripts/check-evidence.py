@@ -166,7 +166,8 @@ def check(root, state_file, before_commit=False, repair=False):
     for done, body in items:
         name, evidence = _split(body)
         if name.lower().startswith(PRE_V3):
-            problems.append(f"pre-v3 item: {name} — rebuild the checklist (gate.md, \"Gate Checklist\")")
+            problems.append(f"pre-v3 item: {name} — write the checklist anew per gate.md, \"Gate Checklist\", "
+                            "and rerun its checked items")
             continue
         if not done:
             if before_commit and name.lower().startswith(LATER_STEPS):

@@ -158,11 +158,11 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual(len(old), 4, old)
                 for name in ("/simplify", "Change review", "Bug hunt", "CI status check"):
                     self.assertTrue(any(name in x for x in old), name)
-                self.assertTrue(all("rebuild the checklist" in x for x in old))
+                self.assertTrue(all("write the checklist anew per gate.md" in x and "rerun its checked items" in x
+                                    for x in old))
 
     def test_rebuilt_v2_checklist_passes(self):
-        # gate.md "Gate Checklist": kept items keep their evidence (Spec checker (5c-v) -> Spec checker),
-        # /simplify + Change review + Bug hunt become one open Diff review, CI status check is dropped.
+        # A checklist written anew per gate.md "Gate Checklist" passes once its items carry evidence.
         i = self.sid()
         rebuilt = ["- [ ] Diff review", f"- [x] Spec checker — 0 gaps @{i}",
                    f"- [x] Typecheck + lint + tests — 412 passed @{i}", f"- [x] Production Build — ok @{i}",
