@@ -39,7 +39,7 @@ Next: Step B fix dispatch with the build error, then Step D again
 - **Acceptance criteria:** the draft of a small phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks it finished (`SKILL.md`, Resume logic).
 - **Quality Gate:** read by `check-evidence.py check` without a file argument.
 - **CI:** `- <sha>` per gate commit, never a status: that stays untracked in
-  `$(git rev-parse --git-common-dir)/dev-ci/<sha>` (`gate.md`, "CI in background").
+  `$(git rev-parse --git-common-dir)/dev-ci/<sha>` (`ci.md`).
 - **Handoff:** written at pause and interruption, at most 8 lines — where it stopped, Next, Open,
   Traps. Approvals are only those recorded in the phase file or ROADMAP.md.
 - **Minor (deferred):** minor and non-critical findings, parked twins, traps later phases need;

@@ -12,7 +12,7 @@ If ROADMAP.md exists: AskUserQuestion — Overwrite (Recommended) or Cancel.
   - Small (1-3 phases): 1, 2 (Recommended), 3 + Other
   - Medium (4-6 phases): 3, 4 (Recommended), 5 + Other
   - Large (7+ phases): 4, 5, 6+ (Recommended) + Other
-**4. Per milestone** — name/goal (free text), phases (multiSelect from types), per-phase skills (multiSelect, optional)
+**4. Per milestone** — name/goal (free text), phases (multiSelect from types), per-phase skills (multiSelect, optional). A phase with migrations is `migration`, never `data` or `backend` — rollback and irreversibility are its own risks.
 **5. Triggers** — offer the installed skills (the Skill tool's list; `~/.claude/skills/`,
 `.claude/skills/`) per trigger point, multiSelect: milestone-start, milestone-end, pre-release, and
 pre-/post-phase per type. `/dev` does not search for or install new skills.

@@ -52,7 +52,7 @@ def test_target_size_rule():
 
 def test_router_has_ui():
     skill = (DEV / "SKILL.md").read_text()
-    assert "| `/dev ui [scope]` | UI review and rework | `ui-review.md` |" in skill
+    assert "| `/dev ui [scope]` | `ui-review.md` | UI review and rework |" in skill
     assert "/dev ui" in skill.split("---")[1]  # description front matter
     review = DEV / "ui-review.md"
     assert review.exists()
@@ -61,17 +61,18 @@ def test_router_has_ui():
 def test_skill_md_loads_on_demand():
     skill = (DEV / "SKILL.md").read_text()
     assert len(skill.splitlines()) <= 396
-    section = skill.split("## Files of This Skill", 1)[1].split("\n---", 1)[0]
+    # v4: one router table "Command or step | File | When"; the File column lists every file.
+    section = skill.split("## Router — what to read when", 1)[1].split("\n---", 1)[0]
     listed = set()
     for line in section.splitlines():
-        if line.startswith("|") and not line.startswith("|---") and "Read when" not in line:
-            listed.update(re.findall(r"`([^`]+\.md)`", line.split("|")[1]))
-    assert listed, "no files found in the 'Files of This Skill' table"
+        if line.startswith("|") and not line.startswith("|---") and "| File |" not in line:
+            listed.update(re.findall(r"`([^`]+\.md)`", line.split("|")[2]))
+    assert listed, "no files found in the router table"
     for path in listed:
         assert (DEV / path).exists(), f"listed but missing: {path}"
     for f in DEV.glob("*.md"):
         if f.name != "SKILL.md":
-            assert f.name in listed, f"not in 'Files of This Skill': {f.name}"
+            assert f.name in listed, f"not in the router table: {f.name}"
 
 def test_skipped_check_rule_is_the_same_everywhere():
     """A check whose optional source is missing is ticked as `skipped: <reason>`, listed in the

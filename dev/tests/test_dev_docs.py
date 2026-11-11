@@ -48,7 +48,9 @@ class DevDocsTests(unittest.TestCase):
         g = text("gate.md")
         t = text("tech-stack-triggers.md")
         self.assertIn("either tier**, whenever its trigger matrix", g)
-        self.assertIn("Security Review runs in either tier", t)
+        # v4: gate.md Step A is the only source for tiers; the trigger file names files, not tiers.
+        self.assertIn("when each review runs (tier, phase type)", t)
+        self.assertNotIn("large tier", t)
         self.assertIn("| A | Security review | Either tier, when the security trigger matrix matches", text("dev-check.md"))
 
     def test_diff_review_is_self_contained(self):
@@ -60,6 +62,7 @@ class DevDocsTests(unittest.TestCase):
         g = text("gate.md")
         for s in ("gate-tier.py", "ci-watch.sh", "check-evidence.py"):
             self.assertIn(s, g)
+        self.assertIn("ci-watch.sh", text("ci.md"))
 
     def test_skill_md_has_no_confirmation_stops(self):
         s = text("SKILL.md")
@@ -113,8 +116,8 @@ class DevDocsTests(unittest.TestCase):
         for f in ("SKILL.md", "state.md", "gate.md"):
             self.assertIn("Phase base:", text(f), f)
         g = text("gate.md")
-        self.assertIn("--before-commit --repair", g)
-        self.assertIn("**A pre-v3 checklist**", g)
+        self.assertIn("--before-commit --repair", text("ci.md"))
+        self.assertNotIn("pre-v3 checklist", g)  # v4: no rebuild of v2 checklists
         self.assertNotIn("add the pattern to `gate-tier.py`", g)
         self.assertIn("rerun the tier with `--gate full`", g)
         self.assertIn("| Similar-bugs scan (gate Step C) | **standard** |", text("models.md"))
@@ -188,26 +191,37 @@ class DevDocsTests(unittest.TestCase):
         gate_block = g.split("## Gate summary", 1)[1].split("```markdown", 1)[1].split("```", 1)[0]
         self.assertTrue(gate_block.lstrip().startswith("## Gate summary — Phase N"), gate_block[:40])
         self.assertNotIn("A line belongs to the `Branch:` of its file", g)
-        self.assertIn("a status never goes into a tracked file", " ".join(g.split()))
+        # v4: CI in background and CI repair live in ci.md, not in gate.md.
+        c = text("ci.md")
+        self.assertNotIn("## CI in background", g)
+        self.assertIn("a status never goes into a tracked file", " ".join(c.split()))
         self.assertIn("$(git rev-parse --git-common-dir)/dev-ci/<sha>", st)
-        gj = " ".join(g.split())
-        # One repair rule, derived from git: own = ancestor of HEAD and phase not closed on origin/<main>.
-        self.assertIn("a SHA is **own** if `git merge-base --is-ancestor <sha> HEAD` and its phase is not **closed**", gj)
-        self.assertIn("The session repairs own SHAs, only reports others", gj)
-        self.assertIn("Milestone End and Pre-Release Review (user-started, one session) repair every", gj)
-        self.assertIn("an old-format status in a line is ignored", gj)
-        self.assertIn("**Repairing a red CI SHA of a phase, closed or not.**", g)
-        self.assertNotIn("Milestone End (it runs once)", gj)
-        self.assertNotIn("phase file `Branch:` = current", gj)
+        cj = " ".join(c.split())
+        # One repair rule, derived from git: own = the SHA's file is changed on this branch (survives rebases).
+        self.assertIn("a SHA is **own** if the file it stands in (`.dev/phase-<N>.md` or `docs/gates/phase-<N>.md`) "
+                      "appears in `git diff --name-only origin/<main>...HEAD`", cj)
+        self.assertNotIn("merge-base", cj)
+        self.assertIn("The session repairs own SHAs, only reports others", cj)
+        self.assertIn("Milestone End and Pre-Release Review (one session; Milestone End also starts on its own "
+                      "after the last phase) repair every", cj)
+        self.assertNotIn("user-started", cj)
+        self.assertIn("a status after the SHA (written by earlier /dev versions) is ignored; "
+                      "`→ repaired in <sha>` is not a status", cj)
+        self.assertIn("**Repairing a red CI SHA of a phase, closed or not.**", c)
+        self.assertNotIn("Milestone End (it runs once)", cj)
+        self.assertNotIn("phase file `Branch:` = current", cj)
         self.assertNotIn("closed phase", " ".join(st.split()))
         self.assertIn("the migrating session uses the new format from it on", " ".join(st.split()))
         sk = text("SKILL.md")
-        self.assertIn("`git ls-tree -d origin/<main> -- <prefix>.dev`", sk)
-        self.assertIn("Listed (the project agreed) → run `migrate` for the own claim's parts without asking", sk)
-        self.assertLess(sk.index("`behind:` first"), sk.index("`migrate:` next"))
+        # v4: the handling of each state-check finding lives in commands.md, "State findings".
+        cm = text("commands.md")
+        self.assertIn('"State findings" — `behind:` first, `migrate:` next', sk)
+        self.assertIn("`git ls-tree -d origin/<main> -- <prefix>.dev`", cm)
+        self.assertIn("Listed (the project agreed) → run `migrate` for the own claim's parts without asking", cm)
+        self.assertLess(cm.index("`behind:` first"), cm.index("`migrate:` next"))
         self.assertIn("No `.dev/` on `origin/<main>`", sk)
-        self.assertIn("STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts", sk)
-        self.assertIn("save (unless already there) and delete as the finding says", sk)
+        self.assertIn("STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts", cm)
+        self.assertIn("save (unless already there) and delete as the finding says", cm)
         self.assertIn("state-check.py migrate", st)
         for p in DEV.rglob("*.md"):
             if "tests" in p.relative_to(DEV).parts:
@@ -218,18 +232,18 @@ class DevDocsTests(unittest.TestCase):
         s = text("SKILL.md")
         for finding in ("migrate:", "orphan phase file:", "phase file missing:", "phase file invalid:",
                         "branch mismatch:"):
-            self.assertIn(finding, s, finding)
+            self.assertIn(finding, cm, finding)
         self.assertIn("roadmap: pause Phase N`", text("commands.md"))
         self.assertIn("docs/gates/check-<YYYY-MM-DD>-<branch slug>.md", text("dev-check.md"))
         self.assertNotIn("never collide", text("dev-check.md"))
         self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
         self.assertIn("never\nunder another session's claim", st)
-        self.assertIn("bring that commit to `<main>` at once", s)
+        self.assertIn("bring that commit to `<main>` at once", cm)
         self.assertNotIn("by owner (`gate.md`", s)
         self.assertNotIn("of another live branch: read only", text("gate.md"))
         self.assertIn("as traps for this phase", s)
         self.assertIn("appends to the file", text("dev-check.md"))
-        self.assertIn("`## Abandoned`", s)
+        self.assertIn("`## Abandoned`", cm)
         self.assertNotIn("before v3 →", text("gate.md"))
 
     def test_brag_is_gone(self):
@@ -262,7 +276,7 @@ class DevDocsTests(unittest.TestCase):
         for p in list(DEV.rglob("*.md")) + list((DEV / "scripts").rglob("*")):
             if p.is_file() and "tests" not in p.relative_to(DEV).parts:
                 self.assertNotIn("skip ci", p.read_text(errors="ignore"), str(p.relative_to(DEV)))
-        self.assertIn("via <sha>", text("gate.md"))
+        self.assertIn("via <sha>", text("ci.md"))
 
     def test_phase_type_is_a_planning_hint(self):
         # Probe: an `@type: infra` phase changing a deploy workflow got the small tier and no
@@ -285,17 +299,17 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)
 
     def test_word_budget(self):
-        # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
+        # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):
             return len(f.read_text().split())
-        hot = sum(words(DEV / f) for f in ("SKILL.md", "gate.md", "execution.md", "state.md"))
+        hot = sum(words(DEV / f) for f in ("SKILL.md", "gate.md", "execution.md", "state.md", "models.md"))
         # Hidden dirs (.pytest_cache writes a README.md) are tool artefacts, not skill text.
         files = [f for f in DEV.rglob("*.md") if "tests" not in f.relative_to(DEV).parts
                  and not any(p.startswith(".") for p in f.relative_to(DEV).parts)]
         sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
         total = sum(n for n, _ in sizes)
-        msg = f"hot path {hot}/9000, total {total}/38189; largest: {sizes[:5]}"
-        self.assertLessEqual(hot, 9000, msg)
+        msg = f"hot path {hot}/7500, total {total}/38189; largest: {sizes[:5]}"
+        self.assertLessEqual(hot, 7500, msg)
         self.assertLessEqual(total, 38189, msg)
 
 

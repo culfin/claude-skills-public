@@ -1,7 +1,7 @@
 # /dev — commands besides the phase loop
 
 Read when the router in `SKILL.md` points here. The phase loop itself (Session Start, Phase
-Execution) stays in `SKILL.md`; the gate is in `gate.md`.
+Execution) stays in `SKILL.md`; the gate is in `gate.md`, CI in `ci.md`.
 
 ## Status Display
 
@@ -17,12 +17,26 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 
 ---
 
+## State findings
+
+Session Start, step 1: each finding of `state-check.py check`, handled before ROADMAP.md is read.
+
+- `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
+- `behind:` first → `git pull --ff-only` (a dirty or diverged tree: say so and stop).
+- `migrate:` next, before any other finding. `origin/<main>` decides: `git ls-tree -d origin/<main> -- <prefix>.dev` (`<prefix>`: ROADMAP.md's directory). Listed (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then `git rebase origin/<main>`; STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts, continue. Not listed: offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` and bring that commit to `<main>` at once (own small PR or push, as the project allows) before the phase goes on.
+- `orphan phase file:` → phase done: save (unless already there) and delete as the finding says, in the next commit. Still `[~]`/`[!]`, branch gone: ask the user — take over, or discard (Position, criteria → `## Abandoned` there; delete the file; phase back to `[ ]`, no `@claim:`).
+- `phase file missing:` → create it now: `Branch:`, `## Position`, `Phase base:` (parent of the phase's `roadmap: claim` commit).
+- `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
+- `orphan handoff:`, `long handoff:` (old format) → remove or shorten that block in the next STATE.md commit.
+
+---
+
 ## Milestone End
 
-All phases `[x]` or `[—]`:
+All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.md`, step 7):
 
 0. **Wait for background CI** — every SHA under `## CI` in `docs/gates/phase-<N>.md` of this
-   milestone, status per `gate.md`, "CI in background": wait until none is
+   milestone, status and repair per `ci.md`: wait until none is
    `pending`; `red`/`timeout` → repair it first, whoever's phase it was; `none` stays.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
@@ -59,6 +73,21 @@ All phases `[x]` or `[—]`:
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
 4. Show confirmation: "Session saved. Next time, run `/dev` to resume." — plus every path
    `git status --porcelain` lists, as uncommitted (lost with the workspace).
+
+---
+
+## Phase Interruption
+
+**Triggered by:** User says "drop it", "do something else", "stop", "cancel" or similar during an active `[~]` or `[!]` phase.
+
+**Behavior:**
+1. **Stop current work immediately,** including background implementers (TaskStop or the host's stop); record each as `interrupted` in the ledger (`execution.md`).
+2. **AskUserQuestion** (single-select):
+   - **Pause phase** (Recommended) — Pause Session (above), keep phase `[~]`/`[!]`, resume later with `/dev next`
+   - **Skip phase** — mark `[—]` with reason, move to next phase
+   - **Do something else** — Pause Session, then handle the user's new request outside `/dev`
+3. Pause and "something else": the phase file's `## Handoff` records what was in progress; status and checked gate items stay intact.
+4. "Something else": do NOT resume on your own — only an explicit `/dev` or `/dev next` does.
 
 ---
 
