@@ -50,7 +50,7 @@ the current step needs.
 |---|---|---|
 | `execution.md` | How a phase is implemented: small phase, parallel waves, task reviews, merge | Step 4c and its resume |
 | `gate.md` | Quality gate: tier, steps A–D, checklist, evidence, gate commit, CI in background, phase types, project commands | Gate entry, resuming `[!]`, CI status, `/dev check` |
-| `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | Router; Milestone End; unexplained build/test failure (Debug Flow) |
+| `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | Router; Milestone End; `/dev debug` |
 | `models.md` | Which model tier each subagent gets | Before dispatching subagents |
 | `state.md` | Formats of the phase file `.dev/phase-<N>.md`, `docs/gates/` and the shared STATE.md | Before writing one of them |
 | `companion.md` | Visual Companion: triggers, server start, "Show screen" | Before the first screen of a session |
@@ -63,7 +63,6 @@ the current step needs.
 | `stack/INDEX.md`, `stack/docs.md` | Stack detection; stack sources and docs per trigger | Detection once (section 1); else only matching rows via `tech-stack-triggers.md` |
 | `design/INDEX.md` | Design guideline or source per trigger | Only matching rows, via `tech-stack-triggers.md`, `ui-review.md`, companion "UI decision" |
 | `analyzers/CONTRACT.md` | How each analyzer subagent is dispatched and reports | With every analyzer dispatch |
-| `brag.md` | When the launch video (brag) is offered and how it runs | Milestone End step 7, Pre-Release Review step 6 |
 | `ui-review.md` | `/dev ui`: screenshots, analyses, `UI-REVIEW.md`, rework after approval | `/dev ui` |
 | `sources.md`, `updates.md` | Contract per referenced skill; `/dev updates` and its queue | `/dev updates`; adding a use of a foreign skill |
 
@@ -94,9 +93,8 @@ the user actually asked. If `${DEV_UPDATES_DIR:-$HOME/.claude/dev-updates}/pendi
 period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
-1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` on `origin/<main>` (below) → old format for every phase (`state.md`, "Old format").
-   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings:
+1. **Sync, then read ROADMAP.md.** No ROADMAP.md in the project root: "No ROADMAP.md found. Run `/dev init` to create one." Stop. Otherwise, **before** reading ROADMAP.md or any phase file:
+   `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings:
    - `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
    - `behind:` first → `git pull --ff-only` (a dirty or diverged tree: say so and stop).
    - `migrate:` next, before any other finding. `origin/<main>` decides: `git ls-tree -d origin/<main> -- <prefix>.dev` (`<prefix>`: ROADMAP.md's directory). Listed (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then `git rebase origin/<main>`; STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts, continue. Not listed: offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` and bring that commit to `<main>` at once (own small PR or push, as the project allows) before the phase goes on.
@@ -104,6 +102,8 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
    - `phase file missing:` → create it now: `Branch:`, `## Position`, `Phase base:` (parent of the phase's `roadmap: claim` commit).
    - `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
    - `orphan handoff:`, `long handoff:` (old format) → remove or shorten that block in the next STATE.md commit.
+   Then read ROADMAP.md.
+2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` on `origin/<main>` (above) → old format for every phase (`state.md`, "Old format").
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
@@ -267,7 +267,7 @@ build and E2E on the final state.
 
 Only with every Gate Checklist item `[x]` (else return to the first open one). Dispatch post-skills as
 subagents on the gate-verified state — read-only analyses in parallel, code-changing ones after them.
-A check already on the Gate Checklist is not run again, even if a post-skill lists it.
+A check already on the Gate Checklist is not run again, even if a post-skill lists it. `requesting-code-review` in `defaults.phase-types.*.post` counts as covered by the gate's Diff review and does not run in addition.
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 

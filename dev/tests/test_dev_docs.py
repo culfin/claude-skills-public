@@ -232,6 +232,16 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`## Abandoned`", s)
         self.assertNotIn("before v3 →", text("gate.md"))
 
+    def test_brag_is_gone(self):
+        self.assertFalse((DEV / "brag.md").exists())
+        for p in DEV.rglob("*.md"):
+            if "tests" in p.relative_to(DEV).parts:
+                continue
+            self.assertNotIn("brag.md", p.read_text(), str(p.relative_to(DEV)))
+
+    def test_no_debug_auto_trigger_and_check_precondition_single_home(self):
+        self.assertNotIn("unexplained build/test failure", text("commands.md") + text("SKILL.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

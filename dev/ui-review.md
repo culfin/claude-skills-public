@@ -52,7 +52,7 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 
 Dispatch per `analyzers/CONTRACT.md`, **mode `full` limited to `$UI_SCOPE`** (no diff, not the
 whole codebase), requirement "the view serves its primary task for its primary user",
-`$TECH_STACKS`; model explicitly per `models.md` (cheap tier; taste: standard tier):
+`$TECH_STACKS`; model explicitly per `models.md` (standard tier):
 
 - **accessibility** — `analyzers/accessibility.md`, plus the platform file named above.
 - **design-detector** — `analyzers/design-detector.md` (web only; native: `skipped: not web`).

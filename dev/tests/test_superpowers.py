@@ -34,6 +34,12 @@ class SuperpowersTests(unittest.TestCase):
         self.assertEqual(result['status'], 'files-present')
         self.assertEqual(result['runtimeCompatibility'], 'not-tested')
         self.assertEqual(result['freshness'], 'not-checked')
+    def test_plan_executor_and_worktree_skills_not_required(self):
+        for name in ('executing-plans', 'using-git-worktrees'):
+            self.assertNotIn(f'skills/{name}/SKILL.md', m.required_paths())
+            f = self.root / 'skills' / name / 'SKILL.md'
+            if f.exists(): f.unlink()
+        self.assertEqual(m.inspect(self.root)['status'], 'files-present')
     def test_missing_builder_check_blocks(self):
         (self.root/'skills/brainstorming/builder-check-prompt.md').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')

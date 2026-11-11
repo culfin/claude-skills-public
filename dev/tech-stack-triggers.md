@@ -9,7 +9,7 @@ designing; step 4c → handed to the implementer with the task that meets the tr
 read-only review of the changed files in the large tier (one "Tech-Stack Review: <stack id>" item per id). `subagent`
 rows come back as findings or a ≤ 40-line digest. Current API facts → `stack/docs.md`, one row.
 The matrices below list what the index does not cover (skills, design, analyzers); Next.js keeps
-its own item and fallback ("Next.js" below) — its bundled-docs index row is the same source, not a second review; its `next` row is a 4c runtime check.
+its own item and fallback ("Next.js" below) — its bundled-docs index row is the same source, not a second review.
 
 ## Where Tech Skills Auto-Trigger
 

@@ -692,7 +692,7 @@ class ListingTests(unittest.TestCase):
         self.assertEqual([l[0] for l in lines], m.source_ids(DEV / 'sources.md'))
         self.assertTrue(all(len(l) == 3 and all(l) and '`' not in l[2] for l in lines))
         self.assertIn(['emil', 'git', '$DEV_DESIGN_DIR/emil'], lines)
-        for source in ('docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'next', 'wordpress'):
+        for source in ('docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'wordpress'):
             self.assertIn([source, 'git', f'$DEV_STACK_DIR/{source}'], lines)
         roots = {l[2].split('/')[0] for l in lines if l[2].startswith('$')}
         self.assertEqual(roots, {'$DEV_DESIGN_DIR', '$DEV_STACK_DIR'})  # all a caller has to expand
@@ -778,7 +778,7 @@ class RealContractTests(unittest.TestCase):
         for expected in ['superpowers', 'emil', 'taste', 'impeccable', 'pg', 'svelte', 'shadcn',
                          'swiftui-pro', 'swift-concurrency-pro', 'swift-testing-pro',
                          'rust-best-practices', 'rust-testing', 'tauri-v2', 'winui-pro',
-                         'docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'next', 'wordpress']:
+                         'docker', 'gha', 'better-auth', 'postgres', 'stripe', 'fastify', 'wordpress']:
             self.assertIn(expected, ids)
             self.assertTrue(m.read_paths(expected, contract), expected)
         self.assertNotIn('vibepolish', ids)

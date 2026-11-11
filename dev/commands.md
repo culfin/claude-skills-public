@@ -41,7 +41,7 @@ All phases `[x]` or `[—]`:
    `docs/gates/` stays), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with highlights of their `docs/gates/` summaries (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
-7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
+7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause. `brag` installed → after a `landing` phase, mention `/brag` once at Milestone End.
 
 ---
 
@@ -63,8 +63,8 @@ All phases `[x]` or `[—]`:
 
 ## Debug Flow
 
-**Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug"; and
-automatically during a phase when a build, test run or app fails or behaves unexpectedly without an obvious cause.
+**Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug". Red runs
+inside the gate are handled by `gate.md` (Step B, Step D), not by this flow.
 An obvious fix (typo, missing import or dependency, outdated test expectation — under 2 minutes) is
 just made. Otherwise read and follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the
 fix, then back to the `[~]` phase).
@@ -128,11 +128,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 4. **Read Gate summaries** from `docs/gates/` and `docs/roadmap-archive/` (old projects: also STATE.md) and show a consolidated picture: findings and fixes across all phases, recurring patterns. None → note "No gate history available — this is the first release".
 5. Read `defaults.skills.pre-release`. Run each configured skill **sequentially** (each may change code):
    - Dispatch Agent subagent → wait → show summary → AskUserQuestion: Continue (Recommended) or Pause
-6. **Launch video (offer only)** — if `brag.md` "When to offer" holds for this release (landing page
-   changed, or a minor/major release with a new user-facing feature): AskUserQuestion with "Create
-   launch video" or "Skip (Recommended only if the user declined before)"; run per `brag.md`.
-   Otherwise skip without mentioning it.
-7. Final summary after all skills, with the rollback plan for the proposed deploy.
+6. Final summary after all skills, with the rollback plan for the proposed deploy.
 
 ---
 
@@ -142,4 +138,4 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 **→ Read `dev-check.md` in this skill directory for the full flow.**
 
-Precondition: **no active phase** (`[~]`/`[!]` → stop, point to `/dev next`).
+Precondition: see `dev-check.md`.
