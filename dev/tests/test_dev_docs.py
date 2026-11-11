@@ -264,6 +264,18 @@ class DevDocsTests(unittest.TestCase):
                 self.assertNotIn("skip ci", p.read_text(errors="ignore"), str(p.relative_to(DEV)))
         self.assertIn("via <sha>", text("gate.md"))
 
+    def test_phase_type_is_a_planning_hint(self):
+        # Probe: an `@type: infra` phase changing a deploy workflow got the small tier and no
+        # Security review — the type table shaped the gate, the diff did not (2026-11-11).
+        g = " ".join(text("gate.md").split())
+        t = " ".join(text("tech-stack-triggers.md").split())
+        self.assertIn("unknown @type: <t> — planning uses no type hints; the gate still reads the diff",
+                      text("SKILL.md"))
+        self.assertIn("The diff decides the gate, not `@type:`.", g)
+        self.assertNotIn("Only Diff review, Typecheck + lint + tests, Gate summary", g)
+        self.assertIn("| Any — `gate-tier.py` names `ops files` or `dependency manifest` |", t)
+        self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
         def words(f):

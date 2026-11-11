@@ -28,7 +28,7 @@ its own item and fallback ("Next.js" below) — its bundled-docs index row is th
 **During the Quality Gate — review wave (Step A, `5c`):** the Tech-Stack, design and performance
 reviews below run in the large tier only (`gate.md`, "Tier"; `@type: landing` adds Accessibility
 review and Design detector in either tier). **Security Review runs in either tier** whenever its
-matrix matches — the tier script's path patterns are narrower than this matrix.
+matrix matches; its ops and dependency row reads the tier script's reasons, not a path list here.
 
 **Tech-Stack Review** — auto-triggered based on which files the phase actually changed:
 
@@ -36,8 +36,8 @@ matrix matches — the tier script's path patterns are narrower than this matrix
 |-------------------|-----------|-------|-------|
 | `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" below) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
-| `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed (any phase type) | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
-| `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css`, `*.scss`, `*.less` | Web UI files changed (any phase type) | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → item ticked as `skipped: <reason>`, never a pass |
+| `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
+| `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css`, `*.scss`, `*.less` | Web UI files changed | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → item ticked as `skipped: <reason>`, never a pass |
 | Files hit by the motion probes (`transition`, `animation`, `@keyframes`, `motion.`, `animate(`, `withSpring`, …) | A motion sweep probe hits in the changed files | Motion review (`analyzers/motion.md`) | Judges each animation against Emil Kowalski's standards read from `$DEV_DESIGN_DIR`; standards missing → item ticked as `skipped: <reason>` |
 | `src/db/migrations/**`, SQL files, schema changes | `postgres` in `$TECH_STACKS` | `pg:design-postgres-tables` | Check indexing, constraints, type choices |
 | `**/*.swift` | `ios` in `$TECH_STACKS` | `swiftui-pro` | Check modern APIs, performance patterns |
@@ -58,7 +58,8 @@ matrix matches — the tier script's path patterns are narrower than this matrix
 | `src/app/api/**`, `src/actions/**`, `**/route.ts` | API endpoints changed | Security review (phase scope) |
 | `src/db/migrations/**`, SQL, ORM schema | DB schema changed | Security review (phase scope) |
 | `**/signup*`, `**/register*`, `**/reset*`, `**/otp*`, `**/upload*`, `**/polic*` | Expensive endpoint or access policy changed | Security review (phase scope) |
-| Phase `@type: auth`, or `@type: backend` in the large tier | Phase type | Security review (phase scope) |
+| Any — `gate-tier.py` names `ops files` or `dependency manifest` | CI, deploy, infra or dependencies changed | Security review (phase scope) |
+| Any — phase `@type: auth`, `security` or `data` | Risk type (planning hint, `gate.md`) | Security review (full scope) |
 
 **Performance review — only on cause.** It runs only when the changed files contain at least one of:
 - new or changed DB queries (ORM calls, SQL, query builders);

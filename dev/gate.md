@@ -44,17 +44,19 @@ Exit 2 means git failed — fix the base ref, never guess a tier.
 
 ## Phase Types
 
-| `@type:` | What it changes in the gate |
+**The diff decides the gate, not `@type:`.** Which reviewers run follows from the changed files
+(Step A) and `gate-tier.py`; `--type` can only make the tier stronger. A type is a planning hint:
+
+| `@type:` | What it triggers in planning |
 |---|---|
-| `ui` | Large tier: Accessibility review, Design detector and Motion review on the changed UI files; shadcn/Next.js Tech-Stack Reviews per trigger. Small tier: E2E runs because UI files changed. |
-| `landing` | Adds Accessibility review, Design detector and Taste pre-flight in either tier; Taste findings are notes, not blockers. |
-| `backend` | Security review in the large tier, and in either tier when a changed file matches the security matrix; a DB change makes the phase large. `pg:design-postgres-tables` when migrations or SQL changed. |
-| `auth` | Always large; Security review in full scope, not phase scope. |
-| `security` | Always large; Security review in full scope. |
-| `data` | Always large; Security review; `pg:design-postgres-tables`. |
-| `migration` | Always large; Security review; Diff review checks the rollback path; E2E includes a migration smoke test (migrate up, verify data, migrate down if possible). |
-| `refactor` | Similar-bugs scan in full-codebase mode whenever something was fixed **or** code moved — moved code is where a pattern survives in its old place. |
-| `docs` | Only Diff review, Typecheck + lint + tests, Gate summary and Gate commit. |
+| `ui`, `landing` | UX clarification and companion (`tech-stack-triggers.md`, "During Brainstorming") |
+| `backend` | `pg:design-postgres-tables` when DB changes are planned |
+| `migration` | The mandatory halt (`SKILL.md`, "Halt on Irreversible Actions") |
+| `auth`, `security`, `data` | Security review in full scope, not phase scope |
+| `docs` | No interview; no Production Build or E2E Tests — only while the diff holds nothing but `*.md` |
+
+A `DB change:` reason from `gate-tier.py` → Diff review checks the rollback path and E2E includes
+a migration smoke test (migrate up, verify data, migrate down if possible).
 
 ---
 
@@ -68,7 +70,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`. List only items that
 
 <!-- Step A, always -->
 - [ ] Diff review
-- [ ] Spec checker                   <!-- not for @type: docs -->
+- [ ] Spec checker
 <!-- Step A, conditional: its trigger and, except Security review, the large tier (table in Step A) -->
 - [ ] Security review
 - [ ] Tech-Stack Review: Next.js docs
@@ -82,7 +84,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`. List only items that
 <!-- Steps B and C, added only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
-<!-- Step D and closing, always (Build and E2E not for @type: docs) -->
+<!-- Step D and closing, always (Build and E2E: not for a docs-only diff, Phase Types) -->
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
 - [ ] E2E Tests                      <!-- small tier: only if UI files or a user flow changed -->
@@ -130,8 +132,8 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
 | Item | Analyzer / source | When |
 |---|---|---|
 | Diff review | `analyzers/diff-review.md` | always |
-| Spec checker | the prompt below | always, except `@type: docs` |
-| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches; full scope for `auth`/`security` |
+| Spec checker | the prompt below | always |
+| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`; full scope for `auth`/`security`/`data` |
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
@@ -188,12 +190,13 @@ Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-
   findings neither reset nor use up a count; rounds that only implement a user decision, only change
   test code, or only take along notes do not count. Backstop: halt after 6 rounds in total.
 
-No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `refactor`, see Phase Types).
+No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `refactor`, Step C).
 
 ## Step C — Similar-bugs
 
-Only if Step B fixed a defect: `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix)
-as input, whole codebase. A confirmed twin goes back through Step B; complex ones go to `## Minor (deferred)`.
+Only if Step B fixed a defect, or `@type: refactor` moved code (a pattern survives in its old
+place): `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix) or of the moves as
+input, whole codebase. A confirmed twin goes back through Step B; complex ones go to `## Minor (deferred)`.
 
 ## Step D — Verify
 

@@ -109,6 +109,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implementation done, quality gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
+   - A `@type:` that `gate.md` does not name and `defaults.phase-types` has no key for → report once per type: `unknown @type: <t> — planning uses no type hints; the gate still reads the diff`.
 6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!" Offer `/dev add` or `/dev review`.
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
    first; `done on <main>` → mark it as there, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
@@ -142,9 +143,9 @@ Creates and commits ROADMAP.md + STATE.md through an interactive question flow.
 ## Skill Trigger Resolution
 
 Pre- and post-skills of a phase are `defaults.phase-types.<@type>.pre` and `.post` from the
-frontmatter; an unknown type → warn, continue with empty lists.
+frontmatter; an unknown type → empty lists (reported once, "Parse phases").
 
-Built-in phase types and the `@gate:` annotation (both shape the gate) are in `gate.md`.
+Built-in phase types (planning hints; the diff decides the gate) and `@gate:` are in `gate.md`.
 
 ---
 
