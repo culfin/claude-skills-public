@@ -438,6 +438,19 @@ class StateCheckTests(unittest.TestCase):
         rc, out = self.migrate()
         self.assertEqual((self.root / ".dev/phase-3.md").read_text(), phase)
 
+    def test_migrate_moves_old_ci_lines_without_status(self):
+        # Old format since v4: `- <sha> — Phase N <name>` under `## CI in background`, no `: status`.
+        (self.root / "STATE.md").write_text("# State\n\n## CI in background\n- 1a2b3c4 — Phase 3 Login\n"
+                                            "- 9f8e7d6 — Phase 1 Database\n\n## Blockers & Risks\nNone.\n")
+        self.assertTrue(any(f.startswith("migrate:") for f in self.check()), self.check())
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertIn("- 1a2b3c4 — Phase 3 Login", (self.root / ".dev/phase-3.md").read_text())
+        self.assertIn("- 9f8e7d6 — Phase 1 Database", (self.root / "docs/gates/phase-1.md").read_text())
+        state = (self.root / "STATE.md").read_text()
+        self.assertNotIn("1a2b3c4", state)
+        self.assertNotIn("9f8e7d6", state)
+
     def test_migrate_nested_gate_summary_keeps_its_target(self):
         (self.root / "STATE.md").write_text("# State\n\n## Quality Gate — Phase 3: Login\n- [ ] a\n\n"
                                             "### Gate summary — Phase 1: Database\n- Tier: small\n\n"

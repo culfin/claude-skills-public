@@ -231,7 +231,6 @@ Written to `docs/gates/phase-<N>.md` before the gate commit (old format: STATE.m
 permanent:
 
 ```markdown
-Branch: <branch>
 ## Gate summary — Phase N: <Name>
 - Tier: small|large — <first reason>
 - Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
@@ -263,29 +262,31 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    branch, PR update, workflow dispatch). No authorized route → halt once per run, name the blocker,
    note the answer (a route, or `no CI this run`) under the phase file's `## CI` and follow it.
    Never push to a protected or production branch for this.
-2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add a line to
+2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add the SHA to
    the phase file:
    ```markdown
    ## CI
-   - <sha>: pending
+   - <sha>
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
-3. **Read the status** (`$(git rev-parse --git-common-dir)/dev-ci/<sha>`) when the watcher reports,
-   before each next phase starts and at Milestone End. A line belongs to the `Branch:` of its file.
-   Own lines, and lines of a merged or deleted branch (you take them over): update and repair. Lines
-   of another live branch: read only — `pending` → go on, `red`/`timeout` → tell the user, go on.
-   Copy the status into the line (phase file, or `docs/gates/phase-<N>.md` after completion):
-   - `green <ids>` → done.
-   - `red …` or `timeout` → halt after the current step: show the failing run(s)
+   It writes the status to `$(git rev-parse --git-common-dir)/dev-ci/<sha>`, shared by all worktrees
+   of the repo; a status never goes into a tracked file.
+3. **Read the status** of every listed SHA there when the watcher reports, before each next phase
+   starts and at Milestone End. No status file, or `pending`, and no watcher for this SHA running
+   (`pgrep -f "ci-watch.sh <sha>"`; another machine, a restart, `/clear`) → start it again (step 2,
+   same SHA). Who repairs: the own phase (phase file `Branch:` = current
+   branch) → repair; another session's phase or a closed one (`[x]`/`[—]` in ROADMAP.md on
+   `<main>`, squash merges too) → tell the user, go on; Milestone End (it runs once) repairs every
+   `red`/`timeout` SHA of the milestone.
+   - `green <ids>`, or the line says `→ repaired in` → done.
+   - `red …` or `timeout` → the repairer halts after the current step: show the failing run(s)
      (`gh run view <id> --log-failed`) and repair (below). A `timeout` from missing `jq` or failing
      `gh` (`gh auth status`) is a tooling problem: report it, never repair.
    - `none` → no run of this SHA appeared (a `paths`/`on:` filter can exclude a commit on purpose).
-     Not a halt and never green: the line keeps `none`.
-   - `pending` → is a watcher for this SHA still running (`pgrep -f "ci-watch.sh <sha>"`)? It dies
-     with the session and may with `/clear`; none running → start it again (step 2, same SHA). Then
-     go on between phases; at Milestone End, wait for it.
+     Not a halt and never green.
+   - `pending` → go on between phases; at Milestone End, wait for it.
 
-**Repairing a red CI of a closed phase.** Its checklist is gone, so open a short one in
+**Repairing a red CI of a closed phase.** Open a short checklist in
 `docs/gates/phase-<N>.md` and let `check-evidence.py check docs/gates/phase-<N>.md
 --before-commit --repair` check it like a gate:
 
@@ -297,8 +298,8 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
 - [ ] Gate commit
 ```
 
-Then a new `[gate-pass]` commit, a new watcher, a new line `- <new sha>: pending`, and the old line
-becomes `- <sha>: red … → repaired in <new sha>`. The repair checklist stays as the record.
+Then a new `[gate-pass]` commit, a new watcher, a new line `- <new sha>`, and the old line becomes
+`- <sha> → repaired in <new sha>`. The repair checklist stays as the record.
 
 ---
 

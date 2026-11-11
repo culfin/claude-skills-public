@@ -178,14 +178,24 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("## Decisions", st)
         self.assertIn("  - Decisions: <answers> (<YYYY-MM-DD>)", st)
         self.assertIn("## Old format (projects without `.dev/`)", st)
-        self.assertIn("- <sha> — Phase N <name>: <status>", st)
+        self.assertIn("`- <sha> — Phase N <name>`, without status", st)
+        ci = block.split("## CI", 1)[1].split("##", 1)[0]
+        self.assertRegex(ci, r"\n- [0-9a-f]{7,40}\n", ci)  # SHA only, never a status
         self.assertIn('"Old format"', text("SKILL.md"))
-        self.assertIn("docs/gates/phase-<N>.md` — line 1 `Branch: <branch>`", st)
+        # CI status lives untracked in the git common dir; gate files carry no `Branch:` (no ownership rules).
+        self.assertNotIn("Branch: <branch>", st)
         g = text("gate.md")
         gate_block = g.split("## Gate summary", 1)[1].split("```markdown", 1)[1].split("```", 1)[0]
-        self.assertTrue(gate_block.lstrip().startswith("Branch: "), gate_block[:40])
-        self.assertIn("A line belongs to the `Branch:` of its file", g)
-        self.assertIn("`.dev/` exists (the project agreed): run `migrate` for the own claim's parts without asking", text("SKILL.md"))
+        self.assertTrue(gate_block.lstrip().startswith("## Gate summary — Phase N"), gate_block[:40])
+        self.assertNotIn("A line belongs to the `Branch:` of its file", g)
+        self.assertIn("a status never goes into a tracked file", " ".join(g.split()))
+        self.assertIn("$(git rev-parse --git-common-dir)/dev-ci/<sha>", st)
+        self.assertIn("Milestone End (it runs once) repairs every", " ".join(g.split()))
+        sk = text("SKILL.md")
+        self.assertIn("`git ls-tree -d origin/<main> -- <prefix>.dev`", sk)
+        self.assertIn("Listed (the project agreed) → run `migrate` for the own claim's parts without asking", sk)
+        self.assertLess(sk.index("`behind:` first"), sk.index("`migrate:` next"))
+        self.assertIn("save (unless already there) and delete as the finding says", sk)
         self.assertIn("state-check.py migrate", st)
         for p in DEV.rglob("*.md"):
             if "tests" in p.relative_to(DEV).parts:
@@ -203,8 +213,8 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
         self.assertIn("never\nunder another session's claim", st)
         self.assertIn("bring that commit to `<main>` at once", s)
-        self.assertIn("by owner (`gate.md`", s)
-        self.assertIn("of another live branch: read only", text("gate.md"))
+        self.assertNotIn("by owner (`gate.md`", s)
+        self.assertNotIn("of another live branch: read only", text("gate.md"))
         self.assertIn("as traps for this phase", s)
         self.assertIn("appends to the file", text("dev-check.md"))
         self.assertIn("`## Abandoned`", s)
