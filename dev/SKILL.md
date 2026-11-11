@@ -95,11 +95,11 @@ period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` → old format for every phase (`state.md`, "Old format").
+2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No `.dev/` on `origin/<main>` (below) → old format for every phase (`state.md`, "Old format").
    Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings:
    - `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
    - `behind:` first → `git pull --ff-only` (a dirty or diverged tree: say so and stop).
-   - `migrate:` next, before any other finding. `origin/<main>` decides, not the worktree: `git ls-tree -d origin/<main> -- <prefix>.dev` (`<prefix>`: ROADMAP.md's directory). Listed (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then `git rebase origin/<main>`. Not listed: offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` and bring that commit to `<main>` at once (own small PR or push, as the project allows) before the phase goes on.
+   - `migrate:` next, before any other finding. `origin/<main>` decides: `git ls-tree -d origin/<main> -- <prefix>.dev` (`<prefix>`: ROADMAP.md's directory). Listed (the project agreed) → run `migrate` for the own claim's parts without asking, commit `roadmap: migrate state to phase files`, then `git rebase origin/<main>`; STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts, continue. Not listed: offer `state-check.py migrate --dry-run` in the bundled round; only after the user's yes run `migrate` and bring that commit to `<main>` at once (own small PR or push, as the project allows) before the phase goes on.
    - `orphan phase file:` → phase done: save (unless already there) and delete as the finding says, in the next commit. Still `[~]`/`[!]`, branch gone: ask the user — take over, or discard (Position, criteria → `## Abandoned` there; delete the file; phase back to `[ ]`, no `@claim:`).
    - `phase file missing:` → create it now: `Branch:`, `## Position`, `Phase base:` (parent of the phase's `roadmap: claim` commit).
    - `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
@@ -211,7 +211,7 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 ### 2. Pre-Phase
 
-1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; status and repairer per `gate.md`, "CI in background": an own phase's `red`/`timeout` → repair before this phase starts. Read the gate files' `## Minor (deferred)` too, as traps for this phase.
+1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; status and repairer per `gate.md`, "CI in background": own `red`/`timeout` SHAs → repair before this phase starts. Read the gate files' `## Minor (deferred)` too, as traps for this phase.
 2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit these at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents

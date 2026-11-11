@@ -4,8 +4,7 @@ Formats only; each step says what it writes.
 
 **1 phase = 1 branch = 1 file `.dev/phase-<N>.md`** next to ROADMAP.md (`<N>` verbatim:
 3, 6a, 4.1). Created at the claim, committed with the phase (never git-ignored),
-deleted at phase completion. Only the branch that claims the phase writes it, so
-parallel sessions never edit the same lines. After `/clear` the position comes from here alone.
+deleted at phase completion. Only the claiming branch writes it. After `/clear` the position comes from here alone.
 
 ## Phase file
 
@@ -56,7 +55,7 @@ Next: Step B fix dispatch with the build error, then Step D again
 Permanent, one path per record (Milestone End and Pre-Release Review read them):
 
 - `docs/gates/phase-<N>.md` — `## Gate summary — Phase N: <Name>` (`gate.md`); from completion on
-  also its `## CI` SHAs (a CI repair of a closed phase opens its checklist here) and `## Minor (deferred)`, which Milestone End gathers into Blockers & Risks.
+  also its `## CI` SHAs (a later CI repair opens its checklist here) and `## Minor (deferred)`, which Milestone End gathers into Blockers & Risks.
 - `docs/gates/check-<YYYY-MM-DD>-<branch slug>.md` — the Check summary of `/dev check` (`dev-check.md`).
 
 ## STATE.md — shared
@@ -85,8 +84,8 @@ after the phase and moves with it.
 ## Old format (projects without `.dev/`)
 
 Without `.dev/` on `origin/<main>`, **all** phases keep the old format until the user agrees to
-`state-check.py migrate`; that commit goes to `<main>` at once, and each other session then migrates
-its own parts (`SKILL.md`, Session Start). No phase file is created. Every write a step makes to
+`state-check.py migrate`; that commit goes to `<main>` at once, the migrating session uses the new
+format from it on, and each other session then migrates its own parts (`SKILL.md`, Session Start). No phase file is created. Every write a step makes to
 `.dev/phase-<N>.md` goes to the same-named place in STATE.md, reads too (`### Phase N` under `## Phases`,
 `## Quality Gate — Phase N`, `## Handoff — <branch>` with the position first); CI lines read
 `- <sha> — Phase N <name>`, without status, under `## CI in background`. The Gate summary stays in STATE.md

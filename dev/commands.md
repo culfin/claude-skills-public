@@ -23,7 +23,7 @@ All phases `[x]` or `[—]`:
 
 0. **Wait for background CI** — every SHA under `## CI` in `docs/gates/phase-<N>.md` of this
    milestone, status per `gate.md`, "CI in background": wait until none is
-   `pending`; `red`/`timeout` → this session repairs it first, for every phase; `none` stays.
+   `pending`; `red`/`timeout` → repair it first, whoever's phase it was; `none` stays.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
@@ -38,7 +38,7 @@ All phases `[x]` or `[—]`:
 5. **Archive:** tell the
    user, run `python3 "$DEV_DIR/scripts/state-check.py" archive "<milestone heading>"` (moves the
    milestone from ROADMAP.md and old gate summaries from STATE.md to `docs/roadmap-archive/`;
-   `docs/gates/` stays where it is, on purpose), commit `roadmap: archive <milestone>`.
+   `docs/gates/` stays), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with highlights of their `docs/gates/` summaries (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
 7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Create launch video (only if the milestone had a `@type: landing` phase — `brag.md`), Pause.
@@ -52,8 +52,7 @@ All phases `[x]` or `[—]`:
 1. **Write `## Handoff`** in the phase file (`state.md`): where it stopped (step, what was in
    progress) and the next action, with today's date.
 2. **Commit and push:** commit the phase file as `roadmap: pause Phase N [skip ci]` and push the
-   branch if it has a remote — a deleted workspace keeps only what is committed and pushed, and
-   `[skip ci]` keeps the push from cancelling a running CI run (cancel-in-progress).
+   branch if it has a remote; `[skip ci]` keeps the push from cancelling a running CI run.
 3. **Clean up the Visual Companion** (if the server is active):
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
@@ -114,7 +113,7 @@ After the commit: show the updated roadmap in the terminal, the moved phase mark
 
 **Triggered by:** `/dev review`
 
-**Precondition:** wait for and repair the CI SHAs as in Milestone End step 0, then continue.
+**Precondition:** wait for and repair the release's CI SHAs as in Milestone End step 0, then continue.
 
 1. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier**, see `models.md`):
    - **Bug hunt** (full mode) — entire codebase, 7 lenses.

@@ -243,8 +243,8 @@ permanent:
 
 ## Evidence check and Gate commit
 
-**Evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check --before-commit` (reads the
-phase file) must exit 0. It lists every item that is open, lacks evidence or is stale; rerun those checks, never
+**Evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check --before-commit` must
+exit 0. It lists every item that is open, lacks evidence or is stale; rerun those checks, never
 edit an `@…` value by hand. It checks consistency, not truth — reading the evidence stays your job.
 
 **Gate commit** — once every other item is `[x]`, before any post-phase skill:
@@ -269,15 +269,15 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    - <sha>
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
-   It writes the status to `$(git rev-parse --git-common-dir)/dev-ci/<sha>`, shared by all worktrees
-   of the repo; a status never goes into a tracked file.
-3. **Read the status** of every listed SHA there when the watcher reports, before each next phase
-   starts and at Milestone End. No status file, or `pending`, and no watcher for this SHA running
-   (`pgrep -f "ci-watch.sh <sha>"`; another machine, a restart, `/clear`) → start it again (step 2,
-   same SHA). Who repairs: the own phase (phase file `Branch:` = current
-   branch) → repair; another session's phase or a closed one (`[x]`/`[—]` in ROADMAP.md on
-   `<main>`, squash merges too) → tell the user, go on; Milestone End (it runs once) repairs every
-   `red`/`timeout` SHA of the milestone.
+   It writes the status to `$(git rev-parse --git-common-dir)/dev-ci/<sha>`, shared by all
+   worktrees; a status never goes into a tracked file.
+3. **Read the status** of every listed SHA there (an old-format status in a line is ignored) when
+   the watcher reports, before each next phase and at Milestone End. No status file, or `pending`,
+   and no watcher (`pgrep -f "ci-watch.sh <sha>"`) → start it again (step 2). **Who repairs:** a SHA
+   is **own** if `git merge-base --is-ancestor <sha> HEAD` and its phase is not **closed** (`[x]`/`[—]`
+   in ROADMAP.md on `origin/<main>`; a check file has no phase). The session repairs own SHAs, only
+   reports others; Milestone End and Pre-Release Review (user-started, one session) repair every
+   `red`/`timeout` SHA of the milestone or release.
    - `green <ids>`, or the line says `→ repaired in` → done.
    - `red …` or `timeout` → the repairer halts after the current step: show the failing run(s)
      (`gh run view <id> --log-failed`) and repair (below). A `timeout` from missing `jq` or failing
@@ -286,9 +286,9 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
      Not a halt and never green.
    - `pending` → go on between phases; at Milestone End, wait for it.
 
-**Repairing a red CI of a closed phase.** Open a short checklist in
-`docs/gates/phase-<N>.md` and let `check-evidence.py check docs/gates/phase-<N>.md
---before-commit --repair` check it like a gate:
+**Repairing a red CI SHA of a phase, closed or not.** Open a short checklist in
+`docs/gates/phase-<N>.md` (in the phase file while it exists) and let `check-evidence.py check
+<that file> --before-commit --repair` check it like a gate:
 
 ```markdown
 ## Quality Gate — Phase N: <Name> (CI repair)
