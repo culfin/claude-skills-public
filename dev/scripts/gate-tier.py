@@ -28,13 +28,14 @@ SENSITIVE = re.compile(
     r"|(^|/)api/|(^|/)(routes?|actions?|controllers?)/"
     r"|(^|/)migrations?/|\.sql$", re.I)
 OPS = re.compile(
-    r"(^|/)\.github/workflows/|(^|/)Dockerfile[^/]*$|(^|/)(docker-)?compose[^/]*\.ya?ml$"
-    r"|(^|/)(deploy|infra|ops|k8s|helm|terraform)(/|$)|\.tf$"
-    r"|(^|/)Caddyfile$|(^|/)nginx[^/]*\.conf$|(^|/)\.gitlab-ci\.ya?ml$")
+    r"(^|/)\.github/workflows/|(^|/)(?i:dockerfile)[^/]*$|(^|/)(docker-)?compose[^/]*\.ya?ml$"
+    r"|(^|/)(deploy|infra(structure)?|ops|k8s|helm|terraform)(/|$)|\.tf$"
+    r"|(^|/)[^/]*deploy[^/]*\.sh$|(^|/)nginx/|(^|/)Caddyfile$|(^|/)nginx[^/]*\.conf$|(^|/)\.gitlab-ci\.ya?ml$")
 DEPS = re.compile(
     r"(^|/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|Cargo\.toml|Cargo\.lock"
     r"|go\.mod|go\.sum|requirements[^/]*\.txt|pyproject\.toml|poetry\.lock|Gemfile\.lock"
-    r"|[^/]*\.gradle[^/]*|Podfile\.lock)$")
+    r"|[^/]*\.gradle[^/]*|Podfile\.lock|pom\.xml|Pipfile\.lock|uv\.lock|composer\.(json|lock)"
+    r"|bun\.lockb|pnpm-workspace\.yaml|Package\.resolved|[^/]*\.csproj)$")
 
 
 def listed(paths):

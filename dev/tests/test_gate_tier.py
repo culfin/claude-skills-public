@@ -109,6 +109,44 @@ class GateTierTests(unittest.TestCase):
         rc, out, _ = self.run_tier("--tasks", "1", "--type", "fullstack")
         self.assertEqual(out[0], "large")
 
+    def test_infrastructure_dir_is_large(self):
+        self.write("infrastructure/main.yaml", 2)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+
+    def test_deploy_script_is_large(self):
+        for rel in ("scripts/deploy.sh", "bin/predeploy.sh", "deploy-prod.sh"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- ops files:") for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_nginx_dir_is_large(self):
+        self.write("nginx/site.conf", 2)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+
+    def test_dockerfile_case_insensitive(self):
+        for rel in ("svc/dockerfile", "svc/Dockerfile.prod"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+                (self.root / rel).unlink()
+
+    def test_more_dependency_manifests_are_large(self):
+        for rel in ("pom.xml", "Pipfile.lock", "uv.lock", "composer.json", "composer.lock", "bun.lockb",
+                    "pnpm-workspace.yaml", "Package.resolved", "src/App/App.csproj"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- dependency manifest:") for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_docs_deploy_md_stays_small(self):
+        self.write("docs/deploy.md", 20)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "small")
+
     def test_docs_only_stays_small(self):
         self.write("README.md", 50)
         self.write("docs/deploy/notes.md", 50)
