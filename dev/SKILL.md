@@ -52,7 +52,7 @@ the current step needs.
 | `gate.md` | Quality gate: tier, steps A–D, checklist, evidence, gate commit, CI in background, phase types, project commands | Gate entry, resuming `[!]`, CI status, `/dev check` |
 | `commands.md` | Status, skip, add, reorder, pause, debug, milestone end, pre-release review | Router; Milestone End; unexplained build/test failure (Debug Flow) |
 | `models.md` | Which model tier each subagent gets | Before dispatching subagents |
-| `state.md` | What STATE.md holds and when each part changes | Before writing STATE.md |
+| `state.md` | Formats of the phase file `.dev/phase-<N>.md`, `docs/gates/` and the shared STATE.md | Before writing one of them |
 | `companion.md` | Visual Companion: triggers, server start, "Show screen" | Before the first screen of a session |
 | `companion-screens.md` | Look and building blocks of the screens | When writing a screen |
 | `runtime.md` | Host adapter: `$DEV_DIR`, tool names, Codex vs Claude Code | Once per session, at the first explicit `/dev` run |
@@ -87,8 +87,7 @@ review wave (Step A); critical findings are fixed in gate Step B.
 **Triggered by:** `/dev`, `/dev next`, or automatically when a new session starts and ROADMAP.md exists.
 
 **Automatic trigger — one line, nothing else.** When the session starts in a project with ROADMAP.md
-and the user has not typed `/dev` or asked to work on the roadmap: read ROADMAP.md (and STATE.md if
-present) and print a single line —
+and the user has not typed `/dev` or asked to work on the roadmap: read ROADMAP.md and print a single line —
 `Roadmap: <milestone> — next: Phase N <name> [<state>]. Continue with /dev.` — then turn to what
 the user actually asked. If `${DEV_UPDATES_DIR:-$HOME/.claude/dev-updates}/pending/*.json` exist
 (count the files, read none), insert `, N skill updates waiting — /dev updates` before the final
@@ -96,8 +95,14 @@ period. No companion, no `AskUserQuestion`, no stack detection, no file writes.
 The steps below run only on an explicit `/dev` / `/dev next` or a request to work on the roadmap.
 
 1. **Read ROADMAP.md** from project root. If missing: "No ROADMAP.md found. Run `/dev init` to create one." Stop.
-2. **Read STATE.md** from project root. If missing: create it from ROADMAP.md (position, your Handoff block). If present: read its top through your branch's **Handoff** block (older files: also Session Continuity) and the current phase's entry; other sections only when a step needs them.
-   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings. `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes. `behind:` → `git pull --ff-only` first (a dirty or diverged tree: say so and stop). `orphan handoff:`, `long handoff:` → remove or shorten that block in the phase's next STATE.md commit.
+2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there.
+   Then `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings:
+   - `size:`, `handoff:`, `archivable:` → offer archiving (Milestone End, step 5) in the bundled round; never rewrite without the user's yes.
+   - `migrate:` → offer in the bundled round to show `state-check.py migrate --dry-run`; only after the user's yes run `migrate` and commit `roadmap: migrate state to phase files`. Until then a running phase goes on in the old format.
+   - `behind:` → `git pull --ff-only` first (a dirty or diverged tree: say so and stop).
+   - `orphan phase file:` → copy its Gate summary to `docs/gates/phase-<N>.md` unless it is there, delete the file in the next commit. `phase file missing:` → create it now (`Branch:` + `## Position`).
+   - `phase file invalid:`, `branch mismatch:` → own claim: correct the `Branch:` line; another branch's claim: ask the user.
+   - `orphan handoff:`, `long handoff:` (old format) → remove or shorten that block in the next STATE.md commit.
 3. **Detect tech stack** once per session (Tech-Stack-Aware Skills).
 4. **Parse YAML frontmatter.** If malformed: show error, ask user to fix manually, stop.
 5. **Parse phases:** Extract milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
@@ -113,7 +118,7 @@ The steps below run only on an explicit `/dev` / `/dev next` or a request to wor
    Next: Phase 4 — Connections View (@type:ui)   [resume: gate, first open item "Spec checker"]
    Tech Stack: [nextjs, shadcn, postgres]
    Blockers: <from STATE.md, if any>
-   CI in background: <open lines from STATE.md, if any>
+   CI: <open lines, Pre-Phase step 1, if any>
    Updates: N skill updates waiting — /dev updates   (only if pending/ has files; count only)
    ```
    Show `@gate: full` when set. Show `$TECH_STACKS` only on first session start or if changed.
@@ -185,18 +190,19 @@ CI `red` or `timeout` halts to repair (`gate.md`), then the run continues; `none
 
 Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
 phases — a pause before a plain "continue" decides nothing. Each phase ends with one status line;
-details are in the spec, the plan and STATE.md.
+details are in the spec, the plan and `docs/gates/phase-<N>.md`.
 
 **Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
 context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
-`/dev next`; the handoff is in STATE.md." — a large context is reread on every turn.
+`/dev next`; ROADMAP.md says where it goes on." — a large context is reread on every turn.
 
 ---
 
 ## Phase Execution
 
 Order: milestone start → pre-phase → clarify (4a) → plan (4b) → execute (4c) → `[!]` (4d) → gate
-(5) → post-phase (6) → `[x]` (7) → next phase or halt (8).
+(5) → post-phase (6) → `[x]` (7) → next phase or halt (8). Each step overwrites `## Position` in the
+phase file; it goes into that step's next commit.
 
 ### 1. Milestone Start Check
 
@@ -204,9 +210,8 @@ First phase of new milestone → run `defaults.skills.milestone-start` as parall
 
 ### 2. Pre-Phase
 
-1. **CI status first:** read every open line under `## CI in background` (`gate.md`). `red` or
-   `timeout` → halt and repair before this phase starts.
-2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim); write `Phase base: <git rev-parse HEAD>` under the phase in STATE.md. Commit both at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
+1. **CI status first:** read the open `## CI` lines of the last completed phase — its phase file, or once that is gone `docs/gates/phase-<N>.md` (`gate.md`, "CI in background"). `red` or `timeout` → halt and repair before this phase starts.
+2. Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>` (taking over replaces the claim and the phase file's `Branch:` line); create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`, moving the phase's line from STATE.md `## Decisions` into it (`state.md`). Commit these at once as `roadmap: claim Phase N` on this branch and push the branch if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch, and worktrees share their refs.
 3. Resolve pre-skills (see Skill Trigger Resolution)
 4. Dispatch pre-skills as parallel Agent subagents
 
@@ -217,15 +222,15 @@ Pass the paths of pre-skill output files to step 4a; read only the relevant find
 ### 4. Phase Cycle
 
 **Resume logic:**
-- Phase is `[!]` → skip directly to Quality Gate (step 5), read Gate Checklist from STATE.md to find remaining steps
+- Phase is `[!]` → skip directly to Quality Gate (step 5), read the Gate Checklist in the phase file to find remaining steps
 - Phase is `[~]` with `@plan:` path on disk, or acceptance criteria ending in `Criteria complete.` (small phase; without that line if the phase already has commits) → execution (4c); the ledger says which tasks are done (`execution.md`, "Ledger")
 - Phase is `[~]` with `@spec:` path on disk → planning (4b)
-- STATE.md has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
+- The phase file has `## UI review — approved findings` → those IDs are part of this phase: fix each to its criterion in `UI-REVIEW.md`, then clear it (`state.md`)
 - Phase is `[~]` with neither, or with criteria lacking that last line → clarification (4a)
 
 **4a. Clarification:**
 1. **Classify:** architectural if the phase creates a new project or subsystem, changes how components interact, or changes interfaces that others build on; `@type: migration` always. When in doubt, architectural. For `@type: docs`, no interview.
-2. **Small → write the draft straight into STATE.md** under the phase as `Acceptance criteria:`
+2. **Small → write the draft straight into the phase file** as `Acceptance criteria:`
    (format in `state.md`), closed by the line `Criteria complete.` — no approval round; the Spec checker and a resume read it there. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
    "(Recommended)"; look up facts yourself instead of asking.
@@ -247,8 +252,8 @@ build and E2E on the final state.
 
 **4d. Gate Transition (`[~]` → `[!]`):**
 1. Mark phase `[!]` in ROADMAP.md (Edit tool)
-2. Create the Quality Gate Checklist in STATE.md — tier and format in `gate.md`, "Tier" and "Gate Checklist"
-3. Update STATE.md Last activity: "Implementation complete, Quality Gate starting"
+2. Create the Quality Gate Checklist in the phase file — tier and format in `gate.md`, "Tier" and "Gate Checklist"
+3. `## Position`: "Gate starting — next: <first item>"
 
 `[!]` = implemented, gate not yet passed — the **only** path to `[x]`; `[~]` → `[x]` is **forbidden**.
 
@@ -265,11 +270,11 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 
-1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md` must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
+1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check` (reads the phase file) must exit 0 (the gate commit keeps the checked state). If any unchecked → STOP, return to first unchecked step 5.
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`), ensure `@spec:` and `@plan:` present (small phases have neither)
-3. **Remove Gate Checklist** from STATE.md (the `## Quality Gate — Phase N` section). **The Gate summary is kept.**
-4. **Update STATE.md**: Current Position, Last activity, and replace your branch's **Handoff** block (`state.md`); copy the ledger's `minor (deferred)` lines to Blockers & Risks, then delete the phase's SDD workspace (`execution.md`)
-5. Commit: `roadmap: complete Phase N — <name>`
+3. **Gate record:** `docs/gates/phase-<N>.md` holds the Gate summary (written by the gate); append the phase file's `## CI` lines to it.
+4. **Minors:** lines under `## Minor (deferred)` → STATE.md Blockers & Risks (only if there are any). Then delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
+5. Commit all of it at once: `roadmap: complete Phase N — <name>`
 6. All phases done in milestone? → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
 
 ### 8. Next Action
@@ -286,10 +291,10 @@ run" applies, the context hint included.
 **Behavior:**
 1. **Stop current work immediately,** including background implementers (TaskStop or the host's stop); record each as `interrupted` in the ledger (`execution.md`).
 2. **AskUserQuestion** (single-select):
-   - **Pause phase** (Recommended) — save progress in STATE.md, keep phase `[~]`/`[!]`, resume later with `/dev next`
+   - **Pause phase** (Recommended) — Pause Session (`commands.md`), keep phase `[~]`/`[!]`, resume later with `/dev next`
    - **Skip phase** — mark `[—]` with reason, move to next phase
-   - **Do something else** — pause via STATE.md, then handle the user's new request outside `/dev`
-3. Pause and "something else": record what was in progress in your branch's Handoff block; status and checked gate items stay intact.
+   - **Do something else** — Pause Session, then handle the user's new request outside `/dev`
+3. Pause and "something else": the phase file's `## Handoff` records what was in progress; status and checked gate items stay intact.
 4. "Something else": do NOT resume on your own — only an explicit `/dev` or `/dev next` does.
 
 ---

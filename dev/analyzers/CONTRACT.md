@@ -21,7 +21,7 @@ Give the subagent, in this order:
 3. **Scope:** the file list — including untracked files
    (`git ls-files --others --exclude-standard`) — and the diff as a file for `phase` and `fix` mode.
 4. **The requirement** the change is supposed to meet: the spec from `@spec:`, the acceptance
-   criteria in STATE.md, or the phase description.
+   criteria in the phase file, or the phase description.
 5. **`$TECH_STACKS`**, so the analyzer can pick its language notes.
 
 **Do not** hand over why you believe the change is correct. The analyzer gets the artifact and the
@@ -66,7 +66,7 @@ Report the sweep in the `Checked:` line: probes run, candidates found, candidate
   that runs code of a caller-supplied object.
   The gate fixes these in its bundled fix (Step B) before it continues.
 - **note** — real but bounded: an edge case with a harmless outcome, a missing guard on an
-  unlikely path, a clearer alternative. The gate records these in STATE.md.
+  unlikely path, a clearer alternative. The gate records these under `## Minor (deferred)` in the phase file.
 
 When unsure between the two, decide by the worst realistic outcome, not by how likely it is.
 

@@ -1,100 +1,93 @@
-# STATE.md — what it holds and when it changes
+# State — the phase file and the shared STATE.md
 
-Read on every `/dev` run that writes STATE.md — the project's persistent state across sessions
-(position, requirements, constraints, risks, handoffs). Every `/dev` run and `/dev status` reads it.
+Read before writing a phase file or STATE.md. Each step says what it writes; this file holds the formats.
 
-### When to Update STATE.md
+**1 phase = 1 branch = 1 file `.dev/phase-<N>.md`** next to ROADMAP.md (`<N>` verbatim from
+ROADMAP.md: 3, 6a, 4.1). Created at the claim, committed with the phase (never git-ignored),
+deleted at phase completion. Only the branch that claims the phase writes it, so
+parallel sessions never edit the same lines. After `/clear` the position comes from here alone.
 
-| Event | What to Update |
-|-------|---------------|
-| Bundled clarification at run start (`befragung.md`) | Answers under each phase as `Decisions:` (below) |
-| Phase starts (`[ ]` → `[~]`) | Current Position, Last activity, `Phase base: <sha>` under the phase |
-| Small phase clarified (`SKILL.md` 4a) | `Acceptance criteria:` under the phase (below) — no approval round |
-| Phase enters gate (`[~]` → `[!]`) | Current Position, Last activity, **create Quality Gate Checklist section** |
-| Gate step completes | Check off item in Gate Checklist |
-| Gate summary written | **Append Gate summary** under `### Gate summary — Phase N` in STATE.md (permanent — never removed) |
-| Gate commit, CI watcher started | Line `- <sha> — Phase N <name>: pending` under `## CI in background`; replace `pending` with the status file's line whenever it is read (`gate.md`, "CI in background") |
-| `/dev check` completed | **Append Check summary** under `## Context` in STATE.md (permanent — never removed) |
-| Phase completes (`[!]` → `[x]`) | Current Position, Last activity, **remove Quality Gate Checklist section**, **replace the Handoff block** (below) |
-| Phase skipped (`[ ]` → `[—]`) | Current Position, Last activity |
-| Last phase of a milestone `[x]` | Line `Milestone End pending: <milestone name>`; Milestone End removes it last (`commands.md`) |
-| Milestone completes | Next milestone in Current Position; archive (`commands.md`, Milestone End) |
-| `/dev ui` approval while a phase is `[~]`/`[!]` | **Create or extend `## UI review — approved findings`** (below) |
-| Key decision made | Phase-specific → `Decisions:` under the phase; otherwise Constraints or a Decisions section |
-| Blocker discovered | Add to Blockers & Risks |
-| Blocker resolved | Remove from Blockers & Risks |
-| Session ends (user pauses) | Your Handoff block: where it stopped, the next action |
-| `/dev init` | Create fresh STATE.md |
-
-### Update Rules
-
-- **Current Position**: OVERWRITE on every phase transition
-- **Blockers & Risks**: APPEND new, REMOVE resolved
-- **Constraints / Core Value**: IMMUTABLE after init (unless user explicitly changes)
-- **Handoff**: OVERWRITE on every phase completion and pause — only your branch's block
-- **Size**: state, not a diary — ≤ ~3000 words, Handoff in the first 80 lines (`state-check.py`);
-  history goes to commits, specs, `docs/roadmap-archive/`
-- **CI in background**: APPEND per gate commit, update the status in place; at Milestone End, once
-  every line is green (or `none`, noted in its gate summary), remove the lines of that milestone
-
-### Run blocks
-
-After `/clear` the next session knows only STATE.md; three blocks carry the run:
+## Phase file
 
 ```markdown
-## Handoff — <branch>
-<!-- replaced at every phase completion; at most 8 lines; a restart works from files alone: commits done, Next, Open; approvals are only those recorded in STATE.md/ROADMAP.md -->
-Next: Phase 5 — Export (@type:backend), plan docs/plans/export.md, tasks 1–2 done (ledger)
-Open: Similar-bugs twin in src/report.ts parked (Blockers & Risks)
-Traps: tests need `DATABASE_URL` from .env.test; the build writes to dist/ — not in parallel
-
-## CI in background
-- 3f9c2a1 — Phase 4 Connections View: green 1234567
-- 8e01b7d — Phase 5 Export: pending
-
-## Phases
-### Phase 6: Filters
+Branch: phase-6-filters
+## Position
+Gate, first open item "Spec checker" — next: dispatch the review wave (YYYY-MM-DD)
 Phase base: 8e01b7d
 Decisions: date range defaults to 30 days; filters persist per user (bundled round, YYYY-MM-DD)
 Acceptance criteria:
 - [ ] Filter by status and date range; empty result shows the empty state
 - [ ] Filters survive a reload
 Criteria complete.
+
+## Quality Gate — Phase 6: Filters
+<!-- checklist per gate.md, "Gate Checklist" -->
+
+## CI
+- 3f9c2a1: green 1234567
+
+## Handoff
+Stopped YYYY-MM-DD: gate Step D, build red in src/filter.ts (cause found, no fix dispatched yet)
+Next: Step B fix dispatch with the build error, then Step D again
+
+## Minor (deferred)
+- Task 2: date parser accepts `2026-13-01` without an error
 ```
 
-- **Handoff** — what the next phase needs and the context does not keep: next phase and where it
-  stands, open notes, traps found on the way. At most 8 lines; details belong in the spec, the plan
-  or Blockers & Risks. **One block per branch** (Current Position as its first line): a session writes
-  only its own and removes it once the branch is merged, so parallel sessions never edit the same
-  lines. Progress is never stored: it is counted from ROADMAP.md.
-- **Decisions:** — answers from the bundled round and from later clarification, one line per phase;
-  a phase with decisions does not ask them again. **Acceptance criteria:** — the draft of a small
-  phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks the
-  draft as finished (`SKILL.md`, Resume logic). Both stay until the phase is `[x]`, then the
-  phase's entry is removed; its gate summary, a separate entry, keeps the result.
+- **Branch:** line 1, the only line that changes hands: a takeover (new workspace, new branch)
+  replaces it in its claim commit.
+- **Position:** one line — step, next action, date; every step overwrites it. Progress is never
+  stored: it is counted from ROADMAP.md.
+- **Phase base:** `git rev-parse HEAD` at the claim; the gate diffs against it.
+- **Decisions:** answers from the bundled round and later clarification, never asked again. **Acceptance criteria:** the draft of a small phase, the requirement the Spec
+  checker and E2E read; the last line `Criteria complete.` marks it finished (`SKILL.md`, Resume logic).
+- **Quality Gate:** the checklist `check-evidence.py check` reads when called without a file.
+- **CI:** one line per gate commit, status updated in place (`gate.md`, "CI in background").
+- **Handoff:** written at pause and interruption, at most 8 lines — where it stopped, Next, Open,
+  Traps. Approvals are only those recorded in the phase file or ROADMAP.md.
+- **Minor (deferred):** minor task findings, non-critical gate findings, parked twins and traps later
+  phases need; phase completion copies them to STATE.md Blockers & Risks.
+- **`## UI review — approved findings`:** `/dev ui` during the phase appends the approved IDs
+  (`- UI-1`, details in `UI-REVIEW.md`), never replacing the list. Each ID is fixed to its criterion
+  in 4c, or before the gate goes on if the phase is `[!]` (a code change: touched gate checks
+  reopen). An ID leaves once `UI-REVIEW.md` says `fixed` or `not fixed: <reason>`; the phase does not
+  become `[x]` while one is listed.
 
-### UI review — approved findings
+## Gate records — `docs/gates/`
 
-`/dev ui` during an active phase only analyses and asks (`ui-review.md`); the approved rework belongs
-to that phase and is stored in its own section (Current Position is overwritten):
+Permanent, one path per record:
+
+- `docs/gates/phase-<N>.md` — `## Gate summary — Phase N: <Name>` (`gate.md`) and, from phase
+  completion on, its `## CI` lines (updated in place; a CI repair of a closed phase opens its
+  checklist here).
+- `docs/gates/check-<YYYY-MM-DD>.md` — the Check summary of `/dev check` (`dev-check.md`).
+
+Milestone End and Pre-Release Review read the folder.
+
+## STATE.md — shared
+
+Only what every phase shares; written rarely:
 
 ```markdown
-## UI review — approved findings
-<!-- from /dev ui <scope>, YYYY-MM-DD; details and acceptance criteria in UI-REVIEW.md -->
-- UI-1
-- UI-4
+# <Project name> — Project State
+## Core Value
+## Constraints
+## Requirements
+## Blockers & Risks
+## Decisions
+- Phase 7: export as CSV only (bundled round, YYYY-MM-DD)
+Milestone End pending: <milestone name>
 ```
 
-- **Written by** `/dev ui`: APPEND the approved IDs (a later run adds to the list, never replaces it).
-- **Read by** the active phase on resume (`SKILL.md`, Resume logic): each ID is fixed to its
-  acceptance criterion in `UI-REVIEW.md` as part of the phase — in 4c, or before the gate continues
-  if the phase is already `[!]` (the rework is a code change, so touched gate checks reopen).
-- **Cleared:** remove an ID once its status in `UI-REVIEW.md` is `fixed` or `not fixed: <reason>`;
-  remove the section when it is empty. A phase does not become `[x]` while the section still lists
-  an ID — it is gone, with the gate checklist, by phase completion at the latest.
+- **Core Value, Constraints:** fixed after init unless the user changes them. **Blockers & Risks:**
+  append new, remove resolved.
+- **Decisions:** only answers for phases not yet claimed; the claim moves its line into the phase file.
+- **`Milestone End pending:`** set when a milestone's last phase is `[x]`; Milestone End removes it.
+- **Size:** state, not a diary — ≤ ~3000 words (`state-check.py`); history goes to commits,
+  `docs/gates/` and `docs/roadmap-archive/`.
 
-**Not for:** plan details (spec/plan files), code-level decisions (CLAUDE.md or comments), debug state
-(`.debug/`), velocity metrics. **Gate and Check summaries are permanent** — a quality log; only the
-`## Quality Gate — Phase N` checklist is removed. At Milestone End they move to the archive, never deleted.
+**Transition:** old projects (STATE.md with Quality Gate, Handoff or CI lines) keep running in that
+format — those STATE.md sections stand in for the phase file — until the user agrees to
+`state-check.py migrate` (`SKILL.md`, Session Start).
 
----
+**Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.

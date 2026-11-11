@@ -44,7 +44,7 @@ branch gone → dispatch fresh.
 
 ## Small phase (no plan)
 
-Copy the phase's acceptance criteria from STATE.md into `.superpowers/sdd/phase-<N>-<slug>.md` (slug
+Copy the phase's acceptance criteria from its phase file (`state.md`) into `.superpowers/sdd/phase-<N>-<slug>.md` (slug
 of the phase name, so a renumbered or repeated phase number never adopts an old workspace) and run
 `sdd-workspace` on it at once (it writes the `.gitignore` that keeps the file out of git); the file is
 both plan and brief. BASE is the `<phase base>` defined in `gate.md`, "Tier". One implementer with
@@ -103,7 +103,7 @@ open after round 3 → halt and report what remains (one of the run's halts). An
 reviewer naming a weakness of the task's own tests (one that cannot fail, tests a parameter instead
 of the default) starts a fix round — never `minor`. No RED evidence (new tests failing first) in a
 behavior-changing task's report → run them on its BASE in a temporary worktree; green there
-starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks. Never fix findings in the main session: that skips review.
+starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and to the phase file's `## Minor (deferred)`. Never fix findings in the main session: that skips review.
 
 **Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
 phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)

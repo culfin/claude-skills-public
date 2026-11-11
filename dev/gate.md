@@ -35,7 +35,7 @@ At gate entry, decide the tier with the script, not by eye:
 python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tasks <n> [--gate full]
 ```
 
-`<phase base>` is the phase's `Phase base:` line in STATE.md, written when it started; a CI repair
+`<phase base>` is the `Phase base:` line in the phase file, written when it started; a CI repair
 never changes it (none, from before v3 → the commit before its first task commit). `*.md` files
 do not count towards the size, only towards sensitive paths. Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist header.
 Exit 2 means git failed — fix the base ref, never guess a tier.
@@ -60,7 +60,7 @@ Exit 2 means git failed — fix the base ref, never guess a tier.
 
 ## Gate Checklist
 
-Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet condition leaves the item out.
+Appended to the phase file (`state.md`) at `[~]` → `[!]`. List only items that will run; an unmet condition leaves the item out.
 
 ```markdown
 ## Quality Gate — Phase N: <Name>
@@ -86,7 +86,7 @@ Appended to STATE.md at `[~]` → `[!]`. List only items that will run; an unmet
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
 - [ ] E2E Tests                      <!-- small tier: only if UI files or a user flow changed -->
-- [ ] Gate summary (STATE.md)
+- [ ] Gate summary (docs/gates/phase-N.md)
 - [ ] Gate commit
 ```
 
@@ -145,7 +145,7 @@ with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (includi
   the solution is right — otherwise the reviewer returns your conclusions.
 
 **Spec checker** — receives the diff and the requirement (`@spec:`; else the acceptance criteria in
-STATE.md; else the phase description in ROADMAP.md; none → item closed as "no spec"). It numbers
+the phase file; else the phase description in ROADMAP.md; none → item closed as "no spec"). It numbers
 the acceptance criteria in order (C1, C2, …) and returns a verdict table first —
 `C1 | met / not met / untested | test name or file:line` — then its findings, each with a quote of the requirement: (a) required but missing or partial, (b) implemented but not
 required, (c) implemented but probably wrong, (d) acceptance criterion without a test. (a), (c), (d)
@@ -176,7 +176,7 @@ Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`) with the Spec
   checker's test patches — one agent sees how fixes interact; it follows `receiving-code-review`.
   Lowering the floor (skipping a test, loosening a check) is not a fix.
-- **Non-critical findings** go to STATE.md Blockers & Risks; the phase continues.
+- **Non-critical findings** go to the phase file's `## Minor (deferred)`; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, and only on the
   fix diff: the diff against the state before the fix (the wave's `@state`), including all untracked
   files — `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)`, two
@@ -193,7 +193,7 @@ No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `
 ## Step C — Similar-bugs
 
 Only if Step B fixed a defect: `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix)
-as input, whole codebase. A confirmed twin goes back through Step B; complex ones go to STATE.md.
+as input, whole codebase. A confirmed twin goes back through Step B; complex ones go to `## Minor (deferred)`.
 
 ## Step D — Verify
 
@@ -227,10 +227,11 @@ Detection: `package.json` `scripts.build`, `Makefile`, `.csproj`, `Package.swift
 
 ## Gate summary
 
-Below the phase completion info in STATE.md; permanent (only the checklist is removed later):
+Written to `docs/gates/phase-<N>.md` before the gate commit; permanent, read by Milestone End and
+Pre-Release Review:
 
 ```markdown
-### Gate summary — Phase N: <Name>
+## Gate summary — Phase N: <Name>
 - Tier: small|large — <first reason>
 - Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
@@ -242,16 +243,16 @@ Below the phase completion info in STATE.md; permanent (only the checklist is re
 
 ## Evidence check and Gate commit
 
-**Evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check STATE.md --before-commit`
-must exit 0. It lists every item that is open, lacks evidence or is stale; rerun those checks, never
+**Evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check --before-commit` (reads the
+phase file) must exit 0. It lists every item that is open, lacks evidence or is stale; rerun those checks, never
 edit an `@…` value by hand. It checks consistency, not truth — reading the evidence stays your job.
 
 **Gate commit** — once every other item is `[x]`, before any post-phase skill:
 `chore: quality gate — Phase N <name> [gate-pass]`.
 - Check the baseline first: `git branch --show-current` and `git status --porcelain`. Wrong branch →
   stop and ask.
-- Stage the phase's paths explicitly, never `git add -A` or `git add .`. Changes to files the phase
-  did not touch (a parallel session, tools rewriting files) stay out; unclear → ask.
+- Stage the phase's paths explicitly, `.dev/phase-<N>.md` and `docs/gates/phase-<N>.md` included,
+  never `git add -A` or `git add .`. Changes to files the phase did not touch (a parallel session, tools rewriting files) stay out; unclear → ask.
 
 ## CI in background
 
@@ -259,29 +260,31 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
 
 1. **CI must see the commit** through the route the project already allows (push of the phase
    branch, PR update, workflow dispatch). No authorized route → halt once per run, name the blocker,
-   note the answer (a route, or `no CI this run`) under `## CI in background` and follow it.
+   note the answer (a route, or `no CI this run`) under the phase file's `## CI` and follow it.
    Never push to a protected or production branch for this.
 2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add a line to
-   STATE.md:
+   the phase file:
    ```markdown
-   ## CI in background
-   - <sha> — Phase N <name>: pending
+   ## CI
+   - <sha>: pending
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
 3. **Read the status** (`$(git rev-parse --git-common-dir)/dev-ci/<sha>`) when the watcher reports,
-   before each next phase starts and at Milestone End, and copy it into the STATE.md line:
+   before each next phase starts and at Milestone End, and copy it into that line — in the phase
+   file, or in `docs/gates/phase-<N>.md` once phase completion has moved the lines there:
    - `green <ids>` → done.
    - `red …` or `timeout` → halt after the current step: show the failing run(s)
      (`gh run view <id> --log-failed`) and repair (below). A `timeout` from missing `jq` or failing
      `gh` (`gh auth status`) is a tooling problem: report it, never repair.
    - `none` → no run of this SHA appeared (a `paths`/`on:` filter can exclude a commit on purpose).
-     Not a halt and never green: add `- CI: none — <sha>` to that phase's gate summary.
+     Not a halt and never green: the line keeps `none`.
    - `pending` → is a watcher for this SHA still running (`pgrep -f "ci-watch.sh <sha>"`)? It dies
      with the session and may with `/clear`; none running → start it again (step 2, same SHA). Then
      go on between phases; at Milestone End, wait for it.
 
-**Repairing a red CI of a closed phase.** Its checklist is gone, so open a short one in STATE.md and
-let `check-evidence.py check STATE.md --before-commit --repair` check it like a gate:
+**Repairing a red CI of a closed phase.** Its checklist is gone, so open a short one in
+`docs/gates/phase-<N>.md` and let `check-evidence.py check docs/gates/phase-<N>.md
+--before-commit --repair` check it like a gate:
 
 ```markdown
 ## Quality Gate — Phase N: <Name> (CI repair)
@@ -291,9 +294,8 @@ let `check-evidence.py check STATE.md --before-commit --repair` check it like a 
 - [ ] Gate commit
 ```
 
-Then a new `[gate-pass]` commit, a new watcher, and the old line becomes
-`- <sha> — Phase N <name>: red … → repaired in <new sha>`. Remove the repair checklist right after
-its gate commit.
+Then a new `[gate-pass]` commit, a new watcher, a new line `- <new sha>: pending`, and the old line
+becomes `- <sha>: red … → repaired in <new sha>`. The repair checklist stays as the record.
 
 ---
 
@@ -305,7 +307,7 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 |---|---|
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, rerun the tier with `--gate full` and note the missed path in the gate summary; never argue the tier. |
 | "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass ("Timeouts", Step A). |
-| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in STATE.md and the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
+| "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
 | "The plan says I should run the migration" | A plan describes, it does not approve (`SKILL.md`, "Halt on Irreversible Actions"). |
 
 ## Common Mistakes

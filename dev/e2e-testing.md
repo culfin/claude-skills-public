@@ -6,7 +6,7 @@ No flow touched → the `E2E Tests` item is left out of the checklist, not ticke
 through the real UI or the real public interface, with the assertions that matter to a user. The
 tool is secondary; what counts is which flows and assertions actually ran.
 
-**Step 1: Name the flows and assertions.** From the spec (or the acceptance criteria in STATE.md), list the
+**Step 1: Name the flows and assertions.** From the spec (or the acceptance criteria in the phase file), list the
 user flows the phase changed or added and, per flow, the assertions that prove it works (e.g.
 "valid checkout completes", "invalid field shows its message", "form submits with the keyboard").
 This list is what the step is measured against.
@@ -44,7 +44,7 @@ Spec checker requires).
 **No infrastructure for the needed level** (no browser runner, no UI test target): that is not a
 pass and not a skip. Either set up the smallest runner that can cover the flows (with the user's
 agreement if it adds dependencies), or the E2E checkbox stays open and the phase stays `[!]` —
-record in STATE.md which flows are unverified and why.
+record in the phase file which flows are unverified and why.
 
 **Failures:**
 - Caused by the phase → fix, rerun.

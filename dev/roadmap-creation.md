@@ -33,17 +33,11 @@ The gate's checks (`gate.md`) and the mandatory milestone-end and pre-release an
 
 Write ROADMAP.md to project root.
 
-**7. Create STATE.md** — always create alongside ROADMAP.md:
+**7. Create STATE.md** — always create alongside ROADMAP.md; it holds only what all phases share
+(`state.md`). Position and per-phase state live in `.dev/phase-<N>.md`, created when a phase is claimed:
 
 ```markdown
 # <Project name> — Project State
-
-## Current Position
-
-Milestone: 1 of N (<milestone name>)
-Next phase: Phase 1 — <phase name>
-Status: Starting
-Last activity: <today's date> — project initialized
 
 ## Core Value
 
@@ -60,10 +54,6 @@ Last activity: <today's date> — project initialized
 ## Blockers & Risks
 
 None.
-
-## Handoff — <branch>
-
-Next: Phase 1 — <phase name>; `/dev next` starts it (<today's date>)
 ```
 
 Commit both ROADMAP.md and STATE.md together.

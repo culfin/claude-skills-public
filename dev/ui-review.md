@@ -6,7 +6,7 @@ Standalone mode like `/dev check`: reviews one part of the running product, writ
 ## Precondition
 
 - Phase `[~]`/`[!]` in ROADMAP.md: the rework belongs to it. Run steps 1–4 (read-only), record the
-  approved IDs in STATE.md under `## UI review — approved findings` (`state.md`), stop with
+  approved IDs in its phase file under `## UI review — approved findings` (`state.md`), stop with
   "Phase N is active — the rework is part of it; continue with `/dev next`". No steps 5–6.
 - All phases `[x]`/`[—]`, or no ROADMAP.md: proceed. Uncommitted changes at the start: name them —
   `/dev check` in step 6 snapshots them too; ask whether to commit or set them aside first.

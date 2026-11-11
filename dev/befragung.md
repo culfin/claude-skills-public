@@ -31,20 +31,21 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or
    > asks about one, ends with this URL on its own line, verbatim; status messages carry none. Copy the list
    > into the spec as the section "Decisions from the interview". After the builder check, add the calls
-   > you made yourself to the phase's `Decisions:` line in STATE.md.
+   > you made yourself to the `Decisions:` line in the phase file.
 
 ## Bundled round at run start
 
 A run goes through several phases without stopping, so the questions that are already foreseeable
 are asked once, up front, instead of halting each phase for them.
 
-1. Read only the remaining phases' lines in ROADMAP.md and the `Decisions:` already in STATE.md —
+1. Read only the remaining phases' lines in ROADMAP.md and the `Decisions:` already recorded —
    never their specs or plans. Collect the decisions that will clearly be needed and that only
    the user can make — with the same filter as above: facts are looked up, not asked.
 2. Ask them in one round: up to four independent questions per `AskUserQuestion` call, recommendation
    first with "(Recommended)", each labelled with its phase. More than four → further calls right
    away, still before the first phase starts. Questions with a UI/UX side follow procedure step 3.
-3. Record each answer in STATE.md under its phase as `Decisions:` (`state.md`, "Run blocks").
+3. Record each answer as `Decisions:` — in the phase file of a claimed phase, else in STATE.md
+   `## Decisions` (`state.md`).
 4. Nothing foreseeable → no round. Questions that only appear later (from a spec, a finding) are
    asked when they appear; an architectural phase still gets its interview, minus what is decided.
 

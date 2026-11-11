@@ -28,7 +28,7 @@ class DevDocsTests(unittest.TestCase):
         g = text("gate.md")
         for name in ("Diff review", "Spec checker", "Fix review", "Similar-bugs scan",
                      "Typecheck + lint + tests", "Production Build", "E2E Tests",
-                     "Gate summary (STATE.md)", "Gate commit"):
+                     "Gate summary (docs/gates/phase-N.md)", "Gate commit"):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
                      "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
@@ -80,7 +80,7 @@ class DevDocsTests(unittest.TestCase):
 
     def test_run_blocks_in_state_and_befragung(self):
         st = text("state.md")
-        for s in ("## Handoff", "## CI in background", "Decisions:"):
+        for s in ("## Handoff", "## CI", "Decisions:"):
             self.assertIn(s, st, s)
         self.assertIn("## Bundled round at run start", text("befragung.md"))
 
@@ -126,7 +126,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("state-check.py\" archive", text("commands.md"))
         self.assertTrue((DEV / "scripts" / "state-check.py").exists())
         self.assertIn("@claim:<branch>@<YYYY-MM-DD>", s)
-        self.assertIn("## Handoff — <branch>", st)
+        self.assertIn("## Handoff", st)
         self.assertIn("**Effect probe**", g)
         self.assertIn("at most 2", g)
         self.assertIn("- Criteria:", g)
@@ -160,6 +160,34 @@ class DevDocsTests(unittest.TestCase):
         e = " ".join(text("execution.md").split())
         self.assertIn("`ux-ui-design` is among the available skills → invoke it before designing", t)
         self.assertIn("whoever writes the UI code invokes `ux-ui-design` first; the dispatch says so", e)
+
+    def test_phase_file_holds_per_phase_state(self):
+        # v4: per-phase state lives in .dev/phase-<N>.md (line 1 `Branch:`); STATE.md keeps only shared parts.
+        st = text("state.md")
+        self.assertIn("`.dev/phase-<N>.md`", st)
+        block = st.split("## Phase file", 1)[1].split("```markdown", 1)[1].split("```", 1)[0]
+        self.assertTrue(block.lstrip().startswith("Branch: "), block[:40])
+        for s in ("## Position", "Phase base:", "Decisions:", "Acceptance criteria:",
+                  "## Quality Gate — Phase", "## CI", "## Handoff", "## Minor (deferred)"):
+            self.assertIn(s, block, s)
+        shared = st.split("## STATE.md — shared", 1)[1]
+        for s in ("## Core Value", "## Constraints", "## Requirements", "## Blockers & Risks",
+                  "Milestone End pending:"):
+            self.assertIn(s, shared, s)
+        self.assertIn("docs/gates/phase-<N>.md", st)
+        self.assertIn("state-check.py migrate", st)
+        for p in DEV.rglob("*.md"):
+            if "tests" in p.relative_to(DEV).parts:
+                continue
+            body = p.read_text()
+            for old in ("## Current Position", "Current Position", "## Progress", "Last activity"):
+                self.assertNotIn(old, body, f"{p.relative_to(DEV)}: {old}")
+        s = text("SKILL.md")
+        for finding in ("migrate:", "orphan phase file:", "phase file missing:", "phase file invalid:",
+                        "branch mismatch:"):
+            self.assertIn(finding, s, finding)
+        self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
+        self.assertIn("docs/gates/check-<YYYY-MM-DD>.md", text("dev-check.md"))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase, and the whole skill not above v2 (2026-10-03).
