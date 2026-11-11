@@ -33,7 +33,8 @@
 - `phase file invalid:` a `.dev/phase-<N>.md` whose first line is not `Branch: <branch>`.
 - `orphan phase file:` a phase file whose branch exists neither locally nor on origin, or whose
   phase is `[x]`/`[—]` in ROADMAP.md on the main branch (after a squash merge the branch is no
-  ancestor of main, so only the ROADMAP tells): archive its gate summary and delete it.
+  ancestor of main, so only the ROADMAP tells): save its Handoff and Minor sections to
+  docs/gates/phase-<N>.md, then delete it (an abandoned phase: ask the user first).
 - `phase file missing:` a `[~]`/`[!]` phase claimed by the current branch has no phase file
   (only once `.dev/` exists next to ROADMAP.md; before that the project is old and `migrate:` applies).
 - `branch mismatch:` the phase file names another branch than the claim in ROADMAP.md.
@@ -392,7 +393,8 @@ def check(root, main=None, branch=None, today=None):
             continue
         if not branch_exists(root, b) or theirs.get(pid, (" ",))[0] in DONE:
             out.append(f"orphan phase file: {f['path']} — branch {b} is gone or Phase {pid} is done on "
-                       f"{ref or 'main'}; archive its gate summary and delete it")
+                       f"{ref or 'main'}; save its Handoff and Minor sections to docs/gates/phase-{pid}.md, "
+                       "then delete it (an abandoned phase: ask the user first)")
             continue
         who = own.get(pid, (None, None))[1]
         if who and who != b:

@@ -24,7 +24,7 @@ All phases `[x]` or `[—]`:
 0. **Wait for background CI.** Read the `## CI` lines in `docs/gates/phase-<N>.md` of this
    milestone's phases and update them from their status files (`gate.md`, "CI in background"); wait
    until none is `pending` (restart a dead watcher). `red` or `timeout` → repair first (`gate.md`,
-   "Repairing a red CI"); `none` stays as noted. The lines stay in the gate files as the record.
+   "Repairing a red CI"); `none` stays as noted; the lines stay.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
 2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
@@ -59,7 +59,7 @@ All phases `[x]` or `[—]`:
    - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
    - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
 4. Show confirmation: "Session saved. Next time, run `/dev` to resume." — plus every path
-   `git status --porcelain` still lists, named as uncommitted (lost if the workspace is deleted).
+   `git status --porcelain` lists, as uncommitted (lost with the workspace).
 
 ---
 
@@ -92,7 +92,7 @@ fix, then back to the `[~]` phase).
 
 AskUserQuestion: Add phase (Recommended) or Add milestone.
 
-**Phase:** Which milestone → name → type → position (end or after specific phase) → extra skills → Edit ROADMAP.md → commit.
+**Phase:** Which milestone → name → type → position (end or after specific phase — behind that phase's `  - Decisions:` line) → extra skills → Edit ROADMAP.md → commit.
 **Milestone:** Name/goal → phases → append to ROADMAP.md → commit.
 
 After the commit: show the updated roadmap in the terminal, the new phase/milestone marked "new".
@@ -105,7 +105,7 @@ Warn if adding to a completed milestone.
 
 **Triggered by:** `/dev reorder`
 
-Only `[ ]` phases can move. `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
+Only `[ ]` phases can move, each with its indented `  - Decisions:` line. `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
 
 After the commit: show the updated roadmap in the terminal, the moved phase marked "moved".
 

@@ -193,7 +193,13 @@ class DevDocsTests(unittest.TestCase):
                         "branch mismatch:"):
             self.assertIn(finding, s, finding)
         self.assertIn("roadmap: pause Phase N [skip ci]", text("commands.md"))
-        self.assertIn("docs/gates/check-<YYYY-MM-DD>-<short sha>.md", text("dev-check.md"))
+        self.assertIn("docs/gates/check-<YYYY-MM-DD>-<branch slug>.md", text("dev-check.md"))
+        self.assertNotIn("never collide", text("dev-check.md"))
+        self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
+        self.assertIn("never\nunder another session's claim", st)
+        self.assertIn("roadmap: migrate state to phase files` to `<main>` at once", s)
+        self.assertIn("another session's → halt and tell the user", s)
+        self.assertIn("another session's lines are read only", text("gate.md"))
         self.assertIn("`## Abandoned`", s)
         self.assertNotIn("before v3 →", text("gate.md"))
 

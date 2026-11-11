@@ -44,7 +44,8 @@ are asked once, up front, instead of halting each phase for them.
 2. Ask them in one round: up to four independent questions per `AskUserQuestion` call, recommendation
    first with "(Recommended)", each labelled with its phase. More than four → further calls right
    away, still before the first phase starts. Questions with a UI/UX side follow procedure step 3.
-3. Record each answer in ROADMAP.md on the phase's `Decisions:` line (`state.md`).
+3. Record each answer in ROADMAP.md on the phase's `Decisions:` line (`state.md`) — unclaimed phases
+   and the own only; phases another session claimed get no question and no line.
 4. Nothing foreseeable → no round. Questions that only appear later (from a spec, a finding) are
    asked when they appear; an architectural phase still gets its interview, minus what is decided.
 

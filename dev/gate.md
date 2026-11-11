@@ -227,8 +227,8 @@ Detection: `package.json` `scripts.build`, `Makefile`, `.csproj`, `Package.swift
 
 ## Gate summary
 
-Written to `docs/gates/phase-<N>.md` before the gate commit; permanent, read by Milestone End and
-Pre-Release Review:
+Written to `docs/gates/phase-<N>.md` before the gate commit (old format: STATE.md, `state.md`);
+permanent, read by Milestone End and Pre-Release Review:
 
 ```markdown
 ## Gate summary — Phase N: <Name>
@@ -270,7 +270,9 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
 3. **Read the status** (`$(git rev-parse --git-common-dir)/dev-ci/<sha>`) when the watcher reports,
-   before each next phase starts and at Milestone End, and copy it into that line — in the phase
+   before each next phase starts and at Milestone End. Update and repair only your own lines and
+   those of phases you completed; another session's lines are read only (red → tell the user). Copy
+   the status into that line — in the phase
    file, or in `docs/gates/phase-<N>.md` once phase completion has moved the lines there:
    - `green <ids>` → done.
    - `red …` or `timeout` → halt after the current step: show the failing run(s)

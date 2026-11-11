@@ -1,6 +1,6 @@
 # State — the phase file and the shared STATE.md
 
-Each step says what it writes; this file holds the formats.
+Formats only; each step says what it writes.
 
 **1 phase = 1 branch = 1 file `.dev/phase-<N>.md`** next to ROADMAP.md (`<N>` verbatim from
 ROADMAP.md: 3, 6a, 4.1). Created at the claim, committed with the phase (never git-ignored),
@@ -34,16 +34,16 @@ Next: Step B fix dispatch with the build error, then Step D again
 ```
 
 - **Branch:** line 1, the only line a takeover (new workspace, new branch) replaces.
-- **Position:** one line — step, next action, date; every step overwrites it. Progress is never
-  stored: it is counted from ROADMAP.md.
+- **Position:** one line — step, next action, date; every step overwrites it. Progress is counted
+  from ROADMAP.md, never stored.
 - **Phase base:** `git rev-parse HEAD` at the claim, kept on a takeover; the gate diffs against it.
 - **Acceptance criteria:** the draft of a small phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks it finished (`SKILL.md`, Resume logic).
 - **Quality Gate:** read by `check-evidence.py check` without a file argument.
 - **CI:** one line per gate commit, status updated in place (`gate.md`, "CI in background").
 - **Handoff:** written at pause and interruption, at most 8 lines — where it stopped, Next, Open,
   Traps. Approvals are only those recorded in the phase file or ROADMAP.md.
-- **Minor (deferred):** minor task findings, non-critical gate findings, parked twins and traps later
-  phases need; phase completion moves them to the gate record.
+- **Minor (deferred):** minor and non-critical findings, parked twins, traps later phases need;
+  completion moves them to the gate record.
 - **`## UI review — approved findings`:** `/dev ui` during the phase appends the approved IDs
   (`- UI-1`, details in `UI-REVIEW.md`). Each ID is fixed to its criterion
   in 4c, or before the gate goes on if the phase is `[!]` (a code change: touched gate checks
@@ -52,18 +52,16 @@ Next: Step B fix dispatch with the build error, then Step D again
 
 ## Gate records — `docs/gates/`
 
-Permanent, one path per record:
+Permanent, one path per record (Milestone End and Pre-Release Review read them):
 
 - `docs/gates/phase-<N>.md` — `## Gate summary — Phase N: <Name>` (`gate.md`); from phase completion
   on also its `## CI` lines (updated in place; a CI repair of a closed phase opens its checklist
   here) and `## Minor (deferred)`, which Milestone End gathers into Blockers & Risks.
-- `docs/gates/check-<YYYY-MM-DD>-<short sha>.md` — the Check summary of `/dev check` (`dev-check.md`).
-
-Milestone End and Pre-Release Review read the folder.
+- `docs/gates/check-<YYYY-MM-DD>-<branch slug>.md` — the Check summary of `/dev check` (`dev-check.md`).
 
 ## STATE.md — shared
 
-Only what every phase shares; a phase never writes it:
+Only what every phase shares; a phase writes it only for the `Milestone End pending:` line:
 
 ```markdown
 # <Project name> — Project State
@@ -80,16 +78,19 @@ Milestone End pending: <milestone name>
 - **Size:** ≤ ~3000 words (`state-check.py`); history goes to commits, `docs/gates/`, `docs/roadmap-archive/`.
 
 **Decisions** live in ROADMAP.md, one indented line under the phase line, for every session:
-`  - Decisions: <answers> (<YYYY-MM-DD>)`. Clarification (4a) reads it; a later round extends that
-line; it stays when the phase is done.
+`  - Decisions: <answers> (<YYYY-MM-DD>)` — written only under unclaimed phases and the own, never
+under another session's claim. 4a reads it, a later round extends it; it stays
+after the phase and moves with it.
 
 ## Old format (projects without `.dev/`)
 
-A project without `.dev/` next to ROADMAP.md keeps the old format for **all** phases until the user
-agrees to `state-check.py migrate` (`SKILL.md`, Session Start). The claim creates no phase file;
-STATE.md holds per phase `### Phase N: <Name>` under `## Phases` (`Phase base:`, `Acceptance
-criteria:`), `## Quality Gate — Phase N: <Name>`, `## Handoff — <branch>` (position first),
-`### Gate summary — Phase N: <Name>`, and under `## CI in background` lines
-`- <sha> — Phase N <name>: <status>`; minors go straight to Blockers & Risks.
+Without `.dev/` next to ROADMAP.md, **all** phases keep the old format until the user agrees to
+`state-check.py migrate`; that commit goes to `<main>` at once, and each other session then migrates
+its own parts (`SKILL.md`, Session Start). No phase file is created. Every write a step makes to
+`.dev/phase-<N>.md` goes to the same-named place in STATE.md (`### Phase N` under `## Phases`,
+`## Quality Gate — Phase N`, `## Handoff — <branch>` with the position first); CI lines read
+`- <sha> — Phase N <name>: <status>` under `## CI in background`. The Gate summary stays in STATE.md
+(`### Gate summary — Phase N`); a takeover replaces the `## Handoff — <branch>` heading instead of
+`Branch:`; minors go to Blockers & Risks — in the old format only.
 
 **Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.

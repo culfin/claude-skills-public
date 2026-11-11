@@ -332,7 +332,8 @@ class StateCheckTests(unittest.TestCase):
     def test_orphan_phase_file_branch_gone(self):
         self.phase_file("4", "feature/gone")
         self.assertIn("orphan phase file: .dev/phase-4.md — branch feature/gone is gone or Phase 4 is done "
-                      "on main; archive its gate summary and delete it", self.check(main="main"))
+                      "on main; save its Handoff and Minor sections to docs/gates/phase-4.md, "
+                      "then delete it (an abandoned phase: ask the user first)", self.check(main="main"))
 
     def test_orphan_phase_file_done_on_main_after_squash(self):
         git(self.root, "checkout", "-qb", "work")
@@ -355,7 +356,8 @@ class StateCheckTests(unittest.TestCase):
         self.assertFalse(sc.is_ancestor(self.root, "work", "main"))
         found = self.check(branch="work", main="main")
         self.assertIn("orphan phase file: .dev/phase-4.md — branch work is gone or Phase 4 is done on main; "
-                      "archive its gate summary and delete it", found)
+                      "save its Handoff and Minor sections to docs/gates/phase-4.md, then delete it "
+                      "(an abandoned phase: ask the user first)", found)
         self.assertFalse(any(f.startswith("phase file missing") for f in found), found)
 
     def test_phase_id_with_letter_is_exact(self):
@@ -551,7 +553,8 @@ class StateCheckTests(unittest.TestCase):
         self.assertEqual(sorted(sc.phase_files(app)), ["3", "4"])
         found = sc.check(app, main="main", branch="work", today=TODAY)
         self.assertIn("orphan phase file: .dev/phase-4.md — branch work is gone or Phase 4 is done on main; "
-                      "archive its gate summary and delete it", found)
+                      "save its Handoff and Minor sections to docs/gates/phase-4.md, then delete it "
+                      "(an abandoned phase: ask the user first)", found)
         (app / "STATE.md").write_text("# State\n\n### Gate summary — Phase 1: Database\n- Tier: small\n")
         self.assertEqual(sc.migrate(app, today=TODAY), 0)
         self.assertTrue((app / "docs/gates/phase-1.md").is_file())
