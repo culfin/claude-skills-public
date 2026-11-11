@@ -22,7 +22,8 @@ import sys
 MAX_TASKS = 3
 MAX_LINES = 400
 RISK_TYPES = {"auth", "security", "migration", "data"}
-DB_CHANGE = re.compile(r"(^|/)migrations?/|\.sql$|(^|/)schema\.(prisma|sql|rb)$", re.I)
+DB_CHANGE = re.compile(r"(^|/)migrations?/|(^|/)db/migrate/|(^|/)alembic/versions/|\.sql$"
+                       r"|(^|/)schema\.(prisma|sql|rb)$", re.I)
 SENSITIVE = re.compile(
     r"(^|/)(auth|login|logout|session|sessions|middleware|security|permissions?)(/|\.|$)"
     r"|(^|/)api/|(^|/)(routes?|actions?|controllers?)/"

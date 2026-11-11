@@ -104,6 +104,15 @@ class GateTierTests(unittest.TestCase):
                 self.assertEqual(out[0], "large")
                 self.assertTrue(any(r.startswith("- DB change:") for r in out[1:]), out)
 
+    def test_rails_and_alembic_migrations_are_db_change(self):
+        for rel in ("db/migrate/20261111_add_users.rb", "alembic/versions/abc123_add_users.py"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- DB change:") and rel in r for r in out[1:]), out)
+                (self.root / rel).unlink()
+
     def test_unknown_type_cannot_weaken(self):
         self.write("src/auth/session.ts", 2)
         rc, out, _ = self.run_tier("--tasks", "1", "--type", "fullstack")

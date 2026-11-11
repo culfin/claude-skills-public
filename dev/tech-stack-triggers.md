@@ -59,7 +59,8 @@ matrix matches; its ops and dependency row reads the tier script's reasons, not 
 | `src/db/migrations/**`, SQL, ORM schema | DB schema changed | Security review (phase scope) |
 | `**/signup*`, `**/register*`, `**/reset*`, `**/otp*`, `**/upload*`, `**/polic*` | Expensive endpoint or access policy changed | Security review (phase scope) |
 | Any — `gate-tier.py` names `ops files` or `dependency manifest` | CI, deploy, infra or dependencies changed | Security review (phase scope) |
-| Any — phase `@type: auth`, `security` or `data` | Risk type (planning hint, `gate.md`) | Security review (full scope) |
+| Phase `@type: migration`, or `@type: backend` in the large tier | Gate addition by type (`gate.md`) | Security review (phase scope) |
+| Phase `@type: auth`, `security` or `data` | Gate addition by type (`gate.md`) | Security review (full scope) |
 
 **Performance review — only on cause.** It runs only when the changed files contain at least one of:
 - new or changed DB queries (ORM calls, SQL, query builders);

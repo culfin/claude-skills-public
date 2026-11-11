@@ -145,7 +145,7 @@ Creates and commits ROADMAP.md + STATE.md through an interactive question flow.
 Pre- and post-skills of a phase are `defaults.phase-types.<@type>.pre` and `.post` from the
 frontmatter; an unknown type → empty lists (reported once, "Parse phases").
 
-Built-in phase types (planning hints; the diff decides the gate) and `@gate:` are in `gate.md`.
+Built-in phase types (planning hints; gate additions that never remove a check) and `@gate:` are in `gate.md`.
 
 ---
 

@@ -271,7 +271,15 @@ class DevDocsTests(unittest.TestCase):
         t = " ".join(text("tech-stack-triggers.md").split())
         self.assertIn("unknown @type: <t> — planning uses no type hints; the gate still reads the diff",
                       text("SKILL.md"))
-        self.assertIn("The diff decides the gate, not `@type:`.", g)
+        self.assertIn("The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.", g)
+        lines = text("gate.md").split("**Gate additions by type (they only add, never remove):**", 1)
+        self.assertEqual(len(lines), 2, "table 'Gate additions by type' missing")
+        rows = lines[1].split("\n\n")[1].splitlines()
+        mig = next(r for r in rows if r.startswith("| `migration` |"))
+        for word in ("Security review", "rollback path", "smoke test"):
+            self.assertIn(word, mig)
+        self.assertIn("Security review", next(r for r in rows if r.startswith("| `backend` |")))
+        self.assertIn("| `refactor` |", lines[0].split("## Phase Types")[1])
         self.assertNotIn("Only Diff review, Typecheck + lint + tests, Gate summary", g)
         self.assertIn("| Any — `gate-tier.py` names `ops files` or `dependency manifest` |", t)
         self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)

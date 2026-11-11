@@ -44,19 +44,30 @@ Exit 2 means git failed — fix the base ref, never guess a tier.
 
 ## Phase Types
 
-**The diff decides the gate, not `@type:`.** Which reviewers run follows from the changed files
-(Step A) and `gate-tier.py`; `--type` can only make the tier stronger. A type is a planning hint:
+**The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
+Reviewers come from the changed files (Step A) and `gate-tier.py` (`--type` only raises the tier).
 
-| `@type:` | What it triggers in planning |
+**Phase Types — planning hints:**
+
+| `@type:` | In planning |
 |---|---|
 | `ui`, `landing` | UX clarification and companion (`tech-stack-triggers.md`, "During Brainstorming") |
-| `backend` | `pg:design-postgres-tables` when DB changes are planned |
 | `migration` | The mandatory halt (`SKILL.md`, "Halt on Irreversible Actions") |
-| `auth`, `security`, `data` | Security review in full scope, not phase scope |
-| `docs` | No interview; no Production Build or E2E Tests — only while the diff holds nothing but `*.md` |
+| `docs` | No interview; no Production Build or E2E Tests — only with a `*.md`-only diff |
+| `refactor` | None; its gate addition is below |
 
-A `DB change:` reason from `gate-tier.py` → Diff review checks the rollback path and E2E includes
-a migration smoke test (migrate up, verify data, migrate down if possible).
+**Gate additions by type (they only add, never remove):**
+
+| `@type:` | Adds |
+|---|---|
+| `migration` | Security review; Diff review checks the rollback path; E2E includes a migration smoke test (migrate up, verify data, migrate down if possible) |
+| `backend` | Large tier: Security review; with `postgres` also `pg:design-postgres-tables` |
+| `data` | `pg:design-postgres-tables` with `postgres` |
+| `auth`, `security`, `data` | Security review in full scope, not phase scope |
+| `landing` | Accessibility review, Design detector and Taste pre-flight in either tier; Taste findings are notes |
+| `refactor` | Similar-bugs scan also when code moved (Step C) |
+
+The rollback check and the smoke test also apply whenever `gate-tier.py` names `DB change:`.
 
 ---
 
@@ -84,7 +95,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`. List only items that
 <!-- Steps B and C, added only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
-<!-- Step D and closing, always (Build and E2E: not for a docs-only diff, Phase Types) -->
+<!-- Step D and closing, always; Build and E2E: not for `@type: docs` with a `*.md`-only diff (Phase Types) -->
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
 - [ ] E2E Tests                      <!-- small tier: only if UI files or a user flow changed -->
