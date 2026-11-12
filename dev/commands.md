@@ -33,7 +33,7 @@ Session Start, step 1: each finding of `state-check.py check`, handled before RO
 
 ## Milestone End
 
-All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.md`, step 7):
+All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.md`, step 7). Several `Milestone End pending:` lines in STATE.md (milestones closed on parallel branches): run it for the milestone that comes first in ROADMAP.md, then the next.
 
 0. **Wait for background CI** — every SHA under `## CI` in `docs/gates/phase-<N>.md` of this
    milestone, status and repair per `ci.md`: wait until none is
@@ -56,7 +56,7 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
    `docs/gates/` stays), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with highlights of their `docs/gates/` summaries (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
-7. Remove `Milestone End pending: <name>` from STATE.md, then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause. `brag` installed → after a `landing` phase, mention `/brag` once at Milestone End.
+7. Remove this milestone's `Milestone End pending:` line from STATE.md (the others stay), then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause. `brag` installed → after a `landing` phase, mention `/brag` once at Milestone End.
 
 ---
 

@@ -397,6 +397,15 @@ class StateCheckTests(unittest.TestCase):
         self.assertIn("phase file missing: Phase 3 [!] claimed by this branch has no .dev/phase-3.md",
                       self.check())
 
+    def test_several_milestone_end_pending_lines_are_accepted(self):
+        # Parallel workspaces close milestones at the same time: one line per milestone.
+        (self.root / "STATE.md").write_text(
+            "# State\n\n## Handoff — main\nNext: Phase 3\n\n## Blockers & Risks\n"
+            "Milestone End pending: Milestone 1: Base\nMilestone End pending: Milestone 2: Next\n")
+        self.assertEqual(self.check(), [])
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse(any("Milestone End" in line for line in out), out)
+
     def test_branch_mismatch(self):
         git(self.root, "branch", "other")
         self.phase_file("3", "other")

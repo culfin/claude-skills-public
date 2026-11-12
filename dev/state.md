@@ -73,7 +73,7 @@ Milestone End pending: <milestone name>
 
 - **Core Value, Constraints:** fixed after init unless the user changes them. **Blockers & Risks:**
   append new, remove resolved.
-- **`Milestone End pending:`** set by the completion that closes a milestone; Milestone End removes it.
+- **`Milestone End pending:`** one line per closed milestone, set by the completion that closes it; its Milestone End removes only that line.
 - **Size:** ≤ ~3000 words (`state-check.py`); history goes to commits, `docs/gates/`, `docs/roadmap-archive/`.
 
 **Decisions** live in ROADMAP.md, one indented line under the phase line, for every session:

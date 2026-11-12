@@ -66,7 +66,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implemented, gate outstanding), `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
    - A `@type:` that `gate.md` does not name and `defaults.phase-types` has no key for → report once per type: `unknown @type: <t> — planning uses no type hints; the gate still reads the diff`.
-6. **Find current position:** STATE.md has `Milestone End pending: <name>` → Milestone End first. Else the first milestone with an incomplete phase; all done: "Roadmap complete!", offer `/dev add` or `/dev review`.
+6. **Find current position:** a `Milestone End pending:` line in STATE.md → Milestone End first (several: `commands.md`). Else the first milestone with an incomplete phase; all done: "Roadmap complete!", offer `/dev add` or `/dev review`.
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
    first; `done on <main>` → mark it, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
    one → halt and say so.
@@ -203,7 +203,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 3. **Gate record:** append the phase file's `## CI` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` (it holds the Gate summary); STATE.md stays untouched.
 4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
 5. Commit all of it at once: `roadmap: complete Phase N — <name>`
-6. `git fetch`, then read `git show origin/<main>:<prefix>ROADMAP.md`: every phase of the milestone `[x]`/`[—]` there, this one counted as done → write `Milestone End pending: <milestone name>` into STATE.md, then Milestone End (`commands.md`)
+6. `git fetch`, then read `git show origin/<main>:<prefix>ROADMAP.md`: every phase of the milestone `[x]`/`[—]` there, this one counted as done → append `Milestone End pending: <milestone name>` below any such lines in STATE.md (a merge keeps all), then Milestone End (`commands.md`)
 
 ### 8. Next Action
 
