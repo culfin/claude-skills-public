@@ -84,7 +84,14 @@ critical`; the `Gate commit` item has no evidence format and its tick lands in n
 `## CI` in the phase file; a gate made up later leaves two gate summaries in one file; analyzers may cite
 diff-file instead of source line numbers; models.md names tiers, not models; a partially available stack
 source has no rule; E2E tests and a shared dev database; roadmap writing does not steer to known `@type:`
-values.
+values; the router no longer says what `/dev` is not for; removing the Spec checker's own agent branch
+(`git branch -D`) is not named as an exception to the halt on deleting branches; a second disagreement
+between analyses in the same run (after the one user question) has no rule; in the old format a STATE.md
+change a phase asks for stays bookkeeping, so the Fix review diff does not show it.
+
+The migration to phase files changes `@state` once (STATE.md turns from bookkeeping into code): ticked
+gate items of a phase in progress go stale and are rerun. Phase lines also match `*` bullets and italic
+titles.
 
 **Breaking / migration.** A project without the marker `.dev/.gitkeep` on `origin/<main>` (no `origin`:
 the local main) keeps the old format until the user agrees; `check` then reports `migrate:`, and the
