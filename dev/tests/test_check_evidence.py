@@ -394,6 +394,17 @@ class EvidenceTests(unittest.TestCase):
         diff = git(self.root, "diff", before, after)
         self.assertIn("pnpm 12.7.0", diff)
 
+    def test_migration_makes_ticked_items_stale(self):
+        # Old format: STATE.md holds the checklist and is bookkeeping. The marker turns STATE.md into
+        # code, so the migration changes @state without a code change; commands.md (`migrate:`) tells
+        # the session to rerun the ticked items of its phase.
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- x\n\n## Quality Gate — Phase 3: Login\n- [x] Diff review\n")
+        before = self.sid()
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- x\n")
+        self.assertNotEqual(self.sid(), before)
+
     def test_old_format_state_stays_bookkeeping(self):
         # Before the migration the gate checklist itself lives in STATE.md.
         before = self.sid()
