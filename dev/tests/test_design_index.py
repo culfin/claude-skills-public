@@ -128,12 +128,42 @@ def test_motion_and_font_rules_follow_page_kind():
     # "one eye-catcher", and the detector reported Inter in app UI as an overused font.
     triggers = " ".join((DEV / "tech-stack-triggers.md").read_text().split())
     assert "**Motion — which source wins.**" in triggers
-    assert "taste's motion rules (intensity, entrances, scroll-reveal per section) win over" in triggers
+    # v4.5.1: taste 2.5 forbids per-section scroll reveals; the sentence no longer names them.
+    assert "taste's motion rules (how much moves, the hero entrance, the moments it places;" in triggers
+    assert "scroll-reveal" not in triggers
     assert "motion stays sparse per ux-ui-design and Emil; taste's motion never carries over" in triggers
     motion = " ".join((DEV / "analyzers/motion.md").read_text().split())
-    assert "entrances and scroll-reveals the page's taste rules call for are not a finding here" in motion
+    assert "the entrance, moments and scroll motion the page's taste rules call for are not a finding here" in motion
     detector = " ".join((DEV / "analyzers/design-detector.md").read_text().split())
     assert "`overused-font` (Inter, Roboto, …) is a note only on a `landing` page kind" in detector
     assert 'dismiss it as "app UI"' in detector
     contract = " ".join((DEV / "analyzers/CONTRACT.md").read_text().split())
     assert "and the **page kind**: `landing`" in contract
+
+
+TASTE = "$DEV_DESIGN_DIR/taste/skills/taste-skill/"
+
+
+def test_taste_landing_reads_skill_plus_named_references():
+    # v4.5.1 RED: with taste 2.5.1 (SKILL.md plus references/) the landing subagent picked references
+    # ad hoc, skipped layout/copy/system and passed taste's dealing scripts on as orders.
+    index = (DESIGN / "INDEX.md").read_text()
+    note = " ".join(index.split("\"4a landing\" (taste)")[1].split())
+    paths = re.findall(r"`(\$DEV_DESIGN_DIR/taste/[^`]+)`", index)
+    rel = {p.removeprefix(TASTE) for p in paths}
+    assert rel == {"SKILL.md", "references/motion.md", "references/layout-v4.md", "references/copy.md",
+                   "references/system.md", "references/sections.md", "references/moments.md",
+                   "references/effects-usage.md", "library/palettes.json", "library/type.json"}
+    assert "motion comes from here" in note and "No `references/` (older taste): `SKILL.md` alone" in note
+    assert "No taste script or hook is run" in note and '"proposed, not dealt"' in note
+    assert "in ≤ 40 lines, its motion block included" in note
+    assert "never a whole file that is listed by section" in note
+    # Every named path exists in the active taste checkout; an older one without references/ uses
+    # the SKILL.md-only fallback, so only SKILL.md is required there.
+    root = VENDOR / "taste/skills/taste-skill"
+    if root.exists():
+        for r in sorted(rel):
+            if (root / "references").is_dir() or r == "SKILL.md":
+                assert (root / r).exists(), r
+    o5 = " ".join((DEV / "sources.md").read_text().split())
+    assert "taste's scripts (dealers, `gate.mjs`, linters), its Stop hook and install steps never run (I4)" in o5

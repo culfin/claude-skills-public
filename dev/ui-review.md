@@ -57,7 +57,7 @@ whole codebase), requirement "the view serves its primary task for its primary u
 - **design-detector** — `analyzers/design-detector.md` (web only; native: `skipped: not web`).
 - **motion** — `analyzers/motion.md`; no sweep hit → `skipped: no animation in scope`.
 - **density** — `design/density-critique.md` applied to each screenshot, plus the rows above.
-- **taste** (kind `landing` only) — reads the taste file itself and returns findings as notes.
+- **taste** (kind `landing` only) — reads the taste files per `design/INDEX.md` (note "4a landing") and returns findings as notes.
 - **ux** — `ux-ui-design` in Review mode on the screenshots and `$UI_SCOPE`; severity 4/3/1–2 → critical/major/minor.
 
 Wait for all (15 minutes, retry once, as in the gate's review wave). Missing source under `$DEV_DESIGN_DIR`,
