@@ -34,7 +34,7 @@ current step needs.
 | CI in background, CI repair | `ci.md` | Gate commit; before each phase if a phase or gate file of this milestone has a `## CI` SHA; Milestone End, Pre-Release Review, `/dev check` |
 | Subagent models; state file formats | `models.md`; `state.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md |
 | Visual Companion | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
-| Host adapter; superpowers install | `runtime.md`; `superpowers.md` | First explicit `/dev` run; before the first phase step or a plugin update |
+| Host adapter, superpowers install | `runtime.md` | First explicit `/dev` run |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start, architectural 4a; gate Step D |
 | Tech, design, security triggers and sources | `tech-stack-triggers.md` → `stack/INDEX.md`, `stack/docs.md`, `design/INDEX.md` | Steps 4a, 4c, gate Step A — matching rows only |
 | Analyzer contract | `analyzers/CONTRACT.md` | With every analyzer dispatch |

@@ -12,6 +12,14 @@ what the host actually offers.
   not a substitute for an independent one. `Skill` = however the host loads another skill.
 - **Models:** set a model per subagent only where the host supports it (see
   `models.md`); otherwise the subagent inherits the current model.
+- **Superpowers install:** the active install is authoritative — the one Claude Code records in
+  `~/.claude/plugins/installed_plugins.json` (`installPath`, `version`), elsewhere `DEV_SUPERPOWERS_ROOT`;
+  never "the newest directory in the cache". Before the first phase step, check it statically:
+  `python3 "$DEV_DIR/scripts/check-superpowers.py" --root <active root>`. `files-present` means the
+  files `/dev` needs exist, not that the version is current or works; `blocked` → name what is
+  missing, the steps that need it are blocked, not skipped. Unchecked freshness is "version X,
+  freshness unknown", never "up to date". A newer install counts from the next phase boundary (O3);
+  updates only when the user asks (`updates.md`).
 - **Visual Companion:** needs the superpowers brainstorm companion. `scripts/companion.sh` finds it
   via `DEV_COMPANION_SCRIPTS_DIR` or `DEV_SUPERPOWERS_ROOT` (set one of them on hosts other than
   Claude Code), else the active install recorded in Claude Code's `installed_plugins.json`. Not found → the screen step is blocked; say so.

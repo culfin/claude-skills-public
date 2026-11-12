@@ -46,4 +46,4 @@ Claude Code records the active install itself. Elsewhere, point `/dev` at it:
 export DEV_SUPERPOWERS_ROOT=/path/to/active/superpowers
 ```
 
-Details and the update path: [dev/superpowers.md](dev/superpowers.md).
+Details: [dev/runtime.md](dev/runtime.md), "Superpowers install"; the update path: [dev/updates.md](dev/updates.md).

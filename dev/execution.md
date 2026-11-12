@@ -6,7 +6,7 @@ The main session dispatches every implementer and reviewer itself
 ## Setup
 
 - **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development` (active root per
-  `superpowers.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
+  `runtime.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
 - **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
