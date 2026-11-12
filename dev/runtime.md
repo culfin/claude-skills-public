@@ -64,9 +64,15 @@ Session Start, before the run begins; other merged rows only get a line `not rem
 "id:<worktreeId>" --json` — never `--force`, never `--delete-branch`; the branch stays. "Just clean
 up, don't ask" changes none of this.
 
-**Parallel phase**, only on the user's yes: a full handoff (`orca-cli`, "Full Handoffs") —
-`orca worktree create --name phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next — Phase <N>" --json`,
-`<agent>` the one running this session (usually `claude`). Then neither wait for it nor steer it.
+**Parallel phase** — `/dev parallel [<N> …]`, or the user asks for a phase in parallel (that is the
+yes). Not in Orca mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
+over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
+`[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
+named phase, a full handoff (`orca-cli`, "Full Handoffs"):
+`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next <N>" --json`,
+`<agent>` the one running this session (usually `claude`); report each workspace name. Then neither
+wait for them nor steer them; this session counts the handed-off phases as claimed and goes on with
+the next free phase, if any.
 
 **Second opinion.** ROADMAP frontmatter `defaults.second-opinion: <agent>` (e.g. `codex`) adds the
 gate item `Second opinion: <agent>` (`gate.md`, Step A). In the same wave, start it as an Orca worker:

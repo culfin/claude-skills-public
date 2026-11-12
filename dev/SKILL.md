@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
+description: "Use when user says /dev, /dev next [<N>], /dev parallel, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
 ---
 
 ## Language
@@ -22,9 +22,9 @@ current step needs.
 | Command or step | File | When |
 |---|---|---|
 | `/dev`, `/dev next` | this file | Session Start |
+| `/dev next <N>`; `/dev parallel [<N> …]` | `commands.md`; `runtime.md` | On the command |
 | `/dev init` | `roadmap-creation.md` | Roadmap Creation (writes and commits ROADMAP.md, STATE.md) |
 | `/dev status`, `skip`, `add`, `reorder`, `pause`, `review` (Pre-Release Review); Milestone End | `commands.md` | On the command |
-| A `state-check.py check` finding | `commands.md` | State findings, Session Start step 1 |
 | "stop", "drop it", "cancel", "do something else" in a `[~]`/`[!]` phase | `commands.md` | Phase Interruption, at once |
 | `/dev debug` | `commands.md` → `debugger.md` | Debug Flow |
 | `/dev check` | `dev-check.md` → `gate.md` | Standalone Quality Gate |
@@ -59,7 +59,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    Then read ROADMAP.md.
 2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No marker `<prefix>.dev/.gitkeep` on `origin/<main>` → old format for every phase (`state.md`, "Old format").
 3. **Detect tech stack** once per session: the project root against section 1 of `stack/INDEX.md`,
-   ids stored as `$TECH_STACKS` (e.g. `[nextjs, shadcn, postgres]`); `nextjs`, `shadcn` and `svelte`
+   ids stored as `$TECH_STACKS`; `nextjs`, `shadcn` and `svelte`
    also count as **web**, `ios` as **Apple** (`design/INDEX.md` platform rows match on these).
 4. **Parse YAML frontmatter.** Malformed: show the error, ask the user to fix it, stop.
 5. **Parse phases:** milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
