@@ -6,8 +6,11 @@ Every checked item must name its evidence and the state of the code it was check
     - [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04
 
 `@<state>` is the git tree id of the working tree (tracked + untracked, .gitignore respected,
-without the bookkeeping the gate itself writes: STATE.md, ROADMAP.md, .dev/phase-*.md, the
-marker .dev/.gitkeep and docs/gates/**; anything else under .dev/ is code), printed by `check-evidence.py id`.
+without the bookkeeping the gate itself writes: ROADMAP.md, .dev/phase-*.md, the marker
+.dev/.gitkeep and docs/gates/**; anything else under .dev/ is code), printed by `check-evidence.py id`.
+STATE.md next to the marker (migrated) is code except its `Milestone End pending:` lines, so a phase
+that changes its content goes through the gate like any file; without the marker (old format, the
+checklist lives there) all of STATE.md is bookkeeping.
 It does not change when that exact content is committed, so a gate commit that contains the checked
 content keeps every item valid — and any edit to the code after a check makes that item stale.
 
@@ -56,7 +59,10 @@ from pathlib import Path
 
 ID_LEN = 12
 # Files the gate itself writes while checking; they are bookkeeping, not the code under review.
-BOOKKEEPING = ("STATE.md", "ROADMAP.md")
+BOOKKEEPING = ("ROADMAP.md",)
+# STATE.md: whole file before the migration, else only these status lines (state.md).
+STATE_FILE = "STATE.md"
+STATUS_LINE = re.compile(r"^\s*Milestone End pending:")
 # Phase files, the migration marker and gate records, likewise wherever the app lives.
 BOOKKEEPING_GLOBS = (".dev/phase-*.md", ".dev/.gitkeep", "docs/gates/**")
 # Same syntax as scripts/state-check.py.
@@ -94,10 +100,28 @@ def state_id(root):
         run("add", "-A")
         # Bookkeeping counts wherever it lives: monorepos keep STATE.md/ROADMAP.md, .dev/ and
         # docs/gates/ next to the app (e.g. apps/web/), not at the root.
+        for line in filter(None, run("ls-files", "-s", "-z", "--", f":(glob)**/{STATE_FILE}").split("\0")):
+            mode_sha, path = line.split("\t", 1)
+            mode, sha = mode_sha.split()[:2]
+            marker = root / Path(path).parent / ".dev" / ".gitkeep"
+            kept = "" if not marker.is_file() else "".join(
+                l for l in run_raw(root, env, "cat-file", "blob", sha).splitlines(keepends=True)
+                if not STATUS_LINE.match(l))
+            if kept.strip():
+                blob = run_raw(root, env, "hash-object", "-w", "--stdin", stdin=kept).strip()
+                run("update-index", "--cacheinfo", f"{mode},{blob},{path}")
+            else:
+                run("rm", "--cached", "-q", "--", path)
         run("rm", "--cached", "-q", "--ignore-unmatch", "--",
             *(f":(glob)**/{name}" for name in BOOKKEEPING),
             *(f":(glob)**/{g}" for g in BOOKKEEPING_GLOBS))
         return run("write-tree")[:ID_LEN]
+
+
+def run_raw(root, env, *args, stdin=None):
+    """git output unstripped (blob contents keep their whitespace)."""
+    return subprocess.run(["git", "-C", str(root), *args], env=env, check=True, input=stdin,
+                          capture_output=True, text=True).stdout
 
 
 def default_file(base="."):

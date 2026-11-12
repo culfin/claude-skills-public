@@ -360,6 +360,39 @@ class EvidenceTests(unittest.TestCase):
         (self.root / "ROADMAP.md").write_text(f"- [~] __Phase 3: Login__ @claim:{branch}@2026-11-11\n")
         self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
 
+    def migrated_state(self, text):
+        (self.root / ".dev").mkdir(exist_ok=True)
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        (self.root / "STATE.md").write_text(text)
+
+    def test_milestone_end_pending_line_is_bookkeeping(self):
+        self.migrated_state("# State\n\n## Blockers & Risks\n- none\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "migrated")
+        before = self.sid()
+        self.migrated_state("# State\n\n## Blockers & Risks\n- none\nMilestone End pending: Milestone 2: Next\n"
+                            "Milestone End pending: Milestone 3: Later\n")
+        self.assertEqual(self.sid(), before)
+
+    def test_content_change_in_migrated_state_is_code(self):
+        # A phase that changes STATE.md content (a trap, a constraint) changes the reviewed state,
+        # so its evidence goes stale and the Fix review diff shows the change.
+        self.migrated_state("# State\n\n## Constraints\n- pnpm 12.x\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "migrated")
+        before = self.sid()
+        self.migrated_state("# State\n\n## Constraints\n- pnpm 12.7.0\n")
+        after = self.sid()
+        self.assertNotEqual(after, before)
+        diff = git(self.root, "diff", before, after)
+        self.assertIn("pnpm 12.7.0", diff)
+
+    def test_old_format_state_stays_bookkeeping(self):
+        # Before the migration the gate checklist itself lives in STATE.md.
+        before = self.sid()
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- anything\n")
+        self.assertEqual(self.sid(), before)
+
     def test_monorepo_subdir(self):
         app = self.root / "apps" / "web"
         self.claim(app, "3")
