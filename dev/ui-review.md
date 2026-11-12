@@ -49,7 +49,7 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 | kind `landing` | "4a landing" (taste, `subagent`) | taste subagent |
 | `ux-ui-design` available | none — the forms, states and copy rows are then not loaded | ux subagent |
 
-Dispatch per `analyzers/CONTRACT.md`, **mode `full` limited to `$UI_SCOPE`** (no diff, not the
+Dispatch per `gate.md`, "Analyzer dispatch" (`analyzers/CONTRACT.md` by path, unread), **mode `full` limited to `$UI_SCOPE`** (no diff, not the
 whole codebase), requirement "the view serves its primary task for its primary user",
 `$TECH_STACKS` and the kind; model explicitly per `models.md` (standard tier):
 

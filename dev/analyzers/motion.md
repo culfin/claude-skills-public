@@ -37,7 +37,7 @@ For each hit, against the standard:
 
 1. **Should it animate at all?** How often does a user see it (frequency table)? Is it triggered by
    the keyboard? A command palette or list navigation that animates is a finding. On a `landing`
-   page kind (`CONTRACT.md`, input 5) entrances and scroll-reveals the page's taste rules call for
+   page kind (`CONTRACT.md`, input 4) entrances and scroll-reveals the page's taste rules call for
    are not a finding here (`tech-stack-triggers.md`, "Motion — which source wins"); 2–6 still apply.
    In app UI, decorative motion is a finding.
 2. **Easing and duration.** Enter/exit, on-screen movement, hover and constant motion each have a

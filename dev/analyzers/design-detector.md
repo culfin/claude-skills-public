@@ -40,7 +40,7 @@ Open the file at the reported place and decide:
    (a brand font, a gradient in the logo). Then dismiss it with that reason and suggest an
    inline `impeccable-disable-line <rule>: <reason>` instead of a silent pass.
 3. **Fonts by page kind.** `overused-font` (Inter, Roboto, …) is a note only on a `landing` page
-   kind (`CONTRACT.md`, input 5). In app UI the system font, Inter, Roboto and the like are right:
+   kind (`CONTRACT.md`, input 4). In app UI the system font, Inter, Roboto and the like are right:
    dismiss it as "app UI" — no note, no other font suggested, no disable comment.
 4. **Visible?** Static scans see source, not the rendered page. A rule that depends on layout
    (contrast against an image, overflow) is a candidate to verify, not a confirmed finding — say

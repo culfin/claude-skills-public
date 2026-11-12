@@ -1,7 +1,7 @@
 # Stack sources index
 
-Loaded on demand, never kept in context: section 1 once per session (stack detection), from
-section 2 only the rows whose stack id is in `$TECH_STACKS` **and** whose trigger matches the
+Loaded on demand, never kept in context: section 1 is read by `scripts/detect-stack.py` (by hand
+only when it fails), from section 2 only the rows whose stack id is in `$TECH_STACKS` **and** whose trigger matches the
 phase, the task or the changed files. `$DEV_STACK_DIR` (default `~/.claude/dev-stack`) holds
 optional git checkouts, one directory per id; `node_modules/…` paths are docs or skills the
 project's own packages ship, version-matched (in a monorepo: the app's own `node_modules`).
@@ -10,19 +10,23 @@ A missing checkout or missing bundled docs → the gate item is ticked `skipped:
 
 ## 1. Detection → `$TECH_STACKS`
 
+Indicator cells are parsed by `scripts/detect-stack.py`: backticked tokens only — `x` in dependencies,
+`glob` with `text`, `dir/`, `**/dir/`, other globs; "(no web stack above)"; in "Also" "counts as
+<group>" and "implies `<id>`". A row it cannot parse makes it exit 2.
+
 | Indicator | Stack id | Also |
 |---|---|---|
 | `next.config.*` or `"next"` in dependencies | `nextjs` | counts as web |
 | `components.json` (shadcn config) | `shadcn` | skill `shadcn`; counts as web |
-| PostgreSQL connection (`.env` with `DATABASE_URL`, `pg` in dependencies, migrations dir) | `postgres` | `pg:design-postgres-tables` |
-| `Podfile` / `.xcodeproj` / `Package.swift` | `ios` | `swiftui-pro`, `swift-concurrency-pro`, `swift-testing-pro`; counts as Apple |
-| `*.csproj` with WinUI/WindowsAppSDK | `winui` | `winui-pro` |
+| PostgreSQL connection (`.env` with `DATABASE_URL`, `pg` in dependencies, `**/migrations/` directory) | `postgres` | `pg:design-postgres-tables` |
+| `Podfile` / `*.xcodeproj` / `Package.swift` | `ios` | `swiftui-pro`, `swift-concurrency-pro`, `swift-testing-pro`; counts as Apple |
+| `*.csproj` with `WinUI` or `WindowsAppSDK` | `winui` | `winui-pro` |
 | `Cargo.toml` | `rust` | `rust-best-practices`, `rust-testing` |
 | `src-tauri/` directory | `tauri` | `tauri-v2`; implies `rust` |
 | `build.gradle*` / `AndroidManifest.xml` | `android` | design rows "platform Android" |
 | `app.json` with `expo`, or `"react-native"` in dependencies | `expo` | design rows "animation Expo", platform Apple/Android |
 | `svelte.config.*` or `"svelte"` in dependencies | `svelte` | `svelte:svelte-core-bestpractices`, `svelte:svelte-code-writer`, Svelte MCP; counts as web |
-| `astro.config.*`, `vite.config.*`, `index.html` (no web stack above) | `web` | design rows "platform web" |
+| `astro.config.*`, `vite.config.*`, `index.html` (no web stack above) | `web` | design rows "platform web"; counts as web |
 | `Dockerfile*`, `compose*.y*ml` or `docker-compose*.y*ml` | `docker` | — |
 | `.github/workflows/` | `gha` | — |
 | `"better-auth"` in dependencies | `better-auth` | — |
@@ -30,7 +34,7 @@ A missing checkout or missing bundled docs → the gate item is ticked `skipped:
 | `"fastify"` in dependencies | `fastify` | — |
 | `"ai"` in dependencies | `ai-sdk` | — |
 | `"@playwright/test"` or `"playwright"` in dependencies | `playwright` | — |
-| `wp-config.php`, `wp-content/`, a theme `style.css` with a `Theme Name:` header, or a PHP file with a `Plugin Name:` header | `wordpress` | — |
+| `wp-config.php`, `wp-content/`, a theme `style.css` with a `Theme Name:` header, or a PHP file `*.php` with a `Plugin Name:` header | `wordpress` | — |
 | `"tailwindcss"` in dependencies | `tailwind` | docs only (`stack/docs.md`) |
 
 The skills under "Also" keep their triggers in `tech-stack-triggers.md`.

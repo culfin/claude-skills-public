@@ -381,6 +381,42 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
 
+    def test_main_session_never_reads_the_analyzer_contract(self):
+        # v4.5.0: the contract is for the analyzer subagents; the dispatcher's part lives in gate.md.
+        gate = " ".join(text("gate.md").split())
+        self.assertIn("**Analyzer dispatch**", gate)
+        self.assertIn("Never open `analyzers/CONTRACT.md` or the analyzer file, not even to check a prompt or a reply", gate)
+        self.assertIn("by absolute path", gate)
+        for needle in ("the diff as a file", "untracked files included", "the requirement", "page kind",
+                       "`models.md`", "Ask for refutation", "`Result:` line is the item's evidence"):
+            self.assertIn(needle, gate)
+        row = next(l for l in text("SKILL.md").splitlines() if "CONTRACT.md" in l)
+        self.assertIn("only by path, for the subagent", row)
+        for name in ("commands.md", "ui-review.md", "tech-stack-triggers.md"):
+            self.assertIn('"Analyzer dispatch"', text(name), name)
+            self.assertNotIn("each with `analyzers/CONTRACT.md`", text(name), name)
+        contract = text("analyzers/CONTRACT.md")
+        self.assertIn("The dispatcher does not read this file", contract)
+        self.assertNotIn("Set the model explicitly", contract)
+
+    def test_stack_detection_runs_the_script_with_a_reported_fallback(self):
+        # v4.5.0: detection is mechanical; the index stays the list, the script reads it.
+        step = text("SKILL.md").split("3. **Detect tech stack**", 1)[1].split("\n4. ", 1)[0]
+        step = " ".join(step.split())
+        self.assertIn('python3 "$DEV_DIR/scripts/detect-stack.py"', step)
+        self.assertIn("No `python3` or exit ≠ 0", step)
+        self.assertIn("detect-stack failed: <error>", step)
+        self.assertIn("section 1 yourself", step)
+
+    def test_trigger_lines_come_from_the_script_with_a_reported_fallback(self):
+        # v4.5.0: the session reads only the trigger lines of its stacks, step and type.
+        row = next(l for l in text("SKILL.md").splitlines() if l.startswith("| Tech, design, security"))
+        self.assertIn('detect-stack.py" --triggers --step <step> --type <@type>', row)
+        self.assertIn("fails → read `tech-stack-triggers.md`, say so", row)
+        self.assertIn("`--triggers --step 4a`", text("SKILL.md"))
+        self.assertIn("`--triggers --step 4c`", text("execution.md"))
+        self.assertIn("`--triggers --step gate`", text("gate.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

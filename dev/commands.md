@@ -56,7 +56,7 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
    `pending`; `red`/`timeout` → repair it first, whoever's phase it was; `none` stays, recorded as
    a line `- CI: none` in that `docs/gates/phase-<N>.md`.
 1. **Run `defaults.skills.milestone-end`** as parallel agents (if configured).
-2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each with `analyzers/CONTRACT.md` + its analyzer file (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
+2. **Mandatory Parallel Block** — dispatch as parallel Agent subagents, each per `gate.md`, "Analyzer dispatch" (**model explicit: capable tier for full scans**, see `models.md`), wait for all to complete:
    - **Bug hunt** (full mode) — the whole milestone scope, all 7 lenses.
    - **Performance review** (full mode) — the milestone's changes.
    - **Security review** (full mode) — the whole milestone scope (cross-cutting risks).
