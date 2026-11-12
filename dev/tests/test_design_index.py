@@ -97,21 +97,43 @@ def test_skipped_check_rule_is_the_same_everywhere():
 
 def test_ux_ui_design_replaces_overlapping_design_rows():
     text = (DEV / "tech-stack-triggers.md").read_text()
-    line = next(l for l in text.splitlines() if "`@type:` is `ui` → consult" in l)
+    line = next(l for l in text.splitlines() if "`ux-ui-design` available → the rows" in l)
     for name in ("forms", "states", "onboarding", "ux-writing"):
         assert name in line
-    assert "not loaded" in line and "density-critique" in line
+    assert "not loaded anywhere" in line and "density-critique" in line
     assert "stay" in line.rsplit("density-critique", 1)[1][:80]
-    assert "without `ux-ui-design`" in line and "available" in line
+    assert "Without `ux-ui-design` everything loads" in line
 
 
-def test_ux_ui_design_rule_is_scoped_to_ui_phases():
+def test_ux_ui_design_rule_covers_landing_and_ui_review():
+    # v4.4.0: the rule no longer stops at `ui` phases; landing and /dev ui drop the four rows too,
+    # and reviews use ux-ui-design's Review mode (gate UX review, ui-review ux subagent).
     text = (DEV / "tech-stack-triggers.md").read_text()
-    ui = next(l for l in text.splitlines() if "`@type:` is `ui` → consult `design/INDEX.md`" in l)
-    for name in ("forms", "states", "onboarding", "ux-writing", "density-critique", "available"):
-        assert name in ui
-    assert "(landing phases and `/dev ui` load them as before)" in ui
+    line = next(l for l in text.splitlines() if "`ux-ui-design` available → the rows" in l)
+    assert "(4a, 4c, `landing`, `/dev ui`)" in line and "Review mode" in line
+    assert "as before" not in text
     ux = next(l for l in text.splitlines() if "ux-ui-design" in l and "invoke it before designing" in l)
     assert "not loaded" not in ux and "INDEX.md" not in ux
+    gate = (DEV / "gate.md").read_text()
+    assert "- [ ] UX review" in gate
+    assert "| UX review | `ux-ui-design` in Review mode" in gate
+    assert "UX review" in (DEV / "models.md").read_text()
     review = (DEV / "ui-review.md").read_text()
     assert "4a ui: forms" in review and "4a ui: error, empty, loading states" in review
+    assert "ux subagent" in review and "Review mode" in review
+
+
+def test_motion_and_font_rules_follow_page_kind():
+    # v4.4.0 RED: with both taste and ux-ui-design loaded a landing phase followed ux-ui-design's
+    # "one eye-catcher", and the detector reported Inter in app UI as an overused font.
+    triggers = " ".join((DEV / "tech-stack-triggers.md").read_text().split())
+    assert "**Motion — which source wins.**" in triggers
+    assert "taste's motion rules (intensity, entrances, scroll-reveal per section) win over" in triggers
+    assert "motion stays sparse per ux-ui-design and Emil; taste's motion never carries over" in triggers
+    motion = " ".join((DEV / "analyzers/motion.md").read_text().split())
+    assert "entrances and scroll-reveals the page's taste rules call for are not a finding here" in motion
+    detector = " ".join((DEV / "analyzers/design-detector.md").read_text().split())
+    assert "`overused-font` (Inter, Roboto, …) is a note only on a `landing` page kind" in detector
+    assert 'dismiss it as "app UI"' in detector
+    contract = " ".join((DEV / "analyzers/CONTRACT.md").read_text().split())
+    assert "and the **page kind**: `landing`" in contract
