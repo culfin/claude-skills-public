@@ -13,7 +13,7 @@ Usage: check-source-update.py --source <id> --old <dir> --new <dir> [--contract 
 Prints {"source", "deterministic": "ok|findings", "findings": [{"kind", "detail"}]} as JSON.
 
        check-source-update.py --validate-entry <queue file> [--contract sources.md]
-Validates one update-queue entry (updates.md) and prints {"file", "valid", "errors", "argv"};
+Validates one update-queue entry (format: the separate dev-updates skill) and prints {"file", "valid", "errors", "argv"};
 "argv" is the only command /dev updates may run for it (null = do not offer Apply).
 
        check-source-update.py --list-sources [--contract sources.md]
@@ -31,6 +31,8 @@ a symlink inside them (the check reports every such link, changed or not).
 
        check-source-update.py --hold-kinds
 Prints the finding kinds that always hold an update for the user's decision, one per line.
+Every other kind (frontmatter-switch-changed, new-network-access, size-jump, outside-claude-code =
+a hook or install step only in another harness's docs or manifests) is input for the review.
 
 Exit 0 whenever the check ran (findings or not, valid or not), 2 on a usage error.
 """
@@ -68,7 +70,7 @@ PATTERNS = {
 }
 APPLIER = 'dev-updates-apply'
 QUEUE_KINDS = {'git', 'plugin', 'agents-skill'}
-# Findings that hold an update whatever the review agent says (sources.md, "Deterministic check").
+# Findings that hold an update whatever the review agent says (--hold-kinds).
 HOLD_KINDS = ('missing-read-path', 'new-hook', 'new-settings-json', 'new-pipe-to-shell',
               'new-install-step', 'license-changed', 'scan-incomplete', 'symlink')
 SAFE_TOKEN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._+-]*$')  # source and new: no leading '-', no '/', no space
@@ -564,7 +566,7 @@ def _row_kind(source, contract):
 
 
 def validate_entry(path, contract, env=None):
-    """Check one queue entry against updates.md; argv is the only command allowed for Apply."""
+    """Check one queue entry (format: dev-updates skill); argv is the only command allowed for Apply."""
     env = os.environ if env is None else env
     path, errors = Path(path), []
     try:

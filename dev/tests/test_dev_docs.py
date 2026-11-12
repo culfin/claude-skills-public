@@ -332,7 +332,20 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("1 phase = 1 branch", j("state.md"))
         self.assertIn("O8–O12", text("stack/INDEX.md"))
         self.assertNotIn("O8–O9)", text("stack/INDEX.md"))
-        self.assertIn("tests/check-screens.sh", text("updates.md").split("5. **Apply**", 1)[1].split("6. **Reject", 1)[0])
+        # v4.4.0: the /dev updates procedure (incl. the check-screens step after Apply) moved to the
+        # separate dev-updates skill; its own tests keep that assertion. Here: the hand-over stays.
+        self.assertFalse((DEV / "updates.md").exists())
+
+    def test_updates_hand_over_and_stay_visible(self):
+        # v4.4.0: /dev updates is a separate skill; without it the router says so instead of failing
+        # silently, and waiting updates keep their count in the start line and the summary.
+        s = text("SKILL.md")
+        self.assertIn("| `/dev updates` | skill `dev-updates` (separate); not available →", s)
+        self.assertIn("needs the `dev-updates` skill — N updates waiting in `pending/`, nothing applied", s)
+        self.assertIn("`${DEV_UPDATES_DIR:-$HOME/.claude/dev-updates}/pending/*.json` exist (count, read", s)
+        self.assertIn(", N skill updates waiting — /dev updates", s)
+        self.assertIn("Updates: N skill updates waiting — /dev updates", s)
+        self.assertIn("/dev updates", s.split("---")[1])
 
     def test_orca_workspace_overview(self):
         # Overview + removal offer: RED 2 of 2 without it (no overview; invented criteria, guessed

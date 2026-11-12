@@ -29,7 +29,8 @@ current step needs.
 | `/dev debug` | `commands.md` → `debugger.md` | Debug Flow |
 | `/dev check` | `dev-check.md` → `gate.md` | Standalone Quality Gate |
 | `/dev ui [scope]` | `ui-review.md` | UI review and rework |
-| `/dev updates`; a new use of a foreign skill | `updates.md` → `sources.md` | On the command |
+| `/dev updates` | skill `dev-updates` (separate); not available → "`/dev updates` needs the `dev-updates` skill — N updates waiting in `pending/`, nothing applied" | On the command |
+| A new use of a foreign skill | `sources.md` | On the change |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
 | Subagent models; state file formats | `models.md`; `state.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md |

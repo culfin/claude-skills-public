@@ -354,8 +354,10 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.assertFalse(m.outside_claude_code('docs/ok.md', self.new, None))
 
     def test_contract_names_the_non_holding_kind(self):
-        text = ' '.join((DEV / 'sources.md').read_text().split())
-        self.assertIn('`outside-claude-code`', text)
+        # v4.4.0: the finding-kind prose moved to the dev-updates skill (its tests check it there);
+        # the script's own help still names the kind that never holds.
+        self.assertNotIn(m.OUTSIDE_KIND, m.HOLD_KINDS)
+        self.assertIn(m.OUTSIDE_KIND, ' '.join(m.__doc__.split()))
 
     def test_missing_index_next_to_contract_is_usage_error(self):
         self.contract.write_text(CONTRACT.replace('`SKILL.md`, `skills/a/SKILL.md`', '`design/INDEX.md`'))
@@ -716,10 +718,7 @@ class ListingTests(unittest.TestCase):
                                                    'new-settings-json', 'license-changed', 'missing-read-path',
                                                    'scan-incomplete', 'symlink'})
         self.assertEqual(set(run.stdout.split()), set(m.HOLD_KINDS))
-        text = (DEV / 'sources.md').read_text()
-        for kind in m.HOLD_KINDS:
-            self.assertIn(f'`{kind}`', text)
-        self.assertIn('always', text.split('## Deterministic check')[1])
+        self.assertIn('always hold an update', m.__doc__)
 
     def test_scope_mode(self):
         stripe = self.run_cli('--scope', '--source', 'stripe')
@@ -748,8 +747,6 @@ class ListingTests(unittest.TestCase):
         self.assertEqual(self.run_cli('--scope', '--list-sources').returncode, 2)
         self.assertIn('--scope --source', m.__doc__)
         self.assertIn('must NOT skip the check', m.__doc__)
-        contract = ' '.join((DEV / 'sources.md').read_text().split())
-        self.assertIn('must not skip the check when the candidate has one there', contract)
 
     def test_modes_do_not_combine(self):
         run = self.run_cli('--hold-kinds', '--list-sources')
@@ -766,11 +763,10 @@ class RealContractTests(unittest.TestCase):
                 self.assertNotIn(word, text, f'{path.name}: {word}')
 
     def test_conflict_and_unclear_have_a_second_brake(self):
-        text = ' '.join((DEV / 'updates.md').read_text().split())
-        self.assertIn('never the recommended option', text)
-        self.assertIn('review could not run', text)
-        for name in ('updates.md', 'sources.md'):
-            self.assertIn('belong to `/dev`', ' '.join((DEV / name).read_text().split()), name)
+        # v4.4.0: the recommendation rules live in the dev-updates skill (tested there);
+        # the contract still says the references belong to /dev.
+        self.assertIn('belong to `/dev`', ' '.join((DEV / 'sources.md').read_text().split()))
+        self.assertFalse((DEV / 'updates.md').exists())
 
     def test_every_source_has_reads(self):
         contract = DEV / 'sources.md'
@@ -811,7 +807,7 @@ class RealContractTests(unittest.TestCase):
         self.assertIn('skills/subagent-driven-development/SKILL.md', reads)
 
     def test_budget_and_no_local_paths(self):
-        for name in ('sources.md', 'updates.md', 'scripts/check-source-update.py'):
+        for name in ('sources.md', 'scripts/check-source-update.py'):
             text = (DEV / name).read_text()
             if name.endswith('.md'):
                 self.assertLessEqual(len(text.splitlines()), 148 if name == 'sources.md' else 120, name)

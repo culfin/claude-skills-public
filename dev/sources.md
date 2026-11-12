@@ -1,20 +1,17 @@
 # Sources `/dev` builds on — update contract
 
 `/dev` reads or invokes skills it does not own; each update is checked against this contract **before** it
-becomes active: `fits` → applied by the update watcher (with a log line); `unclear` or `conflict` → held
-back, old version stays active, the user decides with `/dev updates` (`updates.md`). Read by the watcher,
-`scripts/check-source-update.py` (the table), the review agent and `/dev updates` — not during phase work.
-**Not covered:** `vibepolish` (in this repository, own review) and every skill `/dev` does not reference.
+becomes active: `fits` → applied by an update watcher; `unclear` or `conflict` → held back, old version stays
+active, the user decides with `/dev updates`. Data for `scripts/check-source-update.py` (`--list-sources`,
+`--help`), the watcher and its review agent — not read during phase work. **Not covered:** `vibepolish` (in
+this repository, own review) and every skill `/dev` does not reference.
 
 ## Sources
 
-`reads` lists paths relative to the source root. Three entries are references the checker resolves:
-`design/INDEX.md` = every row of that file under `$DEV_DESIGN_DIR/<id>/`; `stack/INDEX.md` = every row under
-`$DEV_STACK_DIR/<id>/` (default `~/.claude/dev-stack`); `scripts/check-superpowers.py` = its
-`required_paths()`. The references belong to `/dev` (they live in this skill) — a reviewer must not expect
-them inside a candidate. Kinds: `plugin` (`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>`), `git`
-(checkout, fast-forward), `agents-skill` (`~/.agents/skills/<id>`, via the `skills` CLI), `local` (a copy
-without an upstream — nothing to watch until it gets one).
+`reads` are paths relative to the source root. `design/INDEX.md`, `stack/INDEX.md` and
+`scripts/check-superpowers.py` there are references the checker resolves to their rows or required paths;
+they belong to `/dev` (they live in this skill) — a reviewer must not expect them inside a candidate. A new use
+of a source adds its paths here in the same commit.
 
 | id | kind | location | reads | overrides |
 |---|---|---|---|---|
@@ -39,12 +36,6 @@ without an upstream — nothing to watch until it gets one).
 | rust-testing | local | `~/.claude/skills/rust-testing` | `SKILL.md` | O8 |
 | tauri-v2 | local | `~/.claude/skills/tauri-v2` | `SKILL.md` | O8 |
 | winui-pro | local | `~/.claude/skills/winui-pro` | `SKILL.md` | O8 |
-
-Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `runtime.md`,
-`debugger.md`; design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
-`commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources — `stack/INDEX.md`
-(4a, 4c, 5c). Docs in a project's `node_modules` are not
-sources. A new use of a source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
 
@@ -108,25 +99,3 @@ An update that would flip one of these is a contradiction (verdict `conflict`), 
   large files through a subagent digest. Nothing is preloaded into every session.
 - **I7 Emil's "I'm ready" opening stays overridden** (O4).
 - **I8 Missing means skipped.** A source that is gone yields `skipped: <reason>`, never a silent pass.
-
-## Deterministic check
-
-`python3 "$DEV_DIR/scripts/check-source-update.py" --source <id> --old <dir> --new <dir>` compares
-two trees of one source. Finding kinds: `missing-read-path`, `frontmatter-switch-changed`
-(`disable-model-invocation`, `user-invocable`, `allowed-tools` in a read file), `new-hook` (in JSON:
-any added or changed hook entry; elsewhere also unquoted YAML or front-matter `hooks:` / hook-event
-keys), `new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `new-network-access` (scripts
-and JSON only), `license-changed`, `size-jump` (a read file more than doubled), `symlink` (a new or
-retargeted symlink; never followed or scanned), `outside-claude-code` (`new-hook`/`new-install-step`
-in `docs/`, root release notes or another harness's manifest folder, named by nothing Claude Code
-runs; any doubt keeps the hold kind). Pattern kinds are searched in **every non-binary text file**;
-"new" means a matching line not in that file before. Findings are input for the review against
-overrides and invariants — except the hold kinds: `missing-read-path`, `new-hook`,
-`new-settings-json`, `new-pipe-to-shell`, `new-install-step`, `license-changed`, `symlink` and
-`scan-incomplete` (a new or changed text file too large to scan; only `.git` is skipped). These
-always hold the update for the user's decision, whatever the review says (`--hold-kinds`).
-A source under `$DEV_STACK_DIR` is scanned only where `/dev` reads it: the folder of each
-`stack/INDEX.md` read path, its other read paths and root licence files (`--scope --source <id>`
-prints them; unchanged there = unchanged for `/dev`). Inside that scope every symlink is a
-finding on every run — a watcher must not skip the check when the candidate has one there.
-`--list-sources` prints `id<TAB>kind<TAB>location` per row, so nothing else parses this table.
