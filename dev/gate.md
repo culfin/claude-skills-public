@@ -40,16 +40,8 @@ header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate
 ## Phase Types
 
 **The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
-Reviewers come from the changed files (Step A) and `gate-tier.py`.
-
-**Phase Types — planning hints:**
-
-| `@type:` | In planning |
-|---|---|
-| `ui`, `landing` | UX clarification and companion (`tech-stack-triggers.md`, 4a) |
-| `migration` | The mandatory halt (`SKILL.md`, "Halt on Irreversible Actions") |
-| `docs` | No interview; no Production Build or E2E Tests — only with a `*.md`-only diff |
-| `refactor` | None; its gate addition is below |
+Reviewers come from the changed files (Step A) and `gate-tier.py`. In planning a type only steers
+4a (`SKILL.md`; `tech-stack-triggers.md` for `ui`/`landing`).
 
 **Gate additions by type (they only add, never remove):**
 

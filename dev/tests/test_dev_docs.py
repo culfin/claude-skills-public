@@ -293,7 +293,11 @@ class DevDocsTests(unittest.TestCase):
         for word in ("Security review", "rollback path", "smoke test"):
             self.assertIn(word, mig)
         self.assertIn("Security review", next(r for r in rows if r.startswith("| `backend` |")))
-        self.assertIn("| `refactor` |", lines[0].split("## Phase Types")[1])
+        self.assertTrue(any(r.startswith("| `refactor` |") for r in rows), "refactor gate addition missing")
+        # v4.3.0: the planning-hints table is gone (each hint has its home in SKILL.md 4a,
+        # the halt section, tech-stack-triggers.md and the checklist comment).
+        self.assertNotIn("Phase Types — planning hints", g)
+        self.assertIn("not for `@type: docs` with a `*.md`-only diff", g)
         self.assertNotIn("Only Diff review, Typecheck + lint + tests, Gate summary", g)
         self.assertIn("| Any — `gate-tier.py` names `ops files` or `dependency manifest` |", t)
         self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)
