@@ -36,7 +36,10 @@ Probe the scope for these and judge every hit:
 For each hit, against the standard:
 
 1. **Should it animate at all?** How often does a user see it (frequency table)? Is it triggered by
-   the keyboard? A command palette or list navigation that animates is a finding.
+   the keyboard? A command palette or list navigation that animates is a finding. On a `landing`
+   page kind (`CONTRACT.md`, input 5) entrances and scroll-reveals the page's taste rules call for
+   are not a finding here (`tech-stack-triggers.md`, "Motion — which source wins"); 2–6 still apply.
+   In app UI, decorative motion is a finding.
 2. **Easing and duration.** Enter/exit, on-screen movement, hover and constant motion each have a
    prescribed curve; `ease-in` on UI and durations outside the standard's ranges are findings.
 3. **Origin and physics.** Popovers scale from their trigger (modals stay centred); nothing

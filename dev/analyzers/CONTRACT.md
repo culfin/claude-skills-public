@@ -22,7 +22,8 @@ Give the subagent, in this order:
    (`git ls-files --others --exclude-standard`) — and the diff as a file for `phase` and `fix` mode.
 4. **The requirement** the change is supposed to meet: the spec from `@spec:`, the acceptance
    criteria in the phase file, or the phase description.
-5. **`$TECH_STACKS`**, so the analyzer can pick its language notes.
+5. **`$TECH_STACKS`**, so the analyzer can pick its language notes, and the **page kind**: `landing`
+   (`@type: landing`, `/dev ui` kind `landing`) or app UI (everything else).
 
 **Do not** hand over why you believe the change is correct. The analyzer gets the artifact and the
 requirement, never your reasoning — otherwise it returns your conclusions instead of a review.

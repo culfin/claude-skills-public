@@ -69,6 +69,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 - [ ] Design detector
 - [ ] Motion review
 - [ ] Taste pre-flight
+- [ ] UX review                    <!-- `ux-ui-design` available -->
 - [ ] Second opinion: <agent>     <!-- defaults.second-opinion set; runtime.md "Orca" -->
 <!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
@@ -121,6 +122,7 @@ belong to this wave, `5g` to E2E.
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
+| UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | `ui`/`landing`, UI files changed, `ux-ui-design` available; tier as Accessibility review |
 | Second opinion: `<agent>` | `analyzers/diff-review.md`, run by that agent as an Orca worker (`runtime.md`, "Orca") | either tier, `defaults.second-opinion` set |
 
 **Dispatch rules** (`analyzers/CONTRACT.md`, also for Spec checker and Second opinion): prompt for

@@ -2,6 +2,45 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.4.0 — 2026-11-12
+
+**dev** — Design rules by page kind, and `/dev updates` leaves the public skill.
+
+Motion (`tech-stack-triggers.md`, "Motion — which source wins"; `analyzers/motion.md` item 1): on a
+landing page (`@type: landing`, `/dev ui` kind `landing`) taste's motion rules — intensity, entrances,
+scroll-reveal per section — win over ux-ui-design's "one eye-catcher", vibepolish's "everything
+animated on scroll" and Emil's "should this animate at all?"; Emil's easing, duration, interruption,
+performance and reduced-motion rules still apply. App UI (`ui`, dashboards, settings) keeps motion
+sparse; taste's motion never carries over. Why: 4a loads taste and ux-ui-design together, and they
+contradict each other on exactly this. RED on v4.3.0: the agent followed ux-ui-design on a landing
+page, said no skill text decided it, and the motion review flagged the stagger taste asked for.
+
+Fonts (`analyzers/design-detector.md` step 3): `overused-font` (Inter, Roboto, …) is a note only on a
+landing page; in app UI the system font, Inter and Roboto are right and the finding is dismissed as
+"app UI". The analyzer contract now passes the page kind to every analyzer. RED on v4.3.0: Inter in a
+settings page became a note.
+
+UX lists: when `ux-ui-design` is available, `forms`, `states`, `onboarding` and `ux-writing` are not
+loaded anywhere — landing phases and `/dev ui` included, not only `ui` phases — and reviews use its
+Review mode: a gate item "UX review" (only when it is available) and a ux subagent in `/dev ui`. Why:
+a phase was built with ux-ui-design but reviewed with `/dev`'s own lists, and the gate had no UX
+reviewer at all. Without ux-ui-design everything loads as before; the files stay as the public fallback.
+RED on v4.3.0: landing and `/dev ui` loaded all four, the gate had no UX item. GREEN 4 of 4 (motion,
+fonts, UX lists, the fallback without ux-ui-design).
+
+Updates: the `/dev updates` procedure (`updates.md`), the explanation of the source table and the
+"Deterministic check" section of `sources.md` moved to a separate `dev-updates` skill outside this
+repository. `sources.md` keeps the table, the overrides O1–O17 and the invariants I1–I8 — an update
+watcher and `scripts/check-source-update.py` read them by path, and the script's `--help` now names
+the finding kinds that never hold. `/dev updates` hands over to `dev-updates`; without it the router
+says so, with the count of waiting updates, and changes nothing. The start line and the summary still
+count waiting updates. Why: the procedure is only useful together with a watcher that is not part of
+this repository either, and it cost budget and upkeep in every release. Checked GREEN with fresh
+agents (3 of 3): hand-over with a `conflict` entry (Apply not recommended), missing skill (clear
+message, nothing moved), start line with 43 waiting.
+
+Words: hot path 7323 → 7393, whole skill 37 032 → 35 895.
+
 ## v4.3.0 — 2026-11-12
 
 **dev** — Leaner where superpowers already covers the ground; the task fix loop rules instead of

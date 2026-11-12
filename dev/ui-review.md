@@ -23,12 +23,10 @@ Standalone mode like `/dev check`: reviews one part of the running product, writ
 
 ## 2. Screenshots of the running app
 
-Capture every view in scope. **Web:** prefer build + preview; on a dev
-server hide its overlays first (Astro toolbar, Next.js indicator, Vite error overlay) — they are not
-the product. Read the port from the server's own start log (the default port may belong to another
-project) and check page title and URL before capturing. Playwright at 1440×900 and 390×844, light,
+Capture every view in scope. **Web:** prefer build + preview; on a dev server hide its overlays first (Astro toolbar, Next.js indicator, Vite error overlay) — they are not
+the product. Read the port from the server's own start log (the default port may belong to another project) and check page title and URL before capturing. Playwright at 1440×900 and 390×844, light,
 and dark via `prefers-color-scheme` if supported. **Native:** simulator shots. **Sub-states:** with a
-forms or states row in scope (step 3), trigger error, success, empty and loading with throwaway
+forms or states row or the ux subagent in scope (step 3), trigger error, success, empty and loading with throwaway
 input (never against production) and capture them — else the finding's evidence says "judged from code, not captured".
 
 Save into `screen_dir` as `ui-<view>[-<state>]-<viewport>-<theme>.png` — the "before" set. Capture
@@ -49,16 +47,18 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 | web UI files | "5c web UI changed" (design detector, `run`) | design-detector subagent |
 | animation (unsure → run `motion.md`'s sweep probes to decide) | "5c motion changed" | motion subagent |
 | kind `landing` | "4a landing" (taste, `subagent`) | taste subagent |
+| `ux-ui-design` available | none — the forms, states and copy rows are then not loaded | ux subagent |
 
 Dispatch per `analyzers/CONTRACT.md`, **mode `full` limited to `$UI_SCOPE`** (no diff, not the
 whole codebase), requirement "the view serves its primary task for its primary user",
-`$TECH_STACKS`; model explicitly per `models.md` (standard tier):
+`$TECH_STACKS` and the kind; model explicitly per `models.md` (standard tier):
 
 - **accessibility** — `analyzers/accessibility.md`, plus the platform file named above.
 - **design-detector** — `analyzers/design-detector.md` (web only; native: `skipped: not web`).
 - **motion** — `analyzers/motion.md`; no sweep hit → `skipped: no animation in scope`.
 - **density** — `design/density-critique.md` applied to each screenshot, plus the rows above.
 - **taste** (kind `landing` only) — reads the taste file itself and returns findings as notes.
+- **ux** — `ux-ui-design` in Review mode on the screenshots and `$UI_SCOPE`; severity 4/3/1–2 → critical/major/minor.
 
 Wait for all (15 minutes, retry once, as in the gate's review wave). Missing source under `$DEV_DESIGN_DIR`,
 unbuilt detector, no screenshot → `skipped: <reason>` in `UI-REVIEW.md` and step 6, never "no findings".

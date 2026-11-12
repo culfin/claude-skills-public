@@ -12,7 +12,7 @@ Read before dispatching any subagent (implementation, gate, Milestone End, Pre-R
 | Spec checker | **standard** |
 | Security review (phase or full scope) | **capable** |
 | Performance review, Tech-Stack Review | **standard** |
-| Accessibility review, Design detector, Motion review, density critique | **standard** |
+| Accessibility review, Design detector, Motion review, UX review, density critique | **standard** |
 | Fix agent (gate Steps B and D) | **standard**; **capable** from round 3 |
 | Fix review (gate Step B) | **standard** |
 | Similar-bugs scan (gate Step C) | **standard** |
