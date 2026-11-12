@@ -104,7 +104,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   `python3 "$DEV_DIR/scripts/check-evidence.py" id`, taken when the check ran. No evidence, no
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
-  that found no tests exits green too. `check-evidence.py` rejects a missing count or a 0.
+  that found no tests exits green too.
 - **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight,
   Second opinion and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
@@ -117,8 +117,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   review itself are always rerun on the final state. If the scope or the acceptance criteria
   change, rerun the affected reviews: they answered a different question.
 - **A command whose output was not read has not run.** A pipe (`| tail`, `2>/dev/null`) can
-  swallow the exit status; when in doubt, rerun without it. A tool that reports overall success
-  proves only what it checked, not every sub-step.
+  swallow the exit status; when in doubt, rerun without it.
 
 ---
 

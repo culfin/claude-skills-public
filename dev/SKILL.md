@@ -39,7 +39,7 @@ current step needs.
 | Tech, design, security triggers and sources | `tech-stack-triggers.md` → `stack/INDEX.md`, `stack/docs.md`, `design/INDEX.md` | Steps 4a, 4c, gate Step A — matching rows only |
 | Analyzer contract | `analyzers/CONTRACT.md` | With every analyzer dispatch |
 
-**Visual Companion:** shows only the product's user interface (mockups, states, real screenshots — never roadmaps, plans, architecture or findings), used without asking wherever this skill says **"Show screen"** (`companion.md`); only a message pointing at a new or updated screen ends with its URL.
+**Visual Companion:** shows only the product's user interface (mockups, states, screenshots — never plans or findings), used without asking wherever this skill says **"Show screen"** (`companion.md`); only a message pointing at a new or updated screen ends with its URL.
 
 ---
 
@@ -63,7 +63,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    also count as **web**, `ios` as **Apple** (`design/INDEX.md` platform rows match on these).
 4. **Parse YAML frontmatter.** Malformed: show the error, ask the user to fix it, stop.
 5. **Parse phases:** milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
-   - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending (implemented, gate outstanding), `[x]` done, `[—]` skipped
+   - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending, `[x]` done, `[—]` skipped
    - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
    - A `@type:` that `gate.md` does not name and `defaults.phase-types` has no key for → report once per type: `unknown @type: <t> — planning uses no type hints; the gate still reads the diff`.
 6. **Find current position:** a `Milestone End pending:` line in STATE.md → Milestone End first (several: `commands.md`). Else the first milestone with an incomplete phase; all done: "Roadmap complete!", offer `/dev add` or `/dev review`.
@@ -125,11 +125,11 @@ bundled round (`befragung.md`). **The run halts only for:**
 CI `red` or `timeout` halts its repairer (`ci.md`), then the run continues; `none` does not halt.
 
 Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
-phases — a pause before a plain "continue" decides nothing.
+phases.
 
 **Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
 context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
-`/dev next`; the position is in `## Position` of the phase file." As an Orca worker: `runtime.md`, "Orca workers" instead. A large context is reread on every turn.
+`/dev next`; the position is in `## Position` of the phase file." As an Orca worker: `runtime.md`, "Orca workers" instead.
 
 ---
 
