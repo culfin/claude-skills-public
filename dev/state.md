@@ -60,7 +60,7 @@ Permanent, one path per record (Milestone End and Pre-Release Review read them):
 
 ## STATE.md — shared
 
-Only what every phase shares; a phase writes it only for the `Milestone End pending:` line:
+Only what every phase shares. The one status line a phase writes here is `Milestone End pending:`; a change its own requirement asks for is content, in the gate's diff and reviewed like code:
 
 ```markdown
 # <Project name> — Project State
