@@ -94,4 +94,4 @@ Milestone End step 0 and the repair checklist. Gate summary (`### Gate summary â
 (Blockers & Risks) stay in STATE.md; completion removes the phase's Quality Gate, `### Phase N` and
 Handoff from it. A takeover replaces the `## Handoff â€” <branch>` heading instead of `Branch:`.
 
-**Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.
+**Not for either file:** plan details, code-level decisions, debug state, velocity metrics.

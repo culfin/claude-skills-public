@@ -113,7 +113,7 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
 **Triggered by:** `/dev debug [<description>]`; "fix crash", "why is this broken", "find bug". Red runs
 inside the gate are handled by `gate.md` (Step B, Step D), not by this flow.
 An obvious fix (typo, missing import or dependency, outdated test expectation — under 2 minutes) is
-just made. Otherwise read and follow `debugger.md` (state in `.debug/`, Similar-bugs scan after the
+just made. Otherwise read and follow `debugger.md` (red command first, Similar-bugs scan after the
 fix, then back to the `[~]` phase).
 
 ---
