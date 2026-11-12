@@ -66,8 +66,9 @@ STATUS_LINE = re.compile(r"^\s*Milestone End pending:")
 # Phase files, the migration marker and gate records, likewise wherever the app lives.
 BOOKKEEPING_GLOBS = (".dev/phase-*.md", ".dev/.gitkeep", "docs/gates/**")
 # Same syntax as scripts/state-check.py.
-# The title may be bold (`**Phase 3: Login**`, `__…__`); ids are only [0-9A-Za-z.].
-PHASE = re.compile(r"^\s*- \[(.)\]\s+(?:\*\*|__)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
+# Bullet `-` or `*`; the title may be bold or italic (`**Phase 3: Login**`, `*…*`, `__…__`, `_…_`);
+# ids are only [0-9A-Za-z.].
+PHASE = re.compile(r"^\s*[-*] \[(.)\]\s+(?:\*\*|__|\*|_)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
 CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
 # Happens after the local checks.
 LATER_STEPS = ("gate commit",)

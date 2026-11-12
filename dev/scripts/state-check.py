@@ -85,8 +85,9 @@ HANDOFF_TOP = 80
 STALE_DAYS = 7
 CLAIM_SCAN_DAYS = 14
 HANDOFF_LINES = 8
-# The title may be bold (`**Phase 3: Login**`, `__…__`); ids are only [0-9A-Za-z.].
-PHASE = re.compile(r"^\s*- \[(.)\]\s+(?:\*\*|__)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
+# Bullet `-` or `*`; the title may be bold or italic (`**Phase 3: Login**`, `*…*`, `__…__`, `_…_`);
+# ids are only [0-9A-Za-z.].
+PHASE = re.compile(r"^\s*[-*] \[(.)\]\s+(?:\*\*|__|\*|_)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
 CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
 HANDOFF = re.compile(r"^#{2,3}\s+(handoff|session continuity)\b", re.I)
 HANDOFF_BRANCH = re.compile(r"^#{2,3}\s+handoff\s*[—:-]\s*(\S+)", re.I)

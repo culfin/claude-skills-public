@@ -360,6 +360,13 @@ class EvidenceTests(unittest.TestCase):
         (self.root / "ROADMAP.md").write_text(f"- [~] __Phase 3: Login__ @claim:{branch}@2026-11-11\n")
         self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
 
+    def test_italic_title_and_star_bullet_find_the_phase_file(self):
+        branch = git(self.root, "branch", "--show-current").strip()
+        f = self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        for line in (f"- [!] *Phase 3: Login* @claim:{branch}@2026-11-11", f"* [!] Phase 3: Login @claim:{branch}@2026-11-11"):
+            (self.root / "ROADMAP.md").write_text(line + "\n")
+            self.assertEqual(ce.default_file(self.root).resolve(), f.resolve(), line)
+
     def migrated_state(self, text):
         (self.root / ".dev").mkdir(exist_ok=True)
         (self.root / ".dev" / ".gitkeep").write_text("")

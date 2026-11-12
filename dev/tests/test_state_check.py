@@ -397,6 +397,10 @@ class StateCheckTests(unittest.TestCase):
         self.assertIn("phase file missing: Phase 3 [!] claimed by this branch has no .dev/phase-3.md",
                       self.check())
 
+    def test_italic_titles_and_star_bullets_are_read(self):
+        text = "- [!] *Phase 3: Login*\n* [~] Phase 4: Export\n- [x] _Phase 5: Done_\n"
+        self.assertEqual({k: v[0] for k, v in sc.phases(text).items()}, {"3": "!", "4": "~", "5": "x"})
+
     def test_several_milestone_end_pending_lines_are_accepted(self):
         # Parallel workspaces close milestones at the same time: one line per milestone.
         (self.root / "STATE.md").write_text(
