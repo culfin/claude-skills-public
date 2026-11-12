@@ -183,7 +183,8 @@ Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-
   `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)` (two trees, so
   files untracked at the wave do not show as deleted). Add `- [ ] Fix review` (and
   `- [ ] Similar-bugs scan` if a defect was fixed) now; tick Fix review with the merged result.
-- A Fix review with a new critical finding starts the next round. **The limit counts attempts per
+- A Fix review with a new critical finding starts the next round. Two analyses disagree → the
+  requirement's wording decides; it does not → ask the user (once per run). **The limit counts attempts per
   finding, not rounds:** halt and report when the same critical finding — or a regression caused by
   an earlier fix — is still open after 3 attempts (one of the run's halt points). New, different
   findings neither reset nor use up a count; rounds that only implement a user decision, only change
