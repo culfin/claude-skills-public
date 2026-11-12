@@ -152,8 +152,9 @@ required, (c) implemented but probably wrong, (d) acceptance criterion without a
 are critical, (b) is a note. For each (d) it writes the test and **sees it red once** (break the
 checked code, test red, restore, test green) and returns the test as a patch with that evidence.
 Dispatch it with `isolation: "worktree"` (broken code in the shared tree misleads the other
-reviewers); uncommitted phase changes → it applies the diff file there first. Its patch taken →
-`git worktree remove <path>`. Simplicity never removes a
+reviewers) and the phase HEAD sha: its worktree may start from `<main>` or in another checkout, so
+it first runs `git checkout --detach <sha>`, then applies the diff file for uncommitted changes.
+Its patch saved: `git worktree remove --force <path>`, `git branch -D` its own agent branch only. Simplicity never removes a
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
 
