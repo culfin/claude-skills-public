@@ -2,6 +2,39 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.5.1 — 2026-11-12
+
+**dev** — taste 2.5.1 readable for landing pages: the taste subagent reads `SKILL.md` plus named
+references, motion comes from `references/motion.md`.
+
+taste 2.5.1 shrank its `SKILL.md` from about 12 900 to 4 700 words and moved the details into
+`references/*.md` and `library/*.json`. Its motion rule also changed: every page moves in three places
+(the hero entrance once on load, one or two dealt moments each in its own section, the hover and press
+layer) and nothing else moves on scroll — per-section scroll reveals are now banned. Tested with a
+landing scenario against the new tree (no commands run): with v4.5.0 the subagent picked references ad
+hoc, skipped layout, copy and system, relayed taste's dealing scripts as orders, and found `/dev` asking
+for "scroll-reveal per section", which taste now forbids.
+
+- `design/INDEX.md`, note "4a landing": after `SKILL.md` the subagent reads `motion.md` and `copy.md` in
+  full, `layout-v4.md` sections 1–5, `system.md` "Type" and "Colour", `sections.md` section 1 and the
+  plan of the page's kind, `moments.md` "Where each fits", `effects-usage.md` on a tech kind, and only
+  the matching entries of `library/palettes.json` and `type.json` — found by search, read by line range.
+  No `references/` folder (taste before 2.5): `SKILL.md` alone, so the note works before and after the
+  update. No taste script or hook runs; what taste deals by script is proposed from the library and
+  marked "proposed, not dealt". The ≤ 40-line digest includes a motion block. The paths are backticked
+  read paths, so the update watcher flags a later version that drops one.
+- `tech-stack-triggers.md` ("Motion — which source wins") and `analyzers/motion.md` no longer name
+  per-section scroll reveals; `ui-review.md` points to the note; `sources.md` O5 says which files the
+  subagent reads and that taste's scripts, Stop hook and install steps never run (I4).
+- Tests: the reference set, the fallback, the no-script rule and O5 are pinned; named paths must exist in
+  the active taste checkout unless it predates `references/`.
+
+Scenarios (fresh subagents, no commands): RED with v4.5.0 against 2.5.1 — fails as above. GREEN against
+2.5.1 — motion block from `motion.md` (entrance, two proposed moments in named sections, hover layer,
+nothing on scroll), no script run, ≤ 40 lines; first run read whole files (about 49 000 words), after
+the "search, then line range" sentence about 26 000. GREEN against the previous taste — `SKILL.md`
+alone, no skip, no script. Words: hot path 7 497 (unchanged), whole skill 36 083 → 36 291.
+
 ## v4.5.0 — 2026-11-12
 
 **dev** — Less skill text in the main session: the analyzer contract goes to the subagents only, stack

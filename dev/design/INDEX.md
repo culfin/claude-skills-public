@@ -30,7 +30,20 @@ the document says which script and how a missing engine is reported.
 | 5c web UI changed | `analyzers/design-detector.md` | run |
 | pre-release web | `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` | subagent |
 
-"4a landing" (taste, about 1,200 lines): the subagent returns only the rules relevant to the page
-(≤ 40 lines). Read inline only when no subagent is available — then only the sections needed.
+"4a landing" (taste): the subagent reads `SKILL.md`. If `references/` sits beside it (taste 2.5 and
+later) it then reads, and nothing else under the skill folder (no `assets/`, no other reference):
+`$DEV_DESIGN_DIR/taste/skills/taste-skill/references/motion.md` in full (motion comes from here),
+`$DEV_DESIGN_DIR/taste/skills/taste-skill/references/layout-v4.md` sections 1–5, `$DEV_DESIGN_DIR/taste/skills/taste-skill/references/copy.md` in full,
+`$DEV_DESIGN_DIR/taste/skills/taste-skill/references/system.md` "Type" and "Colour", `$DEV_DESIGN_DIR/taste/skills/taste-skill/references/sections.md` section 1 and the
+plan of the page's kind, `$DEV_DESIGN_DIR/taste/skills/taste-skill/references/moments.md` "Where each fits", on a tech kind
+`$DEV_DESIGN_DIR/taste/skills/taste-skill/references/effects-usage.md`, and from `$DEV_DESIGN_DIR/taste/skills/taste-skill/library/palettes.json` and
+`$DEV_DESIGN_DIR/taste/skills/taste-skill/library/type.json` only the entries for the trade or kind. A section or entry is found by
+searching for its heading or trade, then read by line range — never a whole file that is listed by
+section. No `references/` (older taste):
+`SKILL.md` alone. No taste script or hook is run: where taste deals by script (hero, palette, type,
+moments), the subagent proposes from the library and says "proposed, not dealt". It returns only the
+rules relevant to the page in ≤ 40 lines, its motion block included: hero entrance, each moment and its
+section, hover layer, what never moves on scroll. Read inline only when no subagent is available —
+then only the sections needed.
 
 See `NOTICE.md` for attribution of the platform guideline files.
