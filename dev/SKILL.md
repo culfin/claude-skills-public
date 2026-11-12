@@ -31,15 +31,13 @@ current step needs.
 | `/dev ui [scope]` | `ui-review.md` | UI review and rework |
 | `/dev updates`; a new use of a foreign skill | `updates.md` → `sources.md` | On the command |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
-| CI in background, CI repair | `ci.md` | Gate commit; before each phase if a phase or gate file of this milestone has a `## CI` SHA; Milestone End, Pre-Release Review, `/dev check` |
+| CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
 | Subagent models; state file formats | `models.md`; `state.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md |
-| Visual Companion | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
+| Visual Companion ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
 | Host adapter, superpowers install | `runtime.md` | First explicit `/dev` run |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start, architectural 4a; gate Step D |
 | Tech, design, security triggers and sources | `tech-stack-triggers.md` → `stack/INDEX.md`, `stack/docs.md`, `design/INDEX.md` | Steps 4a, 4c, gate Step A — matching rows only |
 | Analyzer contract | `analyzers/CONTRACT.md` | With every analyzer dispatch |
-
-**Visual Companion:** shows only the product's user interface (mockups, states, screenshots — never plans or findings), used without asking wherever this skill says **"Show screen"** (`companion.md`); only a message pointing at a new or updated screen ends with its URL.
 
 ---
 

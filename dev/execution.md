@@ -87,9 +87,8 @@ Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 **Task review as soon as a task finishes** — do not wait for the rest of the wave:
 `bash "$SDD/scripts/review-package" <plan> <BASE> <task branch or HEAD>`, then a reviewer with
 `$SDD/task-reviewer-prompt.md`, given the brief, the report, the package and the binding constraints
-copied verbatim from the spec. `DONE_WITH_CONCERNS` → read the concerns first; `NEEDS_CONTEXT` →
-answer and resume; `BLOCKED` → change something (context, model one tier up, smaller task) before
-dispatching again.
+copied verbatim from the spec. Report statuses (`DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`):
+`$SDD/SKILL.md`, "Handle the report".
 
 **Fix loop — at most 3 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
 Rounds 1–2 resume the same implementer with the open findings verbatim. Fixers follow

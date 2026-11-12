@@ -2,7 +2,7 @@
 
 Read before dispatching any subagent (implementation, gate, Milestone End, Pre-Release Review, `/dev ui`).
 
-`/dev` dispatches many subagents. **Always specify a model explicitly when dispatching** — an omitted model inherits the most expensive session model (lesson from superpowers 6.x SDD). Every review runs on the standard tier — judging a change is judgement work; the cheap tier is for transcription and pattern search, the capable tier for security and full scans:
+**Name a model in every dispatch** — an omitted one inherits the most expensive session model. Reviews are judgement work (standard tier); cheap is for transcription, capable for security and full scans:
 
 | Role | Tier |
 |---|---|

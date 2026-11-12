@@ -232,5 +232,4 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | Thought | Reality |
 |---|---|
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, rerun the tier with `--gate full` and note the missed path in the gate summary; never argue the tier. |
-| "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass ("Timeouts", Step A). |
 | "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
