@@ -54,6 +54,38 @@ unified. In `ui` phases `ux-ui-design` replaces the overlapping design sources (
 onboarding, ux-writing): equally complete, about 2,500–4,000 fewer words read, no contradiction
 (density critique stays).
 
+**Probe findings fixed.** An end-to-end probe (two parallel workspaces, one gate run months after the
+code was merged) found eleven faults; all are fixed, each text change checked by a fresh agent:
+- `state-check.py` and `check-evidence.py` did not read phase lines with a bold title
+  (`- [x] **Phase N: …**`), so every claim and missing phase file went unseen and the evidence check fell
+  back to STATE.md — silently blind. Both read `**…**`/`__…__` titles now.
+- Two milestones closed on parallel branches: `Milestone End pending:` is one line per milestone, appended
+  below the others (a merge keeps all); Milestone End runs for the one first in ROADMAP.md and removes
+  only its own line.
+- The Spec checker's `isolation: worktree` started from main inside another session's checkout and left
+  its branch behind. It now gets the phase HEAD and checks it out first; afterwards its worktree and only
+  its own agent branch are removed. Kept with isolation, not replaced by a patch-only rule: it must break
+  code to see a test red, which the shared tree must never see.
+- All of STATE.md counted as bookkeeping, so a phase changing its content kept stale evidence valid and
+  the Fix review diff left the change out. Once migrated, only `Milestone End pending:` lines are
+  bookkeeping; a change the phase's requirement asks for is content and reviewed like code.
+- A task fix round relaxed an acceptance criterion and the re-review missed it; re-reviews and the gate's
+  Fix review now get the criteria, and a weakened one is a finding.
+- A `[!]` phase without a phase file keeps `[!]` at the claim and gets its file with the Gate Checklist;
+  phase base is the parent of its first commit, and tier and floor-guard run on a worktree at its last
+  commit (`Phase head:`), not on today's tree, which counted later phases.
+- Also: the Orca card for "`[x]`, PR open" (`waits: merge`); one exact slug rule (umlauts, cut at a word
+  boundary, same slug for workspace, branch and SDD file); disagreeing analyses are decided by the
+  requirement's wording, else asked once; a PR from the phase branch is the CI route when CI runs only
+  on `pull_request`.
+
+**Known open (small).** floor-guard prints nothing at 0 findings although the gate quotes `floor-guard: 0
+critical`; the `Gate commit` item has no evidence format and its tick lands in no commit; the order of
+`## CI` in the phase file; a gate made up later leaves two gate summaries in one file; analyzers may cite
+diff-file instead of source line numbers; models.md names tiers, not models; a partially available stack
+source has no rule; E2E tests and a shared dev database; roadmap writing does not steer to known `@type:`
+values.
+
 **Breaking / migration.** A project without the marker `.dev/.gitkeep` on `origin/<main>` (no `origin`:
 the local main) keeps the old format until the user agrees; `check` then reports `migrate:`, and the
 migration lands at once as its own small PR to main. Other sessions migrate their own phase at their next
