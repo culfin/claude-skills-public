@@ -47,6 +47,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
 | run halts for the user | `--unread --comment "waits: <one sentence>"` |
 | `/dev pause` (after its commit) | `--unread --comment "paused: <next action>"` |
 | PR opened | `orca reference add <PR URL> --worktree active --json` |
+| phase `[x]` on the branch, PR still open | `--workspace-status in-review --unread --comment "waits: merge"` |
 | phase `[x]` and merged | `--workspace-status completed --comment ""` |
 
 **Parallel phase**, only on the user's yes: a full handoff (`orca-cli`, "Full Handoffs") —
