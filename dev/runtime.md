@@ -50,6 +50,20 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
 | phase `[x]` on the branch, PR still open | `--workspace-status in-review --unread --comment "waits: merge"` |
 | phase `[x]` and merged | `--workspace-status completed --comment ""` |
 
+**Workspace overview** — Orca mode, in the Session Start summary (`SKILL.md`, step 7) and in Status
+Display: `orca worktree ps --json`, rows with your `repoId` except your own workspace. Display only;
+claims stay decided by ROADMAP.md. One line per row: `<displayName>  <workspaceStatus>  PR #<n>
+<state>  <comment>`, prefixed `waits for you:` when `unread` is true; a `@claim:` branch without a row
+→ `Phase <N>: no workspace`.
+A row is a **removal candidate** when `linkedPR.state` is `merged`, `git -C <path> status
+--porcelain` and `git -C <path> log origin/<branch>..HEAD` are both empty, and no agent is `working`
+or `waiting`. Candidates go into one AskUserQuestion (multiSelect, one option per workspace, "Keep
+all" last), asked together with the step's own question (Status: Start/Add/Skip/Done) or, at
+Session Start, before the run begins; other merged rows only get a line `not removable: <displayName>
+(<uncommitted|unpushed|agent running>)`, never an option. On the yes, per chosen row: `orca worktree rm --worktree
+"id:<worktreeId>" --json` — never `--force`, never `--delete-branch`; the branch stays. "Just clean
+up, don't ask" changes none of this.
+
 **Parallel phase**, only on the user's yes: a full handoff (`orca-cli`, "Full Handoffs") —
 `orca worktree create --name phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next — Phase <N>" --json`,
 `<agent>` the one running this session (usually `claude`). Then neither wait for it nor steer it.

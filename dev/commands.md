@@ -12,6 +12,7 @@ Execution) stays in `SKILL.md`; the gate is in `gate.md`, CI in `ci.md`.
 2. **Show full roadmap** — in the terminal only (the companion is for the user interface): blockers
    first, then per milestone `### Milestone 2: UI Shell (1/3)` and a table `# | Phase | Type | Status
    | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements.
+3. **Orca mode:** workspace overview and removal offer (`runtime.md`, "Workspace overview").
 
 After display: AskUserQuestion with Start/Add/Skip/Done options.
 
