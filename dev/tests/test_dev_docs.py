@@ -358,6 +358,16 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("/dev next — Phase", text("runtime.md"))
         self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
 
+    def test_claim_never_on_main(self):
+        # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace
+        # instead of handing the phase off; without Orca agents had to guess the way off <main>.
+        pre = " ".join(text("SKILL.md").split("### 2–3. Pre-Phase", 1)[1].split("### 4.", 1)[0].split())
+        for needle in ("**On `<main>`** (`git branch --show-current`) claim nothing there.",
+                       "hand Phase N off as `/dev parallel <N>` does", "this session stays coordinator",
+                       "git switch -c phase-<N>-<slug> origin/<main>"):
+            self.assertIn(needle, pre)
+        self.assertIn("adds one only off `<main>`", text("runtime.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):
