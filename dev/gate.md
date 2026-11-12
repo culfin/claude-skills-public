@@ -32,8 +32,8 @@ At gate entry, decide the tier with the script, not by eye:
 python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tasks <n> [--gate full]
 ```
 
-`<phase base>` is the phase file's `Phase base:` line; a CI repair never changes it (none recorded →
-the parent of the phase's `roadmap: claim` commit). `*.md` files count only towards sensitive paths,
+`<phase base>` is the phase file's `Phase base:` line; a CI repair never changes it (none recorded,
+or a `Phase head:` line: `commands.md`, `phase file missing:`). `*.md` files count only towards sensitive paths,
 not size. Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist
 header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate: full` forces large (`--gate full`).
 
@@ -200,7 +200,7 @@ input, whole codebase. A confirmed twin goes back through Step B; complex ones g
 
 1. **Typecheck + lint + tests and Production Build in parallel** — two background commands
    ("Project Commands per Stack"); one after the other only if both write the same output directory.
-   Before `[gate-pass]` also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>`; its result
+   Before `[gate-pass]` also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>` (`--root` as for the tier); its result
    (`floor-guard: 0 critical` or the list) joins that evidence. A critical finding blocks: undo it,
    or record it in `.floor-guard-allow` with the reason after the user's explicit approval. Notes
    (type or lint suppressions) never block; list them in the gate summary.
