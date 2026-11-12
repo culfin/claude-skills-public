@@ -2,6 +2,51 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.5.0 — 2026-11-12
+
+**dev** — Less skill text in the main session: the analyzer contract goes to the subagents only, stack
+detection and the trigger lines come from a script.
+
+Measured over 30 days of main-session transcripts, a session read about 6 900 words of `/dev` text
+(median, p90 11 400) besides `SKILL.md`, and three files it did not need in full: the analyzer
+contract (read in half of the sessions because the router said "with every analyzer dispatch", but
+written for the analyzer), `stack/INDEX.md` (read for a mechanical match of the project root against
+its detection table) and `tech-stack-triggers.md` (read whole, used for the rows of the detected
+stacks and the phase type).
+
+Analyzer contract: `gate.md` has a paragraph "Analyzer dispatch" with what the dispatcher needs — the
+contract and the analyzer file named by absolute path for the subagent to read, mode, file list,
+diff as a file with untracked files, requirement, `$TECH_STACKS`, page kind, model, the refutation
+prompt, the `Result:` line as evidence, and that a finding without file:line, quote and failing input
+is an open question. The main session never opens the contract or the analyzer file, not even to
+check a prompt. `/dev check`, Milestone End and `/dev ui` dispatch the same way. The contract now
+speaks to the analyzer ("Your input").
+
+`scripts/detect-stack.py`: Session Start step 3 runs it instead of reading `stack/INDEX.md`. It reads
+section 1 of the index — still the only list; the indicator cells were normalised to backticked
+tokens it can parse — checks the project root and the declared workspace members (package.json
+`workspaces`, `pnpm-workspace.yaml`), and prints the ids and the groups web/Apple (`--json`
+optional). A row it cannot parse makes it exit 2 with the row. `--triggers --step <4a|4c|gate>
+--type <@type>` prints, verbatim, only the lines of `tech-stack-triggers.md` whose stacks were
+detected and whose type condition matches (an unknown type keeps the type-independent lines), plus
+the section-2 rows of `stack/INDEX.md` for those stacks and that step. Steps 4a, 4c and gate Step A
+call it. No `python3` or a failing script → the session says so and reads the file by hand, as before.
+
+`tech-stack-triggers.md` was rearranged so the script can cut it: the Next.js paragraph moved up, the
+`ux-ui-design` and motion rules form a section for `ui`/`landing` phases in steps 4a and 4c; no rule
+changed.
+
+Checked GREEN with fresh agents: a backend gate wave with given replies (all analyses dispatched with
+model, CONTRACT path, diff file; a critical without evidence not sent to Step B; a missing checkout
+closed as skipped), a `ui` phase from session start to its gate, and the fallback with a broken index.
+The first backend run after the trigger change read the contract "to confirm the prompts match it";
+the rule now names that case ("not even to check a prompt or a reply") and the rerun held 2 of 2.
+Final count GREEN 5 of 5 (backend gate ×3, ui phase, fallback), one REFACTOR round.
+
+Words a main session reads in one phase with gate (hot path plus these three files, or the script
+output of detection, 4a, 4c and gate): backend 10 660 → 9 287, ui 10 660 → 9 620; the three files
+alone 3 267 → 1 790 (backend) and 2 123 (ui). Hot path 7393 → 7497, whole skill 35 895 → 36 083.
+
 ## v4.4.0 — 2026-11-12
 
 **dev** — Design rules by page kind, and `/dev updates` leaves the public skill.

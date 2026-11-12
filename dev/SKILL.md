@@ -37,8 +37,8 @@ current step needs.
 | Visual Companion ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
 | Host adapter, superpowers install | `runtime.md` | First explicit `/dev` run |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start, architectural 4a; gate Step D |
-| Tech, design, security triggers and sources | `tech-stack-triggers.md` → `stack/INDEX.md`, `stack/docs.md`, `design/INDEX.md` | Steps 4a, 4c, gate Step A — matching rows only |
-| Analyzer contract | `analyzers/CONTRACT.md` | With every analyzer dispatch |
+| Tech, design, security triggers and sources | `python3 "$DEV_DIR/scripts/detect-stack.py" --triggers --step <step> --type <@type>` (fails → read `tech-stack-triggers.md`, say so) → `stack/docs.md`, `design/INDEX.md` | Steps `4a`, `4c`, `gate` (Step A) |
+| Analyzer dispatch | `gate.md`, "Analyzer dispatch" — `analyzers/CONTRACT.md` only by path, for the subagent | Every analyzer dispatch |
 
 ---
 
@@ -57,9 +57,9 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    any finding → handle it per `commands.md`, "State findings" — `behind:` first, `migrate:` next.
    Then read ROADMAP.md.
 2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No marker `<prefix>.dev/.gitkeep` on `origin/<main>` → old format for every phase (`state.md`, "Old format").
-3. **Detect tech stack** once per session: the project root against section 1 of `stack/INDEX.md`,
-   ids stored as `$TECH_STACKS`; `nextjs`, `shadcn` and `svelte`
-   also count as **web**, `ios` as **Apple** (`design/INDEX.md` platform rows match on these).
+3. **Detect tech stack** once per session: `python3 "$DEV_DIR/scripts/detect-stack.py"` (project root)
+   → `$TECH_STACKS` and the groups **web**/**Apple** (`design/INDEX.md` platform rows). No `python3` or
+   exit ≠ 0 → say `detect-stack failed: <error>`, match the root against `stack/INDEX.md` section 1 yourself.
 4. **Parse YAML frontmatter.** Malformed: show the error, ask the user to fix it, stop.
 5. **Parse phases:** milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending, `[x]` done, `[—]` skipped
@@ -173,7 +173,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    approvals, write and commit the spec (`sources.md` O14). Its hand-off to `writing-plans` carries the
    4b instruction. After the spec is committed: add `@spec:` to ROADMAP.md.
 
-Both: matching tech skills first (`tech-stack-triggers.md`, "During Brainstorming"). Questions with a
+Both: matching tech skills first (`--triggers --step 4a`, router). Questions with a
 UI/UX side: ensure the companion via "Show screen" and pass on the hand-off note's companion
 sentences (`befragung.md`, step 5).
 

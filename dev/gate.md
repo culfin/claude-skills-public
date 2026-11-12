@@ -32,7 +32,7 @@ header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate
 
 **The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
 Reviewers come from the changed files (Step A) and `gate-tier.py`. In planning a type only steers
-4a (`SKILL.md`; `tech-stack-triggers.md` for `ui`/`landing`).
+4a.
 
 **Gate additions by type (they only add, never remove):**
 
@@ -107,11 +107,9 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 
 ## Step A — Review wave
 
-Dispatch every Step A item of the checklist **in one message** as parallel Agent subagents, each
-with `analyzers/CONTRACT.md` plus its analyzer file, the diff as a file (including untracked files,
-`git ls-files --others --exclude-standard`), the requirement and its model (`models.md`). Record the
-wave's `@state` — Step B diffs against it. `stack/INDEX.md` and `design/INDEX.md` rows tagged `5c`
-belong to this wave, `5g` to E2E.
+Dispatch every Step A item of the checklist **in one message** as parallel Agent subagents ("Analyzer
+dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows tagged `5c` (`--triggers --step gate`,
+`design/INDEX.md`) belong to this wave, `5g` to E2E.
 
 | Item | Analyzer / source | When |
 |---|---|---|
@@ -125,8 +123,15 @@ belong to this wave, `5g` to E2E.
 | UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | `ui`/`landing`, UI files changed, `ux-ui-design` available; tier as Accessibility review |
 | Second opinion: `<agent>` | `analyzers/diff-review.md`, run by that agent as an Orca worker (`runtime.md`, "Orca") | either tier, `defaults.second-opinion` set |
 
-**Dispatch rules** (`analyzers/CONTRACT.md`, also for Spec checker and Second opinion): prompt for
-refutation; hand over diff and requirement, never your reasoning.
+**Analyzer dispatch** (also `/dev check`, Milestone End, `/dev ui`). Never open `analyzers/CONTRACT.md`
+or the analyzer file, not even to check a prompt or a reply: this paragraph suffices. The
+prompt names both by absolute path (`$DEV_DIR/analyzers/…`) for the subagent to read, then gives the
+mode (`phase`; `fix` = Step B's fix diff only; `full`), the file list and, for `phase`/`fix`, the diff
+as a file, untracked files included (`git ls-files --others --exclude-standard`), the requirement,
+`$TECH_STACKS`, the page kind (`landing` or app UI) and its model (`models.md`). Ask for refutation;
+never hand over why you think the change is right. Its `Result:` line is the item's evidence; a
+finding without file:line, quoted line and failing input is an open question, not a finding. Spec
+checker and Second opinion too.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers

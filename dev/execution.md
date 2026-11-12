@@ -15,7 +15,7 @@ The main session dispatches every implementer and reviewer itself
   reaches `[x]`, delete its workspace.
 - **Models:** every dispatch names its model per `models.md` (omitted = the most expensive).
 - **UI tasks:** pass the `design/INDEX.md` and `stack/INDEX.md` rows marked `4c` whose trigger the task
-  meets (`tech-stack-triggers.md`, "During Execution"). Phase `@type:` `ui` or `landing` and
+  meets (`--triggers --step 4c`, `SKILL.md` router). Phase `@type:` `ui` or `landing` and
   `ux-ui-design` among the available skills → whoever writes the UI code invokes `ux-ui-design` first;
   the dispatch says so.
 - **Before the first dispatch,** scan the plan for tasks that contradict each other or the spec. Rule

@@ -1,29 +1,41 @@
 # Tech stack and security triggers
 
-`5c` in the index files = the gate's review wave (Step A). **Detection** (`$TECH_STACKS`) is section 1
-of `stack/INDEX.md`, once per session. This file says which files and stacks trigger a source or
-review; when each review runs (tier, phase type) and how a missing source is closed is `gate.md`
-(Step A, Evidence rules) alone.
+`5c` in the index files = the gate's review wave (Step A). **Detection** (`$TECH_STACKS`) is
+`scripts/detect-stack.py` over section 1 of `stack/INDEX.md`, once per session; `detect-stack.py
+--triggers --step <4a|4c|gate> --type <@type>` prints only the lines of this file and the section-2
+rows of `stack/INDEX.md` that match the stacks, the step and the type. This file says which files and
+stacks trigger a source or review; when each review runs (tier, phase type) and how a missing source
+is closed is `gate.md` (Step A, Evidence rules) alone.
 
-**Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, consult section 2
-of `stack/INDEX.md` and load only the rows whose trigger matches: step 4a → as context before
+## Where Tech Skills Auto-Trigger
+
+**Stack sources — one rule for all three steps.** For every id in `$TECH_STACKS`, take the section-2
+rows of `stack/INDEX.md` (printed with `--triggers`) and load only those whose trigger matches: step 4a → as context before
 designing; step 4c → handed to the implementer with the task that meets the trigger; step 5c → as a
 read-only review of the changed files (one "Tech-Stack Review: <stack id>" item per id). `subagent`
 rows come back as findings or a ≤ 40-line digest. Current API facts → `stack/docs.md`, one row.
 The matrices below list what the index does not cover (skills, design, analyzers); Next.js keeps
 its own item and fallback ("Next.js" below) — its bundled-docs index row is the same source, not a second review.
 
-## Where Tech Skills Auto-Trigger
+**Next.js — where the knowledge comes from** (`nextjs` in `$TECH_STACKS`). Next.js ships its
+documentation with the package (16.3 and later), version-matched to what the project runs. A subagent reads
+`node_modules/next/dist/docs/index.md` of the `next` the project resolves (in a monorepo: the
+app's own) and from there only the pages that match the changed files or the planned routes; it
+returns findings or a ≤ 40-line digest, never the docs themselves. No bundled docs (older Next.js,
+dependencies not installed) → fall back to an installed `next-best-practices` skill if there is
+one; neither → the item is ticked as `skipped: <reason>`.
+
+**UI and landing phases (steps 4a and 4c) — phase `@type:` is `ui` or `landing`:**
+- **`ux-ui-design` available → the rows `forms`, `states`, `onboarding` and `ux-writing` are not loaded anywhere** (4a, 4c, `landing`, `/dev ui`): it covers them, and reviews use its Review mode instead (`gate.md` UX review, `ui-review.md`); `density-critique`, the platform rows and emil stay. Without `ux-ui-design` everything loads
+- **Motion — which source wins.** On a landing page (`@type: landing`, `/dev ui` kind `landing`) taste's motion rules (intensity, entrances, scroll-reveal per section) win over ux-ui-design's "one eye-catcher", vibepolish's "everything animated on scroll" and Emil's "should this animate at all?"; Emil's easing, duration, interruption, performance and reduced-motion rules still apply. App UI (`ui`, dashboards, settings): motion stays sparse per ux-ui-design and Emil; taste's motion never carries over
 
 **During Brainstorming (step 4a):**
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
 - If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
-- **`ux-ui-design` available → the rows `forms`, `states`, `onboarding` and `ux-writing` are not loaded anywhere** (4a, 4c, `landing`, `/dev ui`): it covers them, and reviews use its Review mode instead (`gate.md` UX review, `ui-review.md`); `density-critique`, the platform rows and emil stay. Without `ux-ui-design` everything loads
 - If phase `@type:` is `landing` → a subagent reads taste (`design/INDEX.md`, row "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
-- **Motion — which source wins.** On a landing page (`@type: landing`, `/dev ui` kind `landing`) taste's motion rules (intensity, entrances, scroll-reveal per section) win over ux-ui-design's "one eye-catcher", vibepolish's "everything animated on scroll" and Emil's "should this animate at all?"; Emil's easing, duration, interruption, performance and reduced-motion rules still apply. App UI (`ui`, dashboards, settings): motion stays sparse per ux-ui-design and Emil; taste's motion never carries over
 - If phase `@type:` is `ui` or `landing` and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
-- If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" below
+- If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" above
 
 **During Execution (step 4c):**
 - UI tasks in the plan → pass the `design/INDEX.md` rows marked `4c` whose trigger the task meets (platform of `$TECH_STACKS`, animation, web on a phone, Apple design) to the implementer with the task — only those rows, `subagent` rows as a subagent's ≤ 40-line digest; motion per "Motion — which source wins" above
@@ -36,7 +48,7 @@ ops and dependency row reads the tier script's reasons, not a path list here.
 
 | Changed files | Condition | Skill | Mode |
 |-------------------|-----------|-------|-------|
-| `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" below) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
+| `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" above) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
 | `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
 | `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css`, `*.scss`, `*.less` | Web UI files changed | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → skipped |
@@ -68,17 +80,9 @@ ops and dependency row reads the tier script's reasons, not a path list here.
 - list rendering of unbounded data (no pagination, no virtualization);
 - new endpoints that return collections.
 
-**Analyzers:** each analysis is a subagent with its file from `analyzers/` (contract in
-`analyzers/CONTRACT.md`), for every stack, with short notes per language. Extra stack-specific
+**Analyzers:** each analysis is a subagent with its file from `analyzers/` (dispatch: `gate.md`,
+"Analyzer dispatch"), for every stack, with short notes per language. Extra stack-specific
 analyses go into `defaults.phase-types` in ROADMAP.md; `/dev` depends on none.
-
-**Next.js — where the knowledge comes from.** Next.js ships its documentation with the package
-(16.3 and later), version-matched to what the project runs. A subagent reads
-`node_modules/next/dist/docs/index.md` of the `next` the project resolves (in a monorepo: the
-app's own) and from there only the pages that match the changed files or the planned routes; it
-returns findings or a ≤ 40-line digest, never the docs themselves. No bundled docs (older Next.js,
-dependencies not installed) → fall back to an installed `next-best-practices` skill if there is
-one; neither → the item is ticked as `skipped: <reason>`.
 
 **Rules:**
 - Tech-Stack Reviews and Security Review are **read-only** — they flag, never fix.
