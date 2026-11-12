@@ -96,7 +96,8 @@ Rounds 1–2 resume the same implementer with the open findings verbatim. Fixers
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
 commits are. After each round, a scoped re-review:
-`review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`. Still
+`review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`, with the
+task's acceptance criteria verbatim: a fix that weakens one (a looser value, a dropped case) is a finding. Still
 open after round 3 → halt and report what remains (one of the run's halts). An implementer or
 reviewer naming a weakness of the task's own tests (one that cannot fail, tests a parameter instead
 of the default) starts a fix round — never `minor`. No RED evidence (new tests failing first) in a

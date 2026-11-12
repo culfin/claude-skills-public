@@ -178,8 +178,8 @@ Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-
   Lowering the floor (skipping a test, loosening a check) is not a fix. When the cause of a finding
   or red run is unclear, the fix agent follows `superpowers:systematic-debugging`.
 - **Non-critical findings** go to the phase file's `## Minor (deferred)`; the phase continues.
-- **Fix review** — afterwards, rerun only the analyses that had a critical finding, only on the fix
-  diff against the wave's `@state`, untracked files included:
+- **Fix review** — afterwards, rerun only the analyses that had a critical finding, with the
+  requirement (a weakened criterion is critical), only on the fix diff against the wave's `@state`, untracked files included:
   `git diff <@state of the wave> $(python3 "$DEV_DIR/scripts/check-evidence.py" id)` (two trees, so
   files untracked at the wave do not show as deleted). Add `- [ ] Fix review` (and
   `- [ ] Similar-bugs scan` if a defect was fixed) now; tick Fix review with the merged result.
