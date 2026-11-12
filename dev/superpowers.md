@@ -18,17 +18,6 @@ know which installation is in use and how to update it. **It prepares; it change
    checked (offline, no permission). Never call it "up to date" without asking the source.
 4. **No switching mid-phase** (O3): a newer install counts from the next phase boundary, after step 2 again.
 
-## Updating — only when the user asks
+## Updating
 
-If the update watcher is set up, a new superpowers version is first checked against its contract
-in `sources.md`: one that fits is applied by the watcher, one that is held back waits for
-`/dev updates` (`updates.md`). `/dev` itself still never starts an update unasked.
-
-- **Claude Code:** `claude plugin update superpowers@<marketplace>` (the marketplace from
-  `claude plugin list`, e.g. `claude-plugins-official`). Automatic updates per marketplace:
-  `/plugin` → Marketplaces. A downloaded update is loaded by new sessions, not by the running one.
-- **Codex:** use Codex's own plugin manager for the installed source; check the exact commands with its
-  `--help` on that machine rather than assuming them.
-- After an update: step 2 again, then `tests/check-screens.sh`. Record version and result in STATE.md.
-  If either fails, keep working with the previous install through the host's own controls; do not delete
-  caches.
+Only when the user asks, per `updates.md`; `/dev` never starts an update unasked.

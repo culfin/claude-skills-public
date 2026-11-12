@@ -2,6 +2,106 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.0.0 — 2026-11-11
+
+**dev** — Orca-first phase model. Breaking: per-phase state moves out of the shared `STATE.md`.
+
+**Phase model.** A phase has exactly one branch at a time; in Orca its workspace carries the display name
+`phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace. Its state lives in one file
+`.dev/phase-<N>.md`; gate results are kept for good in `docs/gates/`; `STATE.md` holds only what is shared. Why: parallel sessions merged
+into one `STATE.md`. A simulated double merge gave 3–4 conflict hunks with the shared file and 0 with one
+file per phase; in one project, 30 of 44 merges had hunks from both sides. RED on v3.3.0 (two sessions
+finishing in parallel): one of two rewrote the shared sections, both flagged a contradiction in the skill.
+GREEN (2 of 2): `STATE.md` untouched, only the own phase file and gate file change. `state-check.py
+migrate` moves a session's own parts; a project counts as migrated when the marker `.dev/.gitkeep` is on
+`origin/<main>` (`/dev init` and `migrate` create it): a bare `.dev/` was never committed when nothing moved, so
+"migrated" never held. `migrate` appends nothing twice (rerun after a rebase conflict) and, before the
+marker exists, `migrate:` also counts other sessions' parts. A pushed branch takes `origin/<main>` by merge,
+never by rebase; the migration commit reaches main by cherry-pick from a fresh branch, without the claim.
+Decisions are one line under the phase in ROADMAP.md, visible to every session; deferred minors stay in
+`docs/gates/phase-<N>.md` until Milestone End gathers them (no shared-file write per phase); the `/dev check`
+summary goes to `docs/gates/check-<date>-<branch>.md`. `check-evidence.py` counts only phase files, the
+marker and `docs/gates/` as bookkeeping, so tools kept under `.dev/` stay code under review.
+
+**CI status never in tracked files.** Three review rounds on "who owns this CI line" ended with the
+rule: status lives only in `<git-common-dir>/dev-ci/<sha>`, shared by all worktrees; ownership is derived
+from `git diff --name-only origin/<main>...HEAD`. `ci-watch.sh` follows a run cancelled by a descendant
+commit (cancel-in-progress). No `[skip ci]` on bookkeeping commits: GitHub then also skips the PR checks of
+the head commit.
+
+**Session Start** runs `git fetch` and `state-check.py check` before reading any roadmap or phase file, so
+it never works on a state another session already changed. An unknown `@type:` is reported once instead
+of silently dropping type hints. A post-skill `requesting-code-review` is not run again: the gate's Diff
+review covers it. `check-superpowers.py` checks two skills fewer (`executing-plans`, `using-git-worktrees`),
+which `/dev` no longer calls.
+
+**Orca flow.** Orca mode only when the workspace path equals the resolved session path exactly; sessions in
+`<repo>/.worktrees/` wrote the main workspace's card (RED 2 of 2). Display name `phase-<N>-<slug>`. A pause
+commits and pushes. A worker at the context stop sends `worker_done` with a status instead of "/clear"
+(RED: one run chose `ask`, both printed a useless "/clear").
+
+**Gate depth from the diff.** Ops, dependency and DB paths set the tier to large and trigger the
+Security review, for any phase type; a type can only add reviewers. RED: an `infra` phase changing a
+workflow got small and no Security review (2 of 2); GREEN: large plus Security review (2 of 2).
+
+**Slimmer.** The hot path, now including `models.md`, shrinks from 9,046 to at most 7,500 words
+(enforced by test). `ci.md` is new; router and file table are one table. Loading scenarios before and
+after behave the same (4 of 4).
+
+**Cleanup.** The `next` source and `brag` are removed. The automatic debug flow is gone: 0 uses, and in a
+failing-gate probe it sent the agent into the debugger instead of Step B. The `/dev ui` model tier is
+unified. In `ui` phases `ux-ui-design` replaces the overlapping design sources (forms, states,
+onboarding, ux-writing): equally complete, about 2,500–4,000 fewer words read, no contradiction
+(density critique stays).
+
+**Probe findings fixed.** An end-to-end probe (two parallel workspaces, one gate run months after the
+code was merged) found eleven faults; all are fixed, each text change checked by a fresh agent:
+- `state-check.py` and `check-evidence.py` did not read phase lines with a bold title
+  (`- [x] **Phase N: …**`), so every claim and missing phase file went unseen and the evidence check fell
+  back to STATE.md — silently blind. Both read `**…**`/`__…__` titles now.
+- Two milestones closed on parallel branches: `Milestone End pending:` is one line per milestone, appended
+  below the others (a merge keeps all); Milestone End runs for the one first in ROADMAP.md and removes
+  only its own line.
+- The Spec checker's `isolation: worktree` started from main inside another session's checkout and left
+  its branch behind. It now gets the phase HEAD and checks it out first; afterwards its worktree and only
+  its own agent branch are removed. Kept with isolation, not replaced by a patch-only rule: it must break
+  code to see a test red, which the shared tree must never see.
+- All of STATE.md counted as bookkeeping, so a phase changing its content kept stale evidence valid and
+  the Fix review diff left the change out. Once migrated, only `Milestone End pending:` lines are
+  bookkeeping; a change the phase's requirement asks for is content and reviewed like code.
+- A task fix round relaxed an acceptance criterion and the re-review missed it; re-reviews and the gate's
+  Fix review now get the criteria, and a weakened one is a finding.
+- A `[!]` phase without a phase file keeps `[!]` at the claim and gets its file with the Gate Checklist;
+  phase base is the parent of its first commit, and tier and floor-guard run on a worktree at its last
+  commit (`Phase head:`), not on today's tree, which counted later phases.
+- Also: the Orca card for "`[x]`, PR open" (`waits: merge`); one exact slug rule (umlauts, cut at a word
+  boundary, same slug for workspace, branch and SDD file); disagreeing analyses are decided by the
+  requirement's wording, else asked once; a PR from the phase branch is the CI route when CI runs only
+  on `pull_request`.
+
+**Known open (small).** floor-guard prints nothing at 0 findings although the gate quotes `floor-guard: 0
+critical`; the `Gate commit` item has no evidence format and its tick lands in no commit; the order of
+`## CI` in the phase file; a gate made up later leaves two gate summaries in one file; analyzers may cite
+diff-file instead of source line numbers; models.md names tiers, not models; a partially available stack
+source has no rule; E2E tests and a shared dev database; roadmap writing does not steer to known `@type:`
+values; the router no longer says what `/dev` is not for; removing the Spec checker's own agent branch
+(`git branch -D`) is not named as an exception to the halt on deleting branches; a second disagreement
+between analyses in the same run (after the one user question) has no rule; in the old format a STATE.md
+change a phase asks for stays bookkeeping, so the Fix review diff does not show it. The sentence that an overall
+success proves only what the tool checked was cut for the word budget; the rule that a STATE.md and phase
+file edit is not for either file sits under the old-format section; for a gate made up later it is not
+said whether the Spec checker works on today's HEAD or `Phase head:`; an unclaimed `[!]` in the old
+format after a squash merge falls back to a claim commit that may lie after the code or be gone.
+
+The migration to phase files changes `@state` once (STATE.md turns from bookkeeping into code): ticked
+gate items of a phase in progress go stale and are rerun. Phase lines also match `*` bullets and italic
+titles.
+
+**Breaking / migration.** A project without the marker `.dev/.gitkeep` on `origin/<main>` (no `origin`:
+the local main) keeps the old format until the user agrees; `check` then reports `migrate:`, and the
+migration lands at once as its own small PR to main. Other sessions migrate their own phase at their next
+start.
+
 ## v3.3.0 — 2026-11-11
 
 **dev** — claims without a commit to main, and STATE.md cleanup findings. Measured across 14 projects:

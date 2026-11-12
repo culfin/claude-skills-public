@@ -39,6 +39,46 @@ PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0
   bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status"
 [[ "$(cat "$tmp/status")" == "timeout" ]] && ok "gh error is never none/green" || bad "gh error: $(cat "$tmp/status")"
 
+# ci-watch follows a cancelled run to a descendant commit's run (real git repo for ancestry)
+repo="$tmp/repo"; git init -q "$repo"
+g(){ git -C "$repo" -c user.name=t -c user.email=t@t -c commit.gpgsign=false "$@"; }
+g commit -q --allow-empty -m R; R=$(g rev-parse HEAD)
+g commit -q --allow-empty -m A; A=$(g rev-parse HEAD)
+g commit -q --allow-empty -m B; B=$(g rev-parse HEAD)
+g checkout -q -b side "$R"; g commit -q --allow-empty -m C; C=$(g rev-parse HEAD)   # newer, not after A
+mkdir -p "$tmp/bin2" "$tmp/stub2"
+cat > "$tmp/bin2/gh" <<'S'
+#!/usr/bin/env bash
+if [[ " $* " == *" --branch "* ]]; then
+    [[ -f "$STUB_DIR/fail-branch" ]] && { echo "HTTP 502" >&2; exit 1; }
+    cat "$STUB_DIR/branch"; exit 0
+fi
+c=""; prev=""
+for a in "$@"; do [[ "$prev" == "--commit" ]] && c="$a"; prev="$a"; done
+cat "$STUB_DIR/commit-$c" 2>/dev/null || echo '[]'
+S
+chmod +x "$tmp/bin2/gh"
+follow(){ ( cd "$repo" && PATH="$tmp/bin2:$PATH" STUB_DIR="$tmp/stub2" DEV_CI_BRANCH=main DEV_CI_INTERVAL=0 \
+            DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "$A" "$tmp/status2" ); cat "$tmp/status2"; }
+run(){ printf '{"headSha":"%s","databaseId":%s,"status":"completed","conclusion":"%s","name":"ci"}' "$1" "$2" "$3"; }
+echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/commit-$A"
+echo "[$(run "$B" 456 success)]" > "$tmp/stub2/commit-$B"
+echo "[$(run "$C" 789 success)]" > "$tmp/stub2/commit-$C"
+
+echo "[$(run "$B" 456 success),$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
+[[ "$(follow)" == "green 456 via ${B:0:7}" ]] && ok "cancelled_followed_to_descendant_green" \
+  || bad "cancelled_followed_to_descendant_green: $(cat "$tmp/status2")"
+echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
+[[ "$(follow)" == "red ci=cancelled" ]] && ok "cancelled_without_descendant_stays_red" \
+  || bad "cancelled_without_descendant_stays_red: $(cat "$tmp/status2")"
+echo "[$(run "$C" 789 success),$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
+[[ "$(follow)" == "red ci=cancelled" ]] && ok "non_descendant_newer_run_is_ignored" \
+  || bad "non_descendant_newer_run_is_ignored: $(cat "$tmp/status2")"
+touch "$tmp/stub2/fail-branch"
+[[ "$(follow)" == "timeout" ]] && ok "gh_failure_while_looking_for_successor_is_timeout_not_red" \
+  || bad "gh_failure_while_looking_for_successor_is_timeout_not_red: $(cat "$tmp/status2")"
+rm -f "$tmp/stub2/fail-branch"
+
 # ci-watch without jq: minimal PATH with only essential tools + gh stub
 mkdir -p "$tmp/nojq/bin"
 for tool in bash dirname mkdir mv git cat sleep printf; do

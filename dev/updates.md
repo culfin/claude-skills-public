@@ -86,7 +86,7 @@ row in `sources.md` with the same `kind`, and that `apply` is exactly the argv a
      keeps a copy of `old` — if it does not, say so in the option description, because then the
      answer is the approval of an irreversible step.
    - Exit 0 → move the file to `applied/` (unless the command already did), then verify:
-     `superpowers` → `superpowers.md` step 2; design sources → `python3 -m pytest
+     `superpowers` → `superpowers.md` step 2, then `bash "$DEV_DIR/tests/check-screens.sh"`; design sources → `python3 -m pytest
      "$DEV_DIR/tests/test_design_index.py"`; others → the skill's `SKILL.md` exists.
      Updated plugins and skills take effect in **new** sessions.
    - Non-zero exit → show the output, keep the file in `pending/`, nothing else.

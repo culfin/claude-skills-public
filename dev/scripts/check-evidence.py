@@ -1,19 +1,31 @@
 #!/usr/bin/env python3
-"""Checks the Quality Gate checklist in STATE.md for stale or missing evidence. Read-only.
+"""Checks the Quality Gate checklist in the phase file for stale or missing evidence. Read-only.
 
 Every checked item must name its evidence and the state of the code it was checked on:
 
     - [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04
 
 `@<state>` is the git tree id of the working tree (tracked + untracked, .gitignore respected,
-without STATE.md and ROADMAP.md, which the gate itself writes), printed by `check-evidence.py id`.
+without the bookkeeping the gate itself writes: ROADMAP.md, .dev/phase-*.md, the marker
+.dev/.gitkeep and docs/gates/**; anything else under .dev/ is code), printed by `check-evidence.py id`.
+STATE.md next to the marker (migrated) is code except its `Milestone End pending:` lines, so a phase
+that changes its content goes through the gate like any file; without the marker (old format, the
+checklist lives there) all of STATE.md is bookkeeping. "Migrated" here means the marker in this working
+tree, the tree the id describes. So the migration itself changes the id once: ticked items of a
+phase in progress go stale and are rerun (commands.md, `migrate:`).
 It does not change when that exact content is committed, so a gate commit that contains the checked
 content keeps every item valid — and any edit to the code after a check makes that item stale.
 
     check-evidence.py id                              # current state id
-    check-evidence.py check [STATE.md]                # before completing the phase
-    check-evidence.py check [STATE.md] --before-commit   # before the gate commit (Gate commit may be open)
-    check-evidence.py check [STATE.md] --repair       # the '(CI repair)' checklist instead of the phase's
+    check-evidence.py check [FILE]                    # before completing the phase
+    check-evidence.py check [FILE] --before-commit    # before the gate commit (Gate commit may be open)
+    check-evidence.py check [FILE] --repair           # the '(CI repair)' checklist instead of the phase's
+
+FILE is the phase file `.dev/phase-<N>.md` (the normal case) or, during the transition, STATE.md.
+Without FILE the first existing of these is read, relative to the folder of ROADMAP.md (the working
+directory): (a) `.dev/phase-<N>.md` of the phase marked [!] or [~] with `@claim:<branch>@<date>` on the
+current branch, (b) STATE.md. <N> is the phase id verbatim from ROADMAP (3, 6a, 4.1). In both forms the
+checklist is the section `## Quality Gate — Phase <N>: <Name>`.
 
 Without --repair only the phase's own '## Quality Gate' section is read, never a CI-repair one, so a
 repair of an earlier phase cannot stand in for the running phase's evidence. Items of a checklist
@@ -49,7 +61,17 @@ from pathlib import Path
 
 ID_LEN = 12
 # Files the gate itself writes while checking; they are bookkeeping, not the code under review.
-BOOKKEEPING = ("STATE.md", "ROADMAP.md")
+BOOKKEEPING = ("ROADMAP.md",)
+# STATE.md: whole file before the migration, else only these status lines (state.md).
+STATE_FILE = "STATE.md"
+STATUS_LINE = re.compile(r"^\s*Milestone End pending:")
+# Phase files, the migration marker and gate records, likewise wherever the app lives.
+BOOKKEEPING_GLOBS = (".dev/phase-*.md", ".dev/.gitkeep", "docs/gates/**")
+# Same syntax as scripts/state-check.py.
+# Bullet `-` or `*`; the title may be bold or italic (`**Phase 3: Login**`, `*…*`, `__…__`, `_…_`);
+# ids are only [0-9A-Za-z.].
+PHASE = re.compile(r"^\s*[-*] \[(.)\]\s+(?:\*\*|__|\*|_)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
+CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
 # Happens after the local checks.
 LATER_STEPS = ("gate commit",)
 # Items v3 has no step for; their checklist is rebuilt (gate.md, "Gate Checklist").
@@ -79,11 +101,47 @@ def state_id(root):
                                         capture_output=True, text=True).stdout.strip()
         run("read-tree", "HEAD")
         run("add", "-A")
-        # Bookkeeping files count wherever they live: monorepos keep STATE.md/ROADMAP.md next to
-        # the app (e.g. apps/web/), not at the root.
+        # Bookkeeping counts wherever it lives: monorepos keep STATE.md/ROADMAP.md, .dev/ and
+        # docs/gates/ next to the app (e.g. apps/web/), not at the root.
+        for line in filter(None, run("ls-files", "-s", "-z", "--", f":(glob)**/{STATE_FILE}").split("\0")):
+            mode_sha, path = line.split("\t", 1)
+            mode, sha = mode_sha.split()[:2]
+            marker = root / Path(path).parent / ".dev" / ".gitkeep"
+            kept = "" if not marker.is_file() else "".join(
+                l for l in run_raw(root, env, "cat-file", "blob", sha).splitlines(keepends=True)
+                if not STATUS_LINE.match(l))
+            if kept.strip():
+                blob = run_raw(root, env, "hash-object", "-w", "--stdin", stdin=kept).strip()
+                run("update-index", "--cacheinfo", f"{mode},{blob},{path}")
+            else:
+                run("rm", "--cached", "-q", "--", path)
         run("rm", "--cached", "-q", "--ignore-unmatch", "--",
-            *(f":(glob)**/{name}" for name in BOOKKEEPING))
+            *(f":(glob)**/{name}" for name in BOOKKEEPING),
+            *(f":(glob)**/{g}" for g in BOOKKEEPING_GLOBS))
         return run("write-tree")[:ID_LEN]
+
+
+def run_raw(root, env, *args, stdin=None):
+    """git output unstripped (blob contents keep their whitespace)."""
+    return subprocess.run(["git", "-C", str(root), *args], env=env, check=True, input=stdin,
+                          capture_output=True, text=True).stdout
+
+
+def default_file(base="."):
+    """Phase file of the phase claimed on the current branch, else STATE.md (both next to ROADMAP.md)."""
+    base = Path(base)
+    roadmap = base / "ROADMAP.md"
+    if roadmap.is_file():
+        branch = subprocess.run(["git", "-C", str(base), "branch", "--show-current"],
+                                capture_output=True, text=True).stdout.strip()
+        for line in roadmap.read_text(encoding="utf-8").splitlines():
+            m = PHASE.match(line)
+            c = m and CLAIM.search(m.group(4))
+            if m and m.group(1) in "!~" and c and branch and c.group(1) == branch:
+                f = base / ".dev" / f"phase-{m.group(3)}.md"
+                if f.is_file():
+                    return f
+    return base / "STATE.md"
 
 
 def gate_items(text, repair=False):
@@ -137,7 +195,8 @@ def check(root, state_file, before_commit=False, repair=False):
     for done, body in items:
         name, evidence = _split(body)
         if name.lower().startswith(PRE_V3):
-            problems.append(f"pre-v3 item: {name} — rebuild the checklist (gate.md, \"Gate Checklist\")")
+            problems.append(f"pre-v3 item: {name} — write the checklist anew per gate.md, \"Gate Checklist\", "
+                            "and rerun its checked items")
             continue
         if not done:
             if before_commit and name.lower().startswith(LATER_STEPS):
@@ -173,7 +232,8 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("id")
     c = sub.add_parser("check")
-    c.add_argument("state", nargs="?", default="STATE.md")
+    c.add_argument("state", nargs="?", default=None,
+                   help="phase file (.dev/phase-<N>.md) or, in transition, STATE.md; default: see above")
     c.add_argument("--before-commit", action="store_true")
     c.add_argument("--repair", action="store_true")
     a = p.parse_args()
@@ -184,6 +244,8 @@ def main():
     if a.cmd == "id":
         print(state_id(root))
         return 0
+    if a.state is None:
+        a.state = str(default_file("."))
     problems = check(root, a.state, a.before_commit, a.repair)
     for line in problems:
         print(line)

@@ -5,7 +5,7 @@ DEV = pathlib.Path(__file__).resolve().parents[1]
 STACK = DEV / "stack"
 INDEX = STACK / "INDEX.md"
 CHECKOUTS = pathlib.Path(os.environ.get("DEV_STACK_DIR", os.path.expanduser("~/.claude/dev-stack")))
-GIT_SOURCES = {"docker", "gha", "better-auth", "postgres", "stripe", "fastify", "next", "wordpress"}
+GIT_SOURCES = {"docker", "gha", "better-auth", "postgres", "stripe", "fastify", "wordpress"}
 SOURCE_STACK = {"next": "nextjs"}  # source id -> stack id where they differ
 DOC_TECHNOLOGIES = ["Next.js", "React", "Tailwind", "shadcn", "Base UI", "Radix", "PostgreSQL",
                     "better-auth", "Zod", "Vitest", "Playwright", "Docker", "GitHub Actions", "Tauri",
@@ -232,35 +232,17 @@ def test_next_and_wordpress_conditions():
     index = " ".join(INDEX.read_text().split())
     contract = " ".join((DEV / "sources.md").read_text().split())
     loads = [load for _, load, _ in triggers()]
-    assert loads.count("$DEV_STACK_DIR/next/skills/next-dev-loop/SKILL.md") == 1
-    assert len([l for l in loads if l.startswith("$DEV_STACK_DIR/next/")]) == 1, "only next-dev-loop"
-    for phrase in ("≥ 16.3 on Turbopack", "`agent-browser` already on `PATH`", "skipped: <reason>",
-                   "never installs or upgrades either", "replaces neither",
-                   "the minimum version the skill file states", "agent-browser --version"):
-        assert phrase in index, phrase
-    for phrase in ("the minimum version the skill file states", "lower or unreadable → `skipped`",
-                   "built-in help output", "anything it would download or install is not followed"):
-        assert phrase in contract, phrase
-    assert "0.31" not in index + contract, "the version floor lives in the skill file, not here"
+    assert not [l for l in loads if l.startswith("$DEV_STACK_DIR/next/")], "next is not a checkout source"
     wp = [l for l in loads if l.startswith("$DEV_STACK_DIR/wordpress/")]
     assert 4 <= len(wp) <= 6 and not any("wordpress-router" in l or "triage" in l for l in wp)
     for phrase in ('"WordPress 7.0+" assumption', "No WP-CLI on a source's instruction",
                    "never hits production without the user's go-ahead", "may be read, never run",
-                   "is called on its instruction except by the `next-dev-loop` row",
-                   "Exception, the `next-dev-loop` row: the subagent reads the file, runs its loop and returns the result",
-                   "HTTP to `/_next/mcp`", "headless"):
+                   ):
         assert phrase in index, phrase
-    for phrase in ("**O11**", "**O12**", "`/dev` installs nothing",
+    for phrase in ("**O12**",
                    "O9 applies unchanged — no WP-CLI on a source's instruction anywhere",
                    "may be read, never run, and the sibling triage script is not run",
                    "nothing runs against a production site without the user's go-ahead",
-                   "on a source's instruction. Sole exception: O11.",
-                   "(sole exception: the `next` runtime check, O11)",
-                   "HTTP requests to `/_next/mcp` of the project's own dev server",
-                   "driving only that server's URL", "no other stack source acts",
-                   "Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and never `--headed`",
-                   "a route that needs a login → `skipped`",
-                   "no Next.js upgrade (`next upgrade`) is run",
                    "checked against the project's version"):
         assert phrase in contract, phrase
     assert "`wordpress`" in {r[1] for r in detection()}
@@ -273,3 +255,9 @@ def test_overrides_in_contract():
     assert "report_usage" in text
     stripe = next(l for l in (DEV / "sources.md").read_text().splitlines() if l.startswith("| stripe |"))
     assert "O10" in stripe
+
+
+def test_no_next_dev_loop():
+    for rel in ("stack/INDEX.md", "sources.md", "tech-stack-triggers.md"):
+        body = (DEV / rel).read_text()
+        assert "next-dev-loop" not in body and "agent-browser" not in body, rel

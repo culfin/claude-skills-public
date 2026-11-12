@@ -9,7 +9,7 @@ seams, leftovers, things no single task owned.
 ## Inputs
 
 Besides the contract: the diff as a file (including untracked files), the requirement (the spec
-from `@spec:` or the acceptance criteria in STATE.md) and the list of changed files. Never the
+from `@spec:` or the acceptance criteria in the phase file) and the list of changed files. Never the
 implementer's reasoning.
 
 ## Sweep

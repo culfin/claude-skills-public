@@ -28,10 +28,8 @@ without an upstream — nothing to watch until it gets one).
 | postgres | git | `$DEV_STACK_DIR/postgres` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
 | stripe | git | `$DEV_STACK_DIR/stripe` | `stack/INDEX.md`, `LICENSE` | O8, O9, O10 |
 | fastify | git | `$DEV_STACK_DIR/fastify` | `stack/INDEX.md`, `LICENSE` | O8, O9 |
-| next | git | `$DEV_STACK_DIR/next` | `stack/INDEX.md`, `license.md` | O8, O9, O11 |
 | wordpress | git | `$DEV_STACK_DIR/wordpress` | `stack/INDEX.md`, `LICENSE` | O8, O9, O12 |
 | pg | plugin | `pg@aiguide` | `skills/design-postgres-tables/SKILL.md` | O8 |
-| brag | plugin | `brag@brag` | `skills/brag/SKILL.md`, `skills/brag/slim.md`, `skills/brag-slim/SKILL.md`, `skills/brag/references/step-1-inspect.md` | O13 |
 | svelte | plugin | `svelte@svelte` | `skills/svelte-core-bestpractices/SKILL.md`, `skills/svelte-code-writer/SKILL.md` | O8 |
 | shadcn | agents-skill | `~/.agents/skills/shadcn` | `SKILL.md` | O8 |
 | swiftui-pro | agents-skill | `~/.agents/skills/swiftui-pro` | `SKILL.md` | O8 |
@@ -45,7 +43,7 @@ without an upstream — nothing to watch until it gets one).
 Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `superpowers.md`,
 `debugger.md`; design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
 `commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources — `stack/INDEX.md`
-(4a, 4c, 5c); brag — `brag.md` (Milestone End, Pre-Release Review). Docs in a project's `node_modules` are not
+(4a, 4c, 5c). Docs in a project's `node_modules` are not
 sources. A new use of a source adds its paths here in the same commit.
 
 ## Overrides — where `/dev` deliberately departs from a source
@@ -68,32 +66,18 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
   `context` step its `SKILL.md` and `polish.md` order, `install`, `hooks on`, or a downloaded binary
   (`commands.md`).
 - **O7** impeccable telemetry is off: `IMPECCABLE_NO_TELEMETRY=1`, `DO_NOT_TRACK=1`.
-- **O8** Stack skills and sources run as read-only reviews in gate Step A and as context in 4a/4c (sole
-  exception: the `next` runtime check, O11); their own fix or install instructions do not apply.
+- **O8** Stack skills and sources run as read-only reviews in gate Step A and as context in 4a/4c; their own fix or install instructions do not apply.
 - **O9** Stack sources are a review yardstick and context, never an order to rebuild: the project's
   conventions win (a file name or restart policy the source prefers is not enforced); no hosted product a
   source recommends is passed on. For `read` and `subagent` rows alike nothing outside the listed file's
   folder is read — no sibling skill, no skill or instruction fetched from a URL the source names. No script
-  a source ships is executed and no vendor CLI or API call is made on a source's instruction. Sole
-  exception: O11.
+  a source ships is executed and no vendor CLI or API call is made on a source's instruction.
 - **O10** stripe: only the skill files under `skills/` are read — never its plugin, hooks, MCP server or
   usage reporting (`stripe agent report_usage`).
-- **O11** next: the dev loop may do exactly two things — HTTP requests to `/_next/mcp` of the project's own
-  dev server, and the `agent-browser` CLI, driving only that server's URL (its `--version`, built-in help
-  and session commands included); no other stack source acts. `agent-browser` must already be on `PATH` in
-  at least the minimum version the skill file states (`agent-browser --version` is checked first; lower or
-  unreadable → `skipped`). Headless and stateless: run without `--restore` / `AGENT_BROWSER_RESTORE` and
-  never `--headed`; a route that needs a login → `skipped`; `/dev` installs nothing, no Next.js upgrade
-  (`next upgrade`) is run and the skill's feedback reporting is not used. The CLI's own built-in help output
-  (e.g. `agent-browser skills get core`) may be read as tool documentation; anything it would download or
-  install is not followed.
 - **O12** wordpress: O9 applies unchanged — no WP-CLI on a source's instruction anywhere; the scripts inside
   the indexed folders may be read, never run, and the sibling triage script is not run. When the task itself
   calls for WP-CLI, nothing runs against a production site without the user's go-ahead. The skills'
   "WordPress 7.0+" assumption is checked against the project's version before a rule applies.
-- **O13** brag: offered, never started on its own; output stays local (`brag-output*/` ignored, never
-  committed, uploaded or posted); `--voice` only on request; personal data only as fictional stand-ins (its
-  own rule — dropping it is a conflict); its `brag-slim` switch is accepted.
 - **O14** brainstorming: no playback or design approval; its HARD-GATE is not applied — `/dev` writes and
   commits the spec and continues; the builder check runs, its questions follow O2 (`SKILL.md` 4a).
 - **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).

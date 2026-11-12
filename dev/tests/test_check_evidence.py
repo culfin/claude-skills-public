@@ -158,11 +158,11 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual(len(old), 4, old)
                 for name in ("/simplify", "Change review", "Bug hunt", "CI status check"):
                     self.assertTrue(any(name in x for x in old), name)
-                self.assertTrue(all("rebuild the checklist" in x for x in old))
+                self.assertTrue(all("write the checklist anew per gate.md" in x and "rerun its checked items" in x
+                                    for x in old))
 
     def test_rebuilt_v2_checklist_passes(self):
-        # gate.md "Gate Checklist": kept items keep their evidence (Spec checker (5c-v) -> Spec checker),
-        # /simplify + Change review + Bug hunt become one open Diff review, CI status check is dropped.
+        # A checklist written anew per gate.md "Gate Checklist" passes once its items carry evidence.
         i = self.sid()
         rebuilt = ["- [ ] Diff review", f"- [x] Spec checker — 0 gaps @{i}",
                    f"- [x] Typecheck + lint + tests — 412 passed @{i}", f"- [x] Production Build — ok @{i}",
@@ -282,6 +282,145 @@ class EvidenceTests(unittest.TestCase):
     def test_missing_gate_section_is_reported(self):
         (self.root / "STATE.md").write_text("# State\n\nno gate here\n")
         self.assertIn("no gate checklist", self.run_check()[0])
+
+    # --- phase file (.dev/phase-<N>.md) instead of STATE.md ---
+
+    def phase_file(self, base, phase, lines):
+        d = Path(base) / ".dev"
+        d.mkdir(parents=True, exist_ok=True)
+        f = d / f"phase-{phase}.md"
+        f.write_text(f"# Phase {phase}\n\n## Quality Gate \u2014 Phase {phase}: Login\n" + "\n".join(lines)
+                     + "\n\n## Context\n- [x] unrelated\n")
+        return f
+
+    def claim(self, base, phase, mark="!"):
+        branch = git(self.root, "branch", "--show-current").strip()
+        Path(base).mkdir(parents=True, exist_ok=True)
+        (Path(base) / "ROADMAP.md").write_text(
+            f"# Roadmap\n\n- [x] Phase 1: Setup\n- [{mark}] Phase {phase}: Login @claim:{branch}@2026-11-11\n"
+            "- [ ] Phase 4: Later\n")
+
+    def test_phase_file_checklist_is_read(self):
+        i = self.sid()
+        f = self.phase_file(self.root, "3", [f"- [x] Diff review \u2014 0 critical @{i}"])
+        # the phase file is bookkeeping: writing it must not have staled the id
+        self.assertEqual(ce.state_id(self.root), i)
+        self.assertEqual(ce.check(self.root, f), [])
+
+    def test_default_finds_phase_file_of_claimed_phase(self):
+        self.claim(self.root, "3")
+        f = self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        self.phase_file(self.root, "4", ["- [ ] Diff review"])
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+
+    def test_default_handles_dotted_and_lettered_phase_ids(self):
+        self.claim(self.root, "6a", mark="~")
+        f = self.phase_file(self.root, "6a", ["- [ ] x"])
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+        self.claim(self.root, "4.1")
+        f = self.phase_file(self.root, "4.1", ["- [ ] x"])
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+
+    def test_default_ignores_claim_on_another_branch(self):
+        (self.root / "ROADMAP.md").write_text("- [!] Phase 3: Login @claim:other-branch@2026-11-11\n")
+        self.phase_file(self.root, "3", ["- [ ] x"])
+        self.state(["- [ ] x"])
+        self.assertEqual(ce.default_file(self.root).resolve(), (self.root / "STATE.md").resolve())
+
+    def test_legacy_state_checklist_still_works(self):
+        i = self.sid()
+        self.state([f"- [x] Diff review \u2014 0 critical @{i}"])
+        self.assertEqual(ce.default_file(self.root).resolve(), (self.root / "STATE.md").resolve())
+        self.assertEqual(self.run_check(), [])
+
+    def test_bookkeeping_phase_and_gate_files_do_not_change_state(self):
+        before = self.sid()
+        self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        (self.root / "docs" / "gates").mkdir(parents=True)
+        (self.root / "docs" / "gates" / "phase-3.md").write_text("gate record\n")
+        self.assertEqual(self.sid(), before)
+
+    def test_code_under_dev_is_not_bookkeeping(self):
+        # Only phase files, the marker and gate records are bookkeeping; tools a project keeps in
+        # .dev/ are code under review.
+        before = self.sid()
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        self.assertEqual(self.sid(), before)
+        (self.root / ".dev" / "tools").mkdir()
+        (self.root / ".dev" / "tools" / "x.sh").write_text("echo hi\n")
+        self.assertNotEqual(self.sid(), before)
+
+    def test_bold_phase_line_finds_the_phase_file(self):
+        branch = git(self.root, "branch", "--show-current").strip()
+        (self.root / "ROADMAP.md").write_text(
+            f"# Roadmap\n\n- [x] **Phase 1: Setup**\n- [!] **Phase 3: Login** @claim:{branch}@2026-11-11\n")
+        f = self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+        (self.root / "ROADMAP.md").write_text(f"- [~] __Phase 3: Login__ @claim:{branch}@2026-11-11\n")
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+
+    def test_italic_title_and_star_bullet_find_the_phase_file(self):
+        branch = git(self.root, "branch", "--show-current").strip()
+        f = self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        for line in (f"- [!] *Phase 3: Login* @claim:{branch}@2026-11-11", f"* [!] Phase 3: Login @claim:{branch}@2026-11-11"):
+            (self.root / "ROADMAP.md").write_text(line + "\n")
+            self.assertEqual(ce.default_file(self.root).resolve(), f.resolve(), line)
+
+    def migrated_state(self, text):
+        (self.root / ".dev").mkdir(exist_ok=True)
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        (self.root / "STATE.md").write_text(text)
+
+    def test_milestone_end_pending_line_is_bookkeeping(self):
+        self.migrated_state("# State\n\n## Blockers & Risks\n- none\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "migrated")
+        before = self.sid()
+        self.migrated_state("# State\n\n## Blockers & Risks\n- none\nMilestone End pending: Milestone 2: Next\n"
+                            "Milestone End pending: Milestone 3: Later\n")
+        self.assertEqual(self.sid(), before)
+
+    def test_content_change_in_migrated_state_is_code(self):
+        # A phase that changes STATE.md content (a trap, a constraint) changes the reviewed state,
+        # so its evidence goes stale and the Fix review diff shows the change.
+        self.migrated_state("# State\n\n## Constraints\n- pnpm 12.x\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "migrated")
+        before = self.sid()
+        self.migrated_state("# State\n\n## Constraints\n- pnpm 12.7.0\n")
+        after = self.sid()
+        self.assertNotEqual(after, before)
+        diff = git(self.root, "diff", before, after)
+        self.assertIn("pnpm 12.7.0", diff)
+
+    def test_migration_makes_ticked_items_stale(self):
+        # Old format: STATE.md holds the checklist and is bookkeeping. The marker turns STATE.md into
+        # code, so the migration changes @state without a code change; commands.md (`migrate:`) tells
+        # the session to rerun the ticked items of its phase.
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- x\n\n## Quality Gate — Phase 3: Login\n- [x] Diff review\n")
+        before = self.sid()
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- x\n")
+        self.assertNotEqual(self.sid(), before)
+
+    def test_old_format_state_stays_bookkeeping(self):
+        # Before the migration the gate checklist itself lives in STATE.md.
+        before = self.sid()
+        (self.root / "STATE.md").write_text("# State\n\n## Constraints\n- anything\n")
+        self.assertEqual(self.sid(), before)
+
+    def test_monorepo_subdir(self):
+        app = self.root / "apps" / "web"
+        self.claim(app, "3")
+        i = self.sid()
+        f = self.phase_file(app, "3", [f"- [x] Diff review \u2014 0 critical @{i}"])
+        (app / "docs" / "gates").mkdir(parents=True)
+        (app / "docs" / "gates" / "phase-3.md").write_text("gate record\n")
+        self.assertEqual(self.sid(), i)
+        self.assertEqual(ce.default_file(app).resolve(), f.resolve())
+        self.assertEqual(ce.check(self.root, ce.default_file(app)), [])
 
 
 if __name__ == "__main__":

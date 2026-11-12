@@ -29,9 +29,8 @@ line the moment it happens — memory does not survive `/clear` or compaction:
 
 ```
 Task 2: dispatched (worktree /abs/path, branch task-2, BASE 3f9c2a1)
-Task 2: reviewed (2 findings)
+Task 2: reviewed (2 findings)          or: reviewed clean
 Task 2: fix round 1/3 (1 addressed, 1 open)
-Task 2: reviewed clean
 Task 2: complete (merged 8e01b7d)
 Task 4: interrupted (worktree /abs/path, branch task-4)
 ```
@@ -44,8 +43,8 @@ branch gone → dispatch fresh.
 
 ## Small phase (no plan)
 
-Copy the phase's acceptance criteria from STATE.md into `.superpowers/sdd/phase-<N>-<slug>.md` (slug
-of the phase name, so a renumbered or repeated phase number never adopts an old workspace) and run
+Copy the phase's acceptance criteria from its phase file (`state.md`) into `.superpowers/sdd/phase-<N>-<slug>.md` (the
+phase's slug, `runtime.md`, so a renumbered or repeated phase number never adopts an old workspace) and run
 `sdd-workspace` on it at once (it writes the `.gitignore` that keeps the file out of git); the file is
 both plan and brief. BASE is the `<phase base>` defined in `gate.md`, "Tier". One implementer with
 `$SDD/implementer-prompt.md`, in the current tree; one task review and its fix loop (below); then the
@@ -98,12 +97,13 @@ Rounds 1–2 resume the same implementer with the open findings verbatim. Fixers
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
 commits are. After each round, a scoped re-review:
-`review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`. Still
+`review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`, with the
+task's acceptance criteria verbatim: a fix that weakens one (a looser value, a dropped case) is a finding. Still
 open after round 3 → halt and report what remains (one of the run's halts). An implementer or
 reviewer naming a weakness of the task's own tests (one that cannot fail, tests a parameter instead
 of the default) starts a fix round — never `minor`. No RED evidence (new tests failing first) in a
 behavior-changing task's report → run them on its BASE in a temporary worktree; green there
-starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and, when the phase ends, to STATE.md Blockers & Risks. Never fix findings in the main session: that skips review.
+starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and to the phase file's `## Minor (deferred)`. Never fix findings in the main session: that skips review.
 
 **Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
 phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)

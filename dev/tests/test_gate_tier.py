@@ -72,6 +72,97 @@ class GateTierTests(unittest.TestCase):
         self.write("migrations/0002_add.sql", 5)
         self.assertEqual(self.run_tier("--tasks", "1", "--type", "backend")[1][0], "large")
 
+    def test_workflow_change_is_large_without_type(self):
+        self.write(".github/workflows/ci.yml", 3)
+        rc, out, _ = self.run_tier("--tasks", "1")
+        self.assertEqual(out[0], "large")
+        self.assertTrue(any(r.startswith("- ops files:") for r in out[1:]), out)
+
+    def test_dockerfile_change_is_large(self):
+        for rel in ("Dockerfile", "svc/Dockerfile.prod", "docker-compose.yml", "deploy/run.sh", "infra/main.tf"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1", "--type", "ui")
+                self.assertEqual(out[0], "large")
+                (self.root / rel).unlink()
+
+    def test_lockfile_change_is_large(self):
+        for rel in ("pnpm-lock.yaml", "apps/web/package.json", "Cargo.lock", "app/build.gradle.kts"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- dependency manifest:") for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_db_change_is_large_for_any_type(self):
+        self.write("migrations/1.sql", 2)
+        for t in ("ui", "backend", ""):
+            with self.subTest(t=t):
+                args = ("--tasks", "1") + (("--type", t) if t else ())
+                rc, out, _ = self.run_tier(*args)
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- DB change:") for r in out[1:]), out)
+
+    def test_rails_and_alembic_migrations_are_db_change(self):
+        for rel in ("db/migrate/20261111_add_users.rb", "alembic/versions/abc123_add_users.py"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- DB change:") and rel in r for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_unknown_type_cannot_weaken(self):
+        self.write("src/auth/session.ts", 2)
+        rc, out, _ = self.run_tier("--tasks", "1", "--type", "fullstack")
+        self.assertEqual(out[0], "large")
+
+    def test_infrastructure_dir_is_large(self):
+        self.write("infrastructure/main.yaml", 2)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+
+    def test_deploy_script_is_large(self):
+        for rel in ("scripts/deploy.sh", "bin/predeploy.sh", "deploy-prod.sh"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- ops files:") for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_nginx_dir_is_large(self):
+        self.write("nginx/site.conf", 2)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+
+    def test_dockerfile_case_insensitive(self):
+        for rel in ("svc/dockerfile", "svc/Dockerfile.prod"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                self.assertEqual(self.run_tier("--tasks", "1")[1][0], "large")
+                (self.root / rel).unlink()
+
+    def test_more_dependency_manifests_are_large(self):
+        for rel in ("pom.xml", "Pipfile.lock", "uv.lock", "composer.json", "composer.lock", "bun.lockb",
+                    "pnpm-workspace.yaml", "Package.resolved", "src/App/App.csproj"):
+            with self.subTest(rel=rel):
+                self.write(rel, 2)
+                rc, out, _ = self.run_tier("--tasks", "1")
+                self.assertEqual(out[0], "large")
+                self.assertTrue(any(r.startswith("- dependency manifest:") for r in out[1:]), out)
+                (self.root / rel).unlink()
+
+    def test_docs_deploy_md_stays_small(self):
+        self.write("docs/deploy.md", 20)
+        self.assertEqual(self.run_tier("--tasks", "1")[1][0], "small")
+
+    def test_docs_only_stays_small(self):
+        self.write("README.md", 50)
+        self.write("docs/deploy/notes.md", 50)
+        self.write("docs/package.json.md", 5)
+        rc, out, _ = self.run_tier("--tasks", "1")
+        self.assertEqual((rc, out[0]), (0, "small"), out)
+
     def test_sensitive_file_forces_large(self):
         for rel in ("src/auth/session.ts", "app/api/orders/route.ts", "db/migrations/1.sql",
                     "src/middleware.ts", "server/routes/login.py"):

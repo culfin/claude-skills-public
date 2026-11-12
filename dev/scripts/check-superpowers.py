@@ -4,11 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
-# executing-plans and using-git-worktrees are named in every plan writing-plans writes (header, context);
 # receiving-code-review is what fixers follow (execution.md fix loop, gate.md Step B);
 # systematic-debugging is the method of /dev debug (debugger.md, sources.md O17).
-REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development', 'executing-plans',
-            'using-git-worktrees', 'receiving-code-review', 'systematic-debugging')
+REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development',
+            'receiving-code-review', 'systematic-debugging')
 
 # Builder check (sources.md O14), companion protocol (companion.md) and the companion scripts.
 BRAINSTORMING_FILES = ('builder-check-prompt.md', 'visual-companion.md',

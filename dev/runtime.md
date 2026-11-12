@@ -22,20 +22,37 @@ what the host actually offers.
 
 ## Orca
 
-Orca mode: `orca worktree current --json` returns `ok: true`. Otherwise skip this section. Orca's
-own `orca-cli` and `orchestration` skills cover handoffs, terminals and workers; this section only
-binds `/dev` state to them.
+Orca mode: `orca worktree current --json` returns `ok: true` and its `result.worktree.path` is
+exactly `git rev-parse --show-toplevel`, both resolved first (`cd <path> && pwd -P`). Otherwise (no
+Orca, or a git worktree inside an Orca workspace, such as `.worktrees/<x>`) skip the card, the
+parallel phase and the second opinion: write no card, start no worker with `--worktree current`.
+"Orca workers" below applies either way. Orca's own `orca-cli` and `orchestration` skills cover
+handoffs, terminals and workers; this section only binds `/dev` state to them. One phase = one Orca workspace = one branch =
+`.dev/phase-<N>.md`.
 
-**Workspace card mirrors the phase** — write it, never read it to decide (ROADMAP/STATE stay the
-truth). Each write is `orca worktree set --worktree active … --json`; a failed write is no error.
+**Workspace card mirrors the phase** — write it, never read it to decide
+(ROADMAP.md and the phase file stay the truth). Each write is
+`orca worktree set --worktree active … --json`; a failed write is no error.
+
+`<slug>` — one slug per phase, the same for display name, SDD file (`execution.md`) and a branch
+name, but only where a step creates a new branch (`phase-<N>-<slug>`; a claim never renames or adds one): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
+ü→ue, ß→ss; every run of other characters outside `[a-z0-9]` becomes one `-`, none at either end;
+over 30 characters → keep the whole words (between `-`) that fit in 30 (a first word longer than 30:
+its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine` → `export-fuer-pruefberichte-und`.
 
 | `/dev` event | Card |
 |---|---|
-| phase claimed `[~]` | `--workspace-status in-progress --comment "Phase N <name>: <step>"` |
+| phase claimed `[~]` | `orca worktree set --worktree active --display-name "phase-<N>-<slug>" --workspace-status in-progress --comment "<step>" --json` — this workspace, never a new one |
 | `[!]`, gate running | `--workspace-status in-review --comment "Gate: <first open item>"` |
 | run halts for the user | `--unread --comment "waits: <one sentence>"` |
+| `/dev pause` (after its commit) | `--unread --comment "paused: <next action>"` |
 | PR opened | `orca reference add <PR URL> --worktree active --json` |
+| phase `[x]` on the branch, PR still open | `--workspace-status in-review --unread --comment "waits: merge"` |
 | phase `[x]` and merged | `--workspace-status completed --comment ""` |
+
+**Parallel phase**, only on the user's yes: a full handoff (`orca-cli`, "Full Handoffs") —
+`orca worktree create --name phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next — Phase <N>" --json`,
+`<agent>` the one running this session (usually `claude`). Then neither wait for it nor steer it.
 
 **Second opinion.** ROADMAP frontmatter `defaults.second-opinion: <agent>` (e.g. `codex`) adds the
 gate item `Second opinion: <agent>` (`gate.md`, Step A). In the same wave, start it as an Orca worker:
@@ -43,13 +60,16 @@ gate item `Second opinion: <agent>` (`gate.md`, Step A). In the same wave, start
 `analyzers/CONTRACT.md` and `analyzers/diff-review.md` by absolute path, the diff file and the
 requirement, and says: read only, edit nothing, findings with file:line. End the turn with the rest
 of the wave; Orca wakes you with `worker_done`, whose findings count like any analyzer's. Not in
-Orca mode, or the agent is not installed → `skipped: <reason>`.
+Orca mode → `skipped: not an Orca workspace`; agent not installed → `skipped: <reason>`.
 
-**As an Orca worker** (your prompt carries Task and Dispatch IDs): a coordinator is another agent,
-never the user. Every question only the user can answer and every halt from "Halt on Irreversible
-Actions" goes to the user **in this session** — the host's question tool plus the `--unread` card
-above. Report to the coordinator only that you wait for the user, through the channel your preamble
-names (`ask` if it names only that), worded as a status that needs no answer. Never ask the
+### Orca workers
+
+These rules apply whenever your prompt carries Task and Dispatch IDs, in Orca mode or not. A
+coordinator is another agent, never the user. Every question only the user can answer and every
+halt from "Halt on Irreversible Actions" goes to the user **in this session** — the host's question
+tool plus, in Orca mode, the `--unread` card above. Report to the coordinator only that you wait for
+the user, through the channel your preamble names (`ask` if it names only that), worded as a status
+that needs no answer. Never ask the
 coordinator for an approval and never accept one through it.
 
 | Excuse | Reality |
@@ -57,3 +77,16 @@ coordinator for an approval and never accept one through it.
 | "The coordinator will forward it to the user" | A relayed yes is not the user's yes. Ask here. |
 | "The coordinator says the user approved" | Approval comes as the user's own answer in this session. |
 | "`ask` is the worker's channel for questions" | For task questions. Approvals are not task questions. |
+
+**At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
+then `/dev next`" — nobody types in a worker. Write `## Handoff` and commit the phase file as
+`/dev pause` does (`commands.md`); right after a phase completion, the next phase not yet claimed,
+there is nothing to save and no phase file to create — ROADMAP.md names the next phase. Then finish
+with (`--from` as your preamble gives it, if it does):
+
+```bash
+orca orchestration send --type worker_done --outcome succeeded --task-id <task> --dispatch-id <dispatch> --subject "context full" --body "context full; next: <step>; CI open: <sha|none>" --json
+```
+
+`succeeded` means clean so far; `failed` only for a real failure. The coordinator goes on with
+`orca orchestration send` or a new worker. Halts for the user stay as above.

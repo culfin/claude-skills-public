@@ -1,5 +1,8 @@
-"""state-check.py: size limits, handoff position, phase claims, main-branch reconcile, archive."""
+"""state-check.py: size limits, handoff position, phase claims, main-branch reconcile, archive,
+phase files (.dev/phase-<N>.md) and migrate."""
+import contextlib
 import datetime
+import io
 import importlib.util
 import subprocess
 import sys
@@ -42,6 +45,8 @@ class StateCheckTests(unittest.TestCase):
         git(self.root, "config", "user.name", "t")
         self.write(claim3="@claim:main@2026-10-06")
         (self.root / "STATE.md").write_text("# State\n\n## Handoff — main\nNext: Phase 3\n")
+        self.phase_file("3", "main")
+        (self.root / ".dev" / ".gitkeep").write_text("")  # marker: the project is migrated
         git(self.root, "add", "-A")
         git(self.root, "commit", "-qm", "init")
 
@@ -50,6 +55,21 @@ class StateCheckTests(unittest.TestCase):
 
     def write(self, claim3="", roadmap=None):
         (self.root / "ROADMAP.md").write_text((roadmap or ROADMAP).format(claim3=claim3))
+        # The phase file lives in the checkout of the claiming branch: only a claim by main keeps it here.
+        if "@claim:main@" not in claim3:
+            (self.root / ".dev" / "phase-3.md").unlink(missing_ok=True)
+
+    def phase_file(self, pid, branch, body="", root=None):
+        d = (root or self.root) / ".dev"
+        d.mkdir(parents=True, exist_ok=True)
+        head = f"Branch: {branch}\n" if branch is not None else ""
+        (d / f"phase-{pid}.md").write_text(head + body)
+
+    def migrate(self, root=None, dry_run=False, branch=None):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = sc.migrate(root or self.root, dry_run=dry_run, today=TODAY, branch=branch)
+        return rc, buf.getvalue().splitlines()
 
     def check(self, branch="main", main=None):
         return sc.check(self.root, main=main, branch=branch, today=TODAY)
@@ -294,6 +314,355 @@ class StateCheckTests(unittest.TestCase):
         self.assertIn("unclaimed: Phase 3", r.stdout)
         (self.root / "ROADMAP.md").unlink()
         self.assertEqual(run("check").returncode, 2)
+
+    # --- phase files (.dev/phase-<N>.md) ---
+
+    def test_phase_file_parsed(self):
+        self.phase_file("6a", "feat/x", "\n## Quality Gate — Phase 6a: Export\n- [ ] a\n\n## Handoff\nNext: b\n")
+        files = sc.phase_files(self.root)
+        self.assertEqual(files["6a"], {"path": ".dev/phase-6a.md", "branch": "feat/x",
+                                       "sections": ["## Quality Gate — Phase 6a: Export", "## Handoff"]})
+        self.assertEqual(files["3"]["branch"], "main")
+        self.assertEqual(sorted(files), ["3", "6a"])
+
+    def test_phase_file_without_branch_line_is_invalid(self):
+        self.phase_file("3", None, "## Quality Gate — Phase 3: Login\n")
+        self.assertIsNone(sc.phase_files(self.root)["3"]["branch"])
+        self.assertIn("phase file invalid: .dev/phase-3.md has no 'Branch:' first line", self.check())
+
+    def test_orphan_phase_file_branch_gone(self):
+        self.phase_file("4", "feature/gone")
+        self.assertIn("orphan phase file: .dev/phase-4.md — branch feature/gone is gone or Phase 4 is done "
+                      "on main; save its Handoff and Minor sections to docs/gates/phase-4.md, "
+                      "then delete it (an abandoned phase: ask the user first)", self.check(main="main"))
+
+    def test_orphan_phase_file_done_on_main_after_squash(self):
+        git(self.root, "checkout", "-qb", "work")
+        road = self.root / "ROADMAP.md"
+        road.write_text(road.read_text().replace("- [ ] Phase 4 — Export @type:backend",
+                                                 "- [~] Phase 4 — Export @type:backend @claim:work@2026-10-06"))
+        self.phase_file("4", "work", "\n## Quality Gate — Phase 4: Export\n")
+        (self.root / "export.txt").write_text("x\n")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "phase 4")
+        git(self.root, "checkout", "-q", "main")
+        # squash merge: the content arrives on main as a new commit, work is no ancestor of main
+        git(self.root, "merge", "-q", "--squash", "work")
+        road.write_text(road.read_text().replace("- [~] Phase 4 — Export @type:backend @claim:work@2026-10-06",
+                                                 "- [x] Phase 4 — Export @type:backend"))
+        (self.root / ".dev" / "phase-4.md").unlink()
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "Phase 4 (squash)")
+        git(self.root, "checkout", "-q", "work")
+        self.assertFalse(sc.is_ancestor(self.root, "work", "main"))
+        found = self.check(branch="work", main="main")
+        self.assertIn("orphan phase file: .dev/phase-4.md — branch work is gone or Phase 4 is done on main; "
+                      "save its Handoff and Minor sections to docs/gates/phase-4.md, then delete it "
+                      "(an abandoned phase: ask the user first)", found)
+        self.assertFalse(any(f.startswith("phase file missing") for f in found), found)
+
+    def test_phase_id_with_letter_is_exact(self):
+        self.write(claim3="@claim:main@2026-10-06",
+                   roadmap=ROADMAP.replace("- [ ] Phase 4 — Export", "- [~] Phase 312a — Export @claim:main@2026-10-06"))
+        self.phase_file("312", "main")
+        self.assertNotIn("312a", sc.phase_files(self.root))
+        self.assertIn("phase file missing: Phase 312a [~] claimed by this branch has no .dev/phase-312a.md",
+                      self.check())
+        self.phase_file("312a", "main")
+        self.phase_file("312a-old", "main")  # not a phase id: '-' is outside [0-9A-Za-z.]
+        files = sc.phase_files(self.root)
+        self.assertEqual(sorted(files), ["3", "312", "312a"])
+        self.assertEqual(files["312a"]["path"], ".dev/phase-312a.md")
+        self.assertFalse(any("312a" in f for f in self.check()), self.check())
+
+    def test_missing_phase_file_for_own_claim(self):
+        (self.root / ".dev" / "phase-3.md").unlink()
+        self.assertEqual(self.check(), ["phase file missing: Phase 3 [~] claimed by this branch has no .dev/phase-3.md"])
+        git(self.root, "branch", "session/b")
+        self.write(claim3="@claim:session/b@2026-10-06")
+        self.assertFalse(any(f.startswith("phase file missing") for f in self.check()))
+
+    def test_bold_phase_lines_are_read(self):
+        # Roadmaps often write the phase title in bold; the checks must not go blind on them.
+        bold = ROADMAP.replace("- [~] Phase 3 — Login @type:auth {claim3}",
+                               "- [!] **Phase 3: Login** @type:auth {claim3}") \
+                      .replace("- [ ] Phase 4 — Export", "- [~] __Phase 4: Export__")
+        self.write(claim3="", roadmap=bold)
+        self.assertEqual(self.check(), ["unclaimed: Phase 3 [!] — claim it before resuming",
+                                        "unclaimed: Phase 4 [~] — claim it before resuming"])
+        self.assertEqual(sorted(sc.phases(bold.format(claim3=""))), ["1", "2", "3", "4"])
+        (self.root / ".dev" / "phase-3.md").unlink(missing_ok=True)
+        self.write(claim3="@claim:main@2026-10-06", roadmap=bold)
+        (self.root / ".dev" / "phase-3.md").unlink(missing_ok=True)
+        self.assertIn("phase file missing: Phase 3 [!] claimed by this branch has no .dev/phase-3.md",
+                      self.check())
+
+    def test_italic_titles_and_star_bullets_are_read(self):
+        text = "- [!] *Phase 3: Login*\n* [~] Phase 4: Export\n- [x] _Phase 5: Done_\n"
+        self.assertEqual({k: v[0] for k, v in sc.phases(text).items()}, {"3": "!", "4": "~", "5": "x"})
+
+    def test_several_milestone_end_pending_lines_are_accepted(self):
+        # Parallel workspaces close milestones at the same time: one line per milestone.
+        (self.root / "STATE.md").write_text(
+            "# State\n\n## Handoff — main\nNext: Phase 3\n\n## Blockers & Risks\n"
+            "Milestone End pending: Milestone 1: Base\nMilestone End pending: Milestone 2: Next\n")
+        self.assertEqual(self.check(), [])
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse(any("Milestone End" in line for line in out), out)
+
+    def test_branch_mismatch(self):
+        git(self.root, "branch", "other")
+        self.phase_file("3", "other")
+        self.assertEqual(self.check(), ["branch mismatch: .dev/phase-3.md says other, claim says main"])
+
+    # --- migrate ---
+
+    LEGACY = ("# State\n\n## Current Position\nPhase 3 gate pending.\n\n## Progress\n- Phase 1 done.\n\n"
+              "## Phases\n\n### Phase 3: Login\nNotes on login.\n\n### Phase 4: Export\nNot started.\n\n"
+              "## Quality Gate — Phase 3: Login\n- [x] Step A — 5 passed @abc1234\n\n"
+              "## CI in background\n- 1a2b3c4 — Phase 3 Login: in_progress\n- 9f8e7d6 — Phase 1 Database: success\n\n"
+              "### Gate summary — Phase 1: Database\n- Tier: small\n\n## Blockers & Risks\nNone.\n\n"
+              "## Session Continuity\nStopped at Step B.\n")
+
+    def tree(self):
+        return {str(p.relative_to(self.root)): p.read_text() for p in self.root.rglob("*")
+                if p.is_file() and ".git" not in p.parts}
+
+    def test_migrate_dry_run_writes_nothing(self):
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        before = self.tree()
+        rc, out = self.migrate(dry_run=True)
+        self.assertEqual(rc, 0)
+        self.assertEqual(self.tree(), before)
+        self.assertTrue(any("Quality Gate — Phase 3" in l and ".dev/phase-3.md" in l for l in out), out)
+
+    def test_migrate_moves_sections_and_keeps_words(self):
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        targets = [".dev/phase-3.md", "docs/gates/phase-1.md", "docs/roadmap-archive/state-2026-10-07.md"]
+        count = lambda: sum(sc.words((self.root / p).read_text()) for p in ["STATE.md", *targets]
+                            if (self.root / p).is_file())
+        before = count()
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertGreaterEqual(count(), before)
+        phase = (self.root / ".dev/phase-3.md").read_text()
+        self.assertEqual(phase.splitlines()[0], "Branch: main")
+        self.assertEqual(phase.count("Branch:"), 1)  # existing target is extended, not overwritten
+        for part in ("## Quality Gate — Phase 3: Login", "### Phase 3: Login", "- 1a2b3c4 — Phase 3 Login: in_progress"):
+            self.assertIn(part, phase)
+        gate = (self.root / "docs/gates/phase-1.md").read_text()
+        self.assertIn("### Gate summary — Phase 1: Database", gate)
+        self.assertIn("- 9f8e7d6 — Phase 1 Database: success", gate)
+        arch = (self.root / "docs/roadmap-archive/state-2026-10-07.md").read_text()
+        for part in ("## Current Position", "## Progress", "## Session Continuity", "Stopped at Step B."):
+            self.assertIn(part, arch)
+        state = (self.root / "STATE.md").read_text()
+        for part in ("## Blockers & Risks", "### Phase 4: Export", "## CI in background"):
+            self.assertIn(part, state)
+        for part in ("Quality Gate", "Gate summary", "### Phase 3", "1a2b3c4", "Current Position", "Session Continuity"):
+            self.assertNotIn(part, state)
+        self.assertIn("kept: '### Phase 4: Export' (no claimed phase)", out)
+        self.assertFalse(any(f.startswith("migrate:") for f in self.check()), self.check())
+        # a second run extends nothing twice
+        rc, out = self.migrate()
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text(), phase)
+
+    def test_migrate_moves_old_ci_lines_without_status(self):
+        # Old format since v4: `- <sha> — Phase N <name>` under `## CI in background`, no `: status`.
+        (self.root / "STATE.md").write_text("# State\n\n## CI in background\n- 1a2b3c4 — Phase 3 Login\n"
+                                            "- 9f8e7d6 — Phase 1 Database\n\n## Blockers & Risks\nNone.\n")
+        self.assertTrue(any(f.startswith("migrate:") for f in self.check()), self.check())
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertIn("- 1a2b3c4 — Phase 3 Login", (self.root / ".dev/phase-3.md").read_text())
+        self.assertIn("- 9f8e7d6 — Phase 1 Database", (self.root / "docs/gates/phase-1.md").read_text())
+        state = (self.root / "STATE.md").read_text()
+        self.assertNotIn("1a2b3c4", state)
+        self.assertNotIn("9f8e7d6", state)
+
+    def test_migrate_nested_gate_summary_keeps_its_target(self):
+        (self.root / "STATE.md").write_text("# State\n\n## Quality Gate — Phase 3: Login\n- [ ] a\n\n"
+                                            "### Gate summary — Phase 1: Database\n- Tier: small\n\n"
+                                            "#### Gate summary — Phase 1: Database (old)\n- Tier: tiny\n\n"
+                                            "## Blockers & Risks\nNone.\n")
+        self.migrate()
+        self.assertIn("- [ ] a", (self.root / ".dev/phase-3.md").read_text())
+        gate = (self.root / "docs/gates/phase-1.md").read_text()
+        self.assertIn("- Tier: small", gate)
+        self.assertIn("- Tier: tiny", gate)
+        self.assertNotIn("Gate summary", (self.root / ".dev/phase-3.md").read_text())
+        self.assertEqual((self.root / "STATE.md").read_text(), "# State\n\n## Blockers & Risks\nNone.\n")
+
+    def test_legacy_project_without_dev_dir_has_no_missing_finding(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff — main\nNext: x\n\n"
+                                            "## Quality Gate — Phase 3: Login\n- [ ] a\n")
+        self.assertEqual(self.check(), ["migrate: STATE.md holds 1 phase sections — run state-check.py migrate --dry-run"])
+
+    def test_migrate_creates_phase_file_for_own_claim_without_parts(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Blockers & Risks\nNone.\n")
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse((self.root / ".dev").exists())
+        self.assertIn("would create: .dev/phase-3.md (Branch: main)", out)
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text(), "Branch: main\n")
+        self.assertIn("created: .dev/phase-3.md (Branch: main)", out)
+        self.assertEqual(self.check(), [])
+        # an existing phase file is left as it is
+        (self.root / ".dev/phase-3.md").write_text("Branch: main\n\n## Handoff\nNext: z\n")
+        self.migrate()
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text(), "Branch: main\n\n## Handoff\nNext: z\n")
+
+    def test_migrate_create_with_other_moves_keeps_own_branch(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n### Gate summary — Phase 1: Database\n- Tier: small\n")
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertIn("created: .dev/phase-3.md (Branch: main)", out)
+        self.assertEqual((self.root / ".dev/phase-3.md").read_text().splitlines()[0], "Branch: main")
+        self.assertTrue((self.root / "docs/gates/phase-1.md").is_file())
+        found = self.check()
+        self.assertFalse(any(f.startswith(("phase file invalid", "phase file missing")) for f in found), found)
+
+    def test_migrate_leaves_foreign_claims_in_state(self):
+        git(self.root, "branch", "session/b")
+        self.write(claim3="@claim:session/b@2026-10-06")
+        legacy = ("# State\n\n## Handoff — session/b\nNext: Step B.\n\n"
+                  "## Quality Gate — Phase 3: Login\n- [ ] a\n\n"
+                  "## CI in background\n- 1a2b3c4 — Phase 3 Login: in_progress\n- 9f8e7d6 — Phase 1 Database: success\n\n"
+                  "### Gate summary — Phase 1: Database\n- Tier: small\n")
+        (self.root / "STATE.md").write_text(legacy)
+        rc, out = self.migrate(branch="main")
+        self.assertEqual(rc, 0)
+        self.assertFalse((self.root / ".dev/phase-3.md").exists())
+        state = (self.root / "STATE.md").read_text()
+        for part in ("## Handoff — session/b", "## Quality Gate — Phase 3: Login", "- 1a2b3c4 — Phase 3 Login"):
+            self.assertIn(part, state)
+        self.assertNotIn("Gate summary", state)
+        self.assertNotIn("9f8e7d6", state)
+        gate = (self.root / "docs/gates/phase-1.md").read_text()
+        self.assertIn("- 9f8e7d6 — Phase 1 Database: success", gate)
+        for head in ("## Handoff — session/b", "## Quality Gate — Phase 3: Login",
+                     "- 1a2b3c4 — Phase 3 Login: in_progress"):
+            self.assertIn(f"kept: '{head}' (claimed by session/b)", out)
+        # check on main does not push the foreign phase's parts into migrate:
+        self.assertFalse(any(f.startswith("migrate:") for f in self.check()), self.check())
+
+    def test_migrate_handoff_follows_claim(self):
+        git(self.root, "branch", "session/b")
+        self.write(claim3="@claim:session/b@2026-10-06")
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff — session/b\nNext: Step B.\n\n"
+                                            "## Handoff — feature/none\nNext: y.\n")
+        rc, out = self.migrate(branch="session/b")
+        self.assertEqual(rc, 0)
+        phase = (self.root / ".dev/phase-3.md").read_text()
+        self.assertEqual(phase.splitlines()[0], "Branch: session/b")
+        self.assertIn("## Handoff — session/b\nNext: Step B.", phase)
+        state = (self.root / "STATE.md").read_text()
+        self.assertNotIn("session/b", state)
+        self.assertIn("## Handoff — feature/none", state)
+        self.assertIn("kept: '## Handoff — feature/none' (no claimed phase)", out)
+
+    def test_check_reports_migrate_for_legacy_state(self):
+        (self.root / "STATE.md").write_text("# State\n\n## Handoff — main\nNext: x\n\n"
+                                            "## Quality Gate — Phase 3: Login\n- [ ] a\n\n"
+                                            "### Gate summary — Phase 1: Database\n- Tier: small\n")
+        self.assertEqual(self.check(), ["migrate: STATE.md holds 2 phase sections — run state-check.py migrate --dry-run"])
+
+    def test_monorepo_subdir(self):
+        app = self.root / "apps" / "web"
+        app.mkdir(parents=True)
+        (app / "ROADMAP.md").write_text(ROADMAP.format(claim3="@claim:main@2026-10-06"))
+        self.phase_file("3", "main", root=app)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "app")
+        git(self.root, "checkout", "-qb", "work")
+        road = app / "ROADMAP.md"
+        road.write_text(road.read_text().replace("- [ ] Phase 4 — Export @type:backend",
+                                                 "- [~] Phase 4 — Export @type:backend @claim:work@2026-10-06"))
+        self.phase_file("4", "work", root=app)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "claim 4")
+        git(self.root, "checkout", "-q", "main")
+        road.write_text(road.read_text().replace("- [ ] Phase 4", "- [x] Phase 4"))
+        git(self.root, "commit", "-qam", "Phase 4 done")
+        git(self.root, "checkout", "-q", "work")
+        self.assertEqual(sorted(sc.phase_files(app)), ["3", "4"])
+        found = sc.check(app, main="main", branch="work", today=TODAY)
+        self.assertIn("orphan phase file: .dev/phase-4.md — branch work is gone or Phase 4 is done on main; "
+                      "save its Handoff and Minor sections to docs/gates/phase-4.md, then delete it "
+                      "(an abandoned phase: ask the user first)", found)
+        (app / "STATE.md").write_text("# State\n\n### Gate summary — Phase 1: Database\n- Tier: small\n")
+        self.assertEqual(sc.migrate(app, today=TODAY), 0)
+        self.assertTrue((app / "docs/gates/phase-1.md").is_file())
+        self.assertFalse((self.root / "docs").exists())
+
+    # --- marker .dev/.gitkeep (migrated <=> on <main>) ---
+
+    def test_migrate_always_creates_the_marker(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        self.write(claim3="")  # no claim, nothing to move
+        (self.root / "STATE.md").write_text("# State\n\n## Blockers & Risks\nNone.\n")
+        rc, out = self.migrate(dry_run=True)
+        self.assertFalse((self.root / ".dev").exists())
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        self.assertEqual((self.root / ".dev/.gitkeep").read_text(), "")
+        self.assertIn("created: .dev/.gitkeep", out)
+
+    def test_marker_decides_phase_file_missing(self):
+        (self.root / ".dev" / "phase-3.md").unlink()
+        (self.root / ".dev" / ".gitkeep").unlink()
+        self.assertFalse(any(f.startswith("phase file missing") for f in self.check()), self.check())
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        self.assertIn("phase file missing: Phase 3 [~] claimed by this branch has no .dev/phase-3.md", self.check())
+
+    def test_migrate_finding_counts_unclaimed_parts_until_the_marker_exists(self):
+        import shutil
+        shutil.rmtree(self.root / ".dev")
+        (self.root / "STATE.md").write_text("# State\n\n## Phases\n\n### Phase 4: Export\nNot started.\n\n"
+                                            "## Handoff — feature/none\nNext: y.\n")
+        # Phase 4 is unclaimed (kept by migrate); the handoff is left to `orphan handoff:`
+        self.assertIn("migrate: STATE.md holds 1 phase sections — run state-check.py migrate --dry-run", self.check())
+        # the marker on <main> alone counts as migrated
+        (self.root / ".dev").mkdir()
+        (self.root / ".dev" / ".gitkeep").write_text("")
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "marker")
+        git(self.root, "checkout", "-qb", "work")
+        git(self.root, "rm", "-q", ".dev/.gitkeep")
+        git(self.root, "commit", "-qm", "drop marker here")
+        found = sc.check(self.root, main="main", branch="work", today=TODAY)
+        self.assertFalse(any(f.startswith("migrate:") for f in found), found)
+
+    def test_migrate_twice_after_rebase_conflict_adds_nothing_twice(self):
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        self.migrate()
+        files = {p: (self.root / p).read_text() for p in
+                 (".dev/phase-3.md", "docs/gates/phase-1.md", "docs/roadmap-archive/state-2026-10-07.md")}
+        state = (self.root / "STATE.md").read_text()
+        # STATE.md conflict: <main>'s old STATE.md is taken, migrate runs again
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        rc, out = self.migrate()
+        self.assertEqual(rc, 0)
+        for p, before in files.items():
+            self.assertEqual((self.root / p).read_text(), before, p)
+        self.assertEqual((self.root / "STATE.md").read_text(), state)
+
+    def test_cli_migrate_dry_run(self):
+        (self.root / "STATE.md").write_text(self.LEGACY)
+        r = subprocess.run([sys.executable, str(SCRIPT), "migrate", "--root", str(self.root), "--dry-run",
+                            "--branch", "main"],
+                           capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn(".dev/phase-3.md", r.stdout)
+        self.assertEqual((self.root / "STATE.md").read_text(), self.LEGACY)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions
 **Precondition:** No active phase.
 - If ROADMAP.md exists and contains a phase with `[~]` or `[!]` not claimed by another branch: stop with "Phase N is still active (`[~]`/`[!]`). Use `/dev next` to complete the quality gate of the running phase."
 - If ROADMAP.md exists and all phases are `[x]` or `[—]` (dormant): proceed normally.
-- If no ROADMAP.md: proceed, but skip STATE.md integration. Check-Commit is still created.
+- If no ROADMAP.md: proceed, but write no Check summary file. Check-Commit is still created.
 
 **1. Snapshot scope** — before ANY skill runs, capture changed files:
 
@@ -39,17 +39,17 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | B | Fix + Fix review | Bundled fix of all critical findings, Fix review on the fix diff |
 | C | Similar-bugs scan | Only if Step B fixed a defect |
 | D | Typecheck + lint + tests, Production Build, E2E Tests | Full suite; tests and build in parallel |
-| — | Check summary | Written to STATE.md (see below); skipped if no ROADMAP.md |
+| — | Check summary | Written to `docs/gates/check-<YYYY-MM-DD>-<branch slug>.md` (see below); skipped if no ROADMAP.md |
 | — | Evidence check | `check-evidence.py` needs a gate checklist; `/dev check` has none. Instead, every result line in the check summary carries its `@state` (from `check-evidence.py id`), and all must be current before the check commit (review results may keep the wave's state when a current Fix review covers the change since) |
 | — | Check-Commit | `chore: dev check [gate-pass]` |
-| — | CI | If `.github/workflows/` exists — `ci-watch.sh` on the check commit as in `gate.md`, "CI in background". `/dev check` has no next phase to go on with, so it waits for the final status and reports it in the post-check summary; `red` or `timeout` → repair as in the gate; `none` is reported, not green |
+| — | CI | If `.github/workflows/` exists — `ci-watch.sh` on the check commit as in `ci.md`, its SHA under `## CI` in the check file. `/dev check` has no next phase to go on with, so it waits for the final status and reports it in the post-check summary; `red` or `timeout` → repair as in the gate (its SHA is own); `none` is reported, not green |
 
 Step A runs as one parallel wave of Agent subagents (15-minute timeout). Any step failure stops the run — no Check-Commit is created.
 
-**3. Check summary format** (STATE.md, inside `## Context`, same area as the `### Gate summary` entries):
+**3. Check summary format** (`docs/gates/check-<YYYY-MM-DD>-<branch slug>.md`, the slug is the branch name with `/` → `-` — `state.md`):
 
 ```markdown
-### Check summary — YYYY-MM-DD — N files
+## Check summary — YYYY-MM-DD — N files
 - Tier: small|large — <first reason>
 - Found: <N critical + M notices> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
@@ -57,12 +57,12 @@ Step A runs as one parallel wave of Agent subagents (15-minute timeout). Any ste
 - Skipped checks: <none | check — reason>
 ```
 
-Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. Same-day duplicates get ` #2`, ` #3` suffix. Check summaries are permanent — never removed.
+Heading uses `entire codebase` instead of `N files` when full-codebase mode was used. A second check that day on that branch appends to the file. Permanent — never removed.
 
 **4. Post-check summary** — after the check commit, show a summary of what ran:
 
 - **≥ 3 findings across all checks:** a findings table in the terminal — grouped by category (critical / notice), tools that ran, what was fixed. No companion screen: findings are not user interface (`companion.md`, ground rule). Runs regardless of whether ROADMAP.md exists.
-- **< 3 findings:** Terminal-only — do not echo STATE.md content again. Show two-line confirmation:
+- **< 3 findings:** Terminal-only — do not echo the check summary again. Show two-line confirmation:
 
 ```
 ✓ All checks green — [N critical + M notices fixed]

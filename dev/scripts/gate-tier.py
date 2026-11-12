@@ -7,9 +7,12 @@ Prints `small` or `large` on the first line, then one `- <reason>` per line. Exi
 2 = usage or git error (nothing on stdout, so a caller never reads a half answer as a tier).
 
 Why a script: the tier decides which checks run, and a judgement call ("this looks small") is
-exactly how a risky one-line auth change ends up with the light gate. Size alone never makes a
-phase small — a sensitive path or a risk type always makes it large. `*.md` files (the phase's spec
-and plan, STATE.md, ROADMAP.md) do not count towards the size, but still towards sensitive paths.
+exactly how a risky one-line auth change ends up with the light gate. The tier comes from the diff:
+sensitive paths, ops files (CI, Docker, deploy, infra), dependency manifests and DB changes make a
+phase large whatever its type. `--type` can only strengthen (a risk type makes it large); an unknown
+or missing type changes nothing. `*.md` files (the phase's spec and plan, STATE.md, ROADMAP.md) do
+not count towards the size and never trigger ops or dependency reasons, but still count towards
+sensitive paths.
 """
 import argparse
 import re
@@ -19,11 +22,25 @@ import sys
 MAX_TASKS = 3
 MAX_LINES = 400
 RISK_TYPES = {"auth", "security", "migration", "data"}
-DB_CHANGE = re.compile(r"(^|/)migrations?/|\.sql$|(^|/)schema\.(prisma|sql|rb)$", re.I)
+DB_CHANGE = re.compile(r"(^|/)migrations?/|(^|/)db/migrate/|(^|/)alembic/versions/|\.sql$"
+                       r"|(^|/)schema\.(prisma|sql|rb)$", re.I)
 SENSITIVE = re.compile(
     r"(^|/)(auth|login|logout|session|sessions|middleware|security|permissions?)(/|\.|$)"
     r"|(^|/)api/|(^|/)(routes?|actions?|controllers?)/"
     r"|(^|/)migrations?/|\.sql$", re.I)
+OPS = re.compile(
+    r"(^|/)\.github/workflows/|(^|/)(?i:dockerfile)[^/]*$|(^|/)(docker-)?compose[^/]*\.ya?ml$"
+    r"|(^|/)(deploy|infra(structure)?|ops|k8s|helm|terraform)(/|$)|\.tf$"
+    r"|(^|/)[^/]*deploy[^/]*\.sh$|(^|/)nginx/|(^|/)Caddyfile$|(^|/)nginx[^/]*\.conf$|(^|/)\.gitlab-ci\.ya?ml$")
+DEPS = re.compile(
+    r"(^|/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|Cargo\.toml|Cargo\.lock"
+    r"|go\.mod|go\.sum|requirements[^/]*\.txt|pyproject\.toml|poetry\.lock|Gemfile\.lock"
+    r"|[^/]*\.gradle[^/]*|Podfile\.lock|pom\.xml|Pipfile\.lock|uv\.lock|composer\.(json|lock)"
+    r"|bun\.lockb|pnpm-workspace\.yaml|Package\.resolved|[^/]*\.csproj)$")
+
+
+def listed(paths):
+    return ", ".join(paths[:5]) + (" …" if len(paths) > 5 else "")
 
 
 def git(root, *args):
@@ -66,11 +83,19 @@ def main():
         reasons.append("@gate: full")
     if a.type in RISK_TYPES:
         reasons.append(f"risk type @type: {a.type}")
-    if a.type == "backend" and any(DB_CHANGE.search(p) for p, _ in rows):
-        reasons.append("backend phase with a DB change")
+    db = sorted({p for p, _ in rows if DB_CHANGE.search(p)})
+    if db:
+        reasons.append("DB change: " + listed(db))
     hits = sorted({p for p, _ in rows if SENSITIVE.search(p)})
     if hits:
-        reasons.append("sensitive files: " + ", ".join(hits[:5]) + (" …" if len(hits) > 5 else ""))
+        reasons.append("sensitive files: " + listed(hits))
+    code = [p for p, _ in rows if not p.lower().endswith(".md")]
+    ops = sorted({p for p in code if OPS.search(p)})
+    if ops:
+        reasons.append("ops files: " + listed(ops))
+    deps = sorted({p for p in code if DEPS.search(p)})
+    if deps:
+        reasons.append("dependency manifest: " + listed(deps))
     if a.tasks > MAX_TASKS:
         reasons.append(f"{a.tasks} tasks > {MAX_TASKS}")
     if lines > MAX_LINES:
