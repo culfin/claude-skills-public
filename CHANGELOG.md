@@ -2,6 +2,48 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.3.0 — 2026-11-12
+
+**dev** — Leaner where superpowers already covers the ground; the task fix loop rules instead of
+halting; a phase is never claimed on `<main>`.
+
+A comparison of `/dev` with plain superpowers found text that repeats superpowers, repeats `/dev`
+itself, or was built but never used. Removed or replaced by a pointer: the `.debug/` file protocol,
+rating table, knowledge base and bug-pattern lists of `/dev debug` (no project ever had a `.debug/`
+directory; the red loop, saturation rule, similar-bugs scan, return to the phase and four-part report
+stay); `superpowers.md` (its active-install, static-check and freshness rules are one bullet in
+`runtime.md`); the phase-type planning table (each hint already lived in 4a, the halt section,
+`tech-stack-triggers.md` or the checklist comment; the gate-additions table stays); the pre-release
+full-scan block (now "as Milestone End step 2, entire codebase"); the per-stack command table (now a
+rule: CI workflow, then `Makefile`/`justfile`, then package scripts, then a configured tool's
+standard command; missing tool = "not configured", no build file = "no build step"); and repeated
+sentences in the router, CI read rule, rationalization table, `models.md` and `execution.md`. Each
+cut was checked GREEN with a fresh agent against the behaviour it must keep (debug red-first and
+load-timeout scenarios, active install over newest cache, docs/migration/ui phase types, commands in
+JS/Rust/Python fixtures, pre-release scans, CI read before a phase, fixers per
+`receiving-code-review`, companion URL): 7 of 7.
+
+Fix loop (`execution.md`): up to 5 rounds per task as in superpowers SDD 7.0 (1–3 resume the
+implementer, 4–5 a fresh one a tier up); a finding still open after round 5 is parked with
+`Ruling: <decision> — <why> — <cost if wrong>` in the ledger and copied to the phase file's
+`## Minor (deferred)`, the task merges, the run goes on. It halts only when every way forward would be
+a guess, or for an irreversible step. Why: "3 rounds, then halt" was a decision without a measurement,
+and it parked whole runs on one disputable finding. RED (3 of 3) on v4.2.0: halted with independent
+tasks waiting and the user away. GREEN (4 of 4), and the counter-check (both ways a guess, a later
+task builds on it) still halts. Gate Step B keeps its halt after 3 attempts per finding: its findings
+are critical by definition, and parking one would let a phase reach `[x]` with a known critical
+defect.
+
+Claims off `<main>` (`SKILL.md`, Pre-Phase step 2): a session that starts a phase on `<main>` claims
+nothing there. In Orca mode it hands the phase off as `/dev parallel <N>` does and stays coordinator;
+otherwise it branches `phase-<N>-<slug>` off a fresh `origin/<main>` and claims there. Why: the step
+forbade a claim commit on `<main>` but named no way off it. RED on v4.2.0: in Orca mode 2 of 2 moved
+the main workspace off `<main>` instead of handing off; without Orca 0 of 2 failed, but both reported
+the gap and had to derive the branch themselves. GREEN (4 of 4); on its own branch a session still
+claims there.
+
+Words: hot path 7500 → 7323, whole skill 37 955 → 37 032.
+
 ## v4.2.0 — 2026-11-12
 
 **dev** — `/dev next <N>` takes a given phase; `/dev parallel [<N> …]` starts several phases at once in
