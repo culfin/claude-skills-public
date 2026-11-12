@@ -329,6 +329,16 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("O8–O9)", text("stack/INDEX.md"))
         self.assertIn("tests/check-screens.sh", text("updates.md").split("5. **Apply**", 1)[1].split("6. **Reject", 1)[0])
 
+    def test_orca_workspace_overview(self):
+        # Overview + removal offer: RED 2 of 2 without it (no overview; invented criteria, guessed
+        # command, dirty and live workspaces offered for removal under time pressure).
+        block = text("runtime.md").split("**Workspace overview**", 1)[1].split("**Parallel phase**", 1)[0]
+        for needle in ("orca worktree ps --json", "waits for you:", "linkedPR.state", "--porcelain",
+                       "origin/<branch>..HEAD", "never `--force`, never `--delete-branch`",
+                       "not removable:", "don't ask"):
+            self.assertIn(needle, block)
+        self.assertIn('"Workspace overview"', text("commands.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

@@ -2,6 +2,24 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.1.0 — 2026-11-12
+
+**dev** — Orca: the main session sees the other phase workspaces and offers to clear merged ones.
+
+In Orca mode, the Session Start summary and `/dev status` list the project's other workspaces from
+`orca worktree ps` (status, PR state, card comment, `waits for you:` when unread) and name a claim that
+has no workspace. A workspace whose PR is merged, with a clean tree, nothing unpushed and no agent
+working or waiting, is offered for removal in one question; other merged ones get a `not removable:`
+line with the reason. Removal is `orca worktree rm` without `--force` or `--delete-branch`, and "just
+clean up, don't ask" does not skip the question. Why: `/dev` wrote cards but never read them, so a
+waiting parallel phase went unseen from the main session, and merged workspaces stayed until someone
+removed them by hand (a phase session cannot remove its own workspace). RED (2 of 2) on v4.0.0: no
+overview; under time pressure the agent invented removal criteria, guessed the command and offered
+a workspace with uncommitted work and one with a running agent as options. GREEN (3 of 3): overview
+shown, only the clean merged workspace offered, the others listed with their reason. Rejected in the
+same review: a targeted merge notice (`/dev` never merges), Orca workers for `/dev debug` (the second
+opinion has not run for real yet), nightly `/dev check` automations (the Stop hook covers it).
+
 ## v4.0.0 — 2026-11-11
 
 **dev** — Orca-first phase model. Breaking: per-phase state moves out of the shared `STATE.md`.
