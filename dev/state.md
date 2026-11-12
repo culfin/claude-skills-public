@@ -93,3 +93,5 @@ same-named place in STATE.md, reads too (`### Phase N` under `## Phases`, `## Qu
 Milestone End step 0 and the repair checklist. Gate summary (`### Gate summary — Phase N`) and minors
 (Blockers & Risks) stay in STATE.md; completion removes the phase's Quality Gate, `### Phase N` and
 Handoff from it. A takeover replaces the `## Handoff — <branch>` heading instead of `Branch:`.
+
+**Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.
