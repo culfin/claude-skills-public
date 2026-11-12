@@ -1,6 +1,5 @@
 # Quality Gate
 
-Read on gate entry (`[~]` → `[!]`), when resuming `[!]`, and from `dev-check.md`; CI: `ci.md`.
 The gate cannot be skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
@@ -211,8 +210,6 @@ input, whole codebase. A confirmed twin goes back through Step B; complex ones g
    add or refresh `Fix review` (Diff review on the fix diff, plus any analysis whose area the fix
    touches) and `Similar-bugs scan`, then rerun Step D. It counts as an attempt on the finding it fixes.
 
-The build is its own item: a type check misses bundler, server/client and asset errors.
-
 ## Gate summary
 
 Permanent, in `docs/gates/phase-<N>.md` before the gate commit (old format: STATE.md):
@@ -252,4 +249,3 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, rerun the tier with `--gate full` and note the missed path in the gate summary; never argue the tier. |
 | "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass ("Timeouts", Step A). |
 | "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |
-| "The plan says I should run the migration" | A plan describes, it does not approve (`SKILL.md`, "Halt on Irreversible Actions"). |

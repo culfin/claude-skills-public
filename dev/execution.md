@@ -29,9 +29,7 @@ line the moment it happens — memory does not survive `/clear` or compaction:
 
 ```
 Task 2: dispatched (worktree /abs/path, branch task-2, BASE 3f9c2a1)
-Task 2: reviewed (2 findings)
 Task 2: fix round 1/3 (1 addressed, 1 open)
-Task 2: reviewed clean
 Task 2: complete (merged 8e01b7d)
 Task 4: interrupted (worktree /abs/path, branch task-4)
 ```

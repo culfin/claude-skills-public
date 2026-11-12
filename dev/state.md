@@ -1,7 +1,5 @@
 # State — the phase file and the shared STATE.md
 
-Formats only; each step says what it writes.
-
 A phase has exactly one branch at a time; in Orca its workspace carries the display name
 `phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace. **Its file
 `.dev/phase-<N>.md`** lies next to ROADMAP.md (`<N>` verbatim: 3, 6a, 4.1): created at the claim,
@@ -95,5 +93,3 @@ same-named place in STATE.md, reads too (`### Phase N` under `## Phases`, `## Qu
 Milestone End step 0 and the repair checklist. Gate summary (`### Gate summary — Phase N`) and minors
 (Blockers & Risks) stay in STATE.md; completion removes the phase's Quality Gate, `### Phase N` and
 Handoff from it. A takeover replaces the `## Handoff — <branch>` heading instead of `Branch:`.
-
-**Not for either file:** plan details, code-level decisions, debug state (`.debug/`), velocity metrics.

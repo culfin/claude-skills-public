@@ -17,7 +17,7 @@ implement and review; the main session only steers.
 ## Router — what to read when
 
 `$DEV_DIR` is the directory of this `SKILL.md`; paths are relative to it. Load only what the
-current step needs. Not for single tasks, projects without milestones, or when the user skips the orchestrator.
+current step needs.
 
 | Command or step | File | When |
 |---|---|---|
@@ -90,8 +90,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
 Across all phase steps: **for anything that `git revert` cannot undo, stop and
 ask** — even in the middle of an autonomous run, even if the plan includes the step.
 
-The criterion is not "feels risky", but: *if this was wrong, does a
-commit revert restore the state?* If the answer is no, the decision belongs to the user:
+The test: *if this was wrong, would a commit revert restore the state?* No → the user decides:
 
 - Schema and data migrations, especially destructive ones (`DROP`, `DELETE`, `TRUNCATE`, type changes)
 - any change to a **shared** development or staging database — it takes effect immediately
@@ -214,7 +213,6 @@ One status line, then the next phase — unless a halt from "The run" applies, t
 
 ## Error Handling
 
-A `[—]` phase is skipped in sequencing, its reason shown on status. `/dev check` and `/dev ui` handle
-an active phase and their own failures themselves (`dev-check.md`, `ui-review.md`).
+A `[—]` phase is skipped in sequencing, its reason shown on status.
 
 **Principle:** Never block for recoverable errors (unknown `@type:`, a skill not installed, a malformed `defaults` entry): warn and continue. Stop only for missing ROADMAP.md, broken YAML and "The run" halts.
