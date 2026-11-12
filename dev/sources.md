@@ -82,7 +82,7 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
   commits the spec and continues; the builder check runs, its questions follow O2 (`SKILL.md` 4a).
 - **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).
 - **O16** subagent-driven-development: `execution.md` uses its prompts and scripts — parallel implementers
-  in worktrees (not "never parallel"), at most 3 fix rounds (not 5), no final review or branch finishing
+  in worktrees (not "never parallel"), 5 fix rounds, then rulings instead of a halt, no final review or branch finishing
   (O1). Removing `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`,
   `scripts/task-brief` or `scripts/review-package` is a conflict.
 - **O17** systematic-debugging is `/dev debug`'s method; `debugger.md` wins, its strong wording does not. Kept:

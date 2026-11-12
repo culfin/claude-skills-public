@@ -113,7 +113,7 @@ bundled round (`befragung.md`). **The run halts only for:**
 
 - clarification questions only the user can answer (`befragung.md`);
 - irreversible actions (section above);
-- a gate finding still critical after 3 attempts (or 6 gate rounds in total, `gate.md` Step B), or a task still open after its 3 fix rounds (`execution.md`);
+- a gate finding still critical after 3 attempts (or 6 gate rounds in total, `gate.md` Step B), or a task finding after 5 fix rounds that every ruling would only guess (`execution.md`);
 - the context hint (below);
 - Milestone End (`commands.md`);
 - plus the gate's own stops (`gate.md`, `ci.md`): wrong branch at the gate commit, unclear staging, no

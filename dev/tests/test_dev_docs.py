@@ -78,7 +78,8 @@ class DevDocsTests(unittest.TestCase):
 
     def test_execution_uses_scripts_and_limits(self):
         e = text("execution.md")
-        for s in ("waves.py", "load-ok.sh", "isolation", "at most 3", "task-reviewer-prompt.md"):
+        for s in ("waves.py", "load-ok.sh", "isolation", "at most 5", "task-reviewer-prompt.md",
+                  "Ruling: <decision> — <why> — <cost if\nwrong>", "every way forward would be a guess"):
             self.assertIn(s, e)
 
     def test_run_blocks_in_state_and_befragung(self):
