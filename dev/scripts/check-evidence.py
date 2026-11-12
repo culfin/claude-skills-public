@@ -60,7 +60,8 @@ BOOKKEEPING = ("STATE.md", "ROADMAP.md")
 # Phase files, the migration marker and gate records, likewise wherever the app lives.
 BOOKKEEPING_GLOBS = (".dev/phase-*.md", ".dev/.gitkeep", "docs/gates/**")
 # Same syntax as scripts/state-check.py.
-PHASE = re.compile(r"^\s*- \[(.)\]\s+(Phase\s+(\d[\w.]*))(.*)$")
+# The title may be bold (`**Phase 3: Login**`, `__…__`); ids are only [0-9A-Za-z.].
+PHASE = re.compile(r"^\s*- \[(.)\]\s+(?:\*\*|__)?(Phase\s+(\d[0-9A-Za-z.]*))(.*)$")
 CLAIM = re.compile(r"@claim:(\S+)@(\d{4}-\d{2}-\d{2})\b")
 # Happens after the local checks.
 LATER_STEPS = ("gate commit",)

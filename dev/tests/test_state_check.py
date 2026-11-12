@@ -382,6 +382,21 @@ class StateCheckTests(unittest.TestCase):
         self.write(claim3="@claim:session/b@2026-10-06")
         self.assertFalse(any(f.startswith("phase file missing") for f in self.check()))
 
+    def test_bold_phase_lines_are_read(self):
+        # Roadmaps often write the phase title in bold; the checks must not go blind on them.
+        bold = ROADMAP.replace("- [~] Phase 3 — Login @type:auth {claim3}",
+                               "- [!] **Phase 3: Login** @type:auth {claim3}") \
+                      .replace("- [ ] Phase 4 — Export", "- [~] __Phase 4: Export__")
+        self.write(claim3="", roadmap=bold)
+        self.assertEqual(self.check(), ["unclaimed: Phase 3 [!] — claim it before resuming",
+                                        "unclaimed: Phase 4 [~] — claim it before resuming"])
+        self.assertEqual(sorted(sc.phases(bold.format(claim3=""))), ["1", "2", "3", "4"])
+        (self.root / ".dev" / "phase-3.md").unlink(missing_ok=True)
+        self.write(claim3="@claim:main@2026-10-06", roadmap=bold)
+        (self.root / ".dev" / "phase-3.md").unlink(missing_ok=True)
+        self.assertIn("phase file missing: Phase 3 [!] claimed by this branch has no .dev/phase-3.md",
+                      self.check())
+
     def test_branch_mismatch(self):
         git(self.root, "branch", "other")
         self.phase_file("3", "other")

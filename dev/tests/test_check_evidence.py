@@ -351,6 +351,15 @@ class EvidenceTests(unittest.TestCase):
         (self.root / ".dev" / "tools" / "x.sh").write_text("echo hi\n")
         self.assertNotEqual(self.sid(), before)
 
+    def test_bold_phase_line_finds_the_phase_file(self):
+        branch = git(self.root, "branch", "--show-current").strip()
+        (self.root / "ROADMAP.md").write_text(
+            f"# Roadmap\n\n- [x] **Phase 1: Setup**\n- [!] **Phase 3: Login** @claim:{branch}@2026-11-11\n")
+        f = self.phase_file(self.root, "3", ["- [ ] Diff review"])
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+        (self.root / "ROADMAP.md").write_text(f"- [~] __Phase 3: Login__ @claim:{branch}@2026-11-11\n")
+        self.assertEqual(ce.default_file(self.root).resolve(), f.resolve())
+
     def test_monorepo_subdir(self):
         app = self.root / "apps" / "web"
         self.claim(app, "3")
