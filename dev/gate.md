@@ -4,23 +4,14 @@ The gate cannot be skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
 
-Step D runs the project's own commands. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
-`$PM` (once per session) from the lock file: `pnpm-lock.yaml` → `pnpm`, `bun.lockb`/`bun.lock` →
-`bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`; none → first of `pnpm`/`bun`/`yarn` in PATH,
-else `npm`. JS/TS script names from `package.json` (or `$PM run …`).
-
-| Stack | Typecheck | Lint (if configured) | Tests | Build |
-|---|---|---|---|---|
-| JS/TS | `$PM tsc --noEmit` | `$PM lint` | `$PM test`, E2E `$PM test:e2e` | Next.js `$PM next build` (or a mapped `$PM build`); Vite, React, Vue, npm library: `$PM build` |
-| Rust | `cargo check` | `cargo clippy -- -D warnings` | `cargo test` | `cargo build` |
-| Swift / iOS / macOS | covered by the Production Build | `swiftlint` | `swift test` or `xcodebuild test` | `xcodebuild build` (or `swift build` for packages) |
-| Go | `go vet ./...` | `golangci-lint run` | `go test ./...` | `go build ./...` |
-| Python | `mypy` / `pyright` | `ruff check` | `pytest` | — |
-| PHP | `php -l` on changed files; `phpstan` | `phpcs` | `phpunit` or the project's test script | — |
-| .NET / WinUI | covered by the Production Build | `dotnet format --verify-no-changes` | `dotnet test` | `dotnet build` |
-
-A `Makefile`, `justfile` or CI workflow defining these steps wins over the table. Build detection: `package.json` `scripts.build`, `Makefile`, `.csproj`, `Package.swift`, `Cargo.toml`,
-`go.mod` — first match; none (pure scripts) → the item's evidence is "no build step".
+Step D runs the project's own commands for typecheck, lint, tests and build. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
+Take them in this order: the CI workflow, then `Makefile`/`justfile` targets, then package scripts
+(`package.json`, `pyproject.toml`, `composer.json`), then the standard command of each tool the
+project configures or its stack always has (`cargo check`/`clippy`/`test`, `go vet`/`test`, `ruff check`,
+`mypy`, `pytest`, `swift test`, `dotnet test`; TypeScript without a typecheck script: `$PM tsc --noEmit`). `$PM` (once per session) from the lock file: `pnpm-lock.yaml` → `pnpm`,
+`bun.lockb`/`bun.lock` → `bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`; none → `npm`.
+Swift and .NET typecheck with the build. No build file (`scripts.build`, `Makefile`, `Cargo.toml`,
+`go.mod`, `Package.swift`, `.csproj`) → the item's evidence is "no build step".
 
 ---
 
