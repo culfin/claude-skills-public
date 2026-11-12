@@ -42,8 +42,8 @@ branch gone → dispatch fresh.
 
 ## Small phase (no plan)
 
-Copy the phase's acceptance criteria from its phase file (`state.md`) into `.superpowers/sdd/phase-<N>-<slug>.md` (slug
-of the phase name, so a renumbered or repeated phase number never adopts an old workspace) and run
+Copy the phase's acceptance criteria from its phase file (`state.md`) into `.superpowers/sdd/phase-<N>-<slug>.md` (the
+phase's slug, `runtime.md`, so a renumbered or repeated phase number never adopts an old workspace) and run
 `sdd-workspace` on it at once (it writes the `.gitignore` that keeps the file out of git); the file is
 both plan and brief. BASE is the `<phase base>` defined in `gate.md`, "Tier". One implementer with
 `$SDD/implementer-prompt.md`, in the current tree; one task review and its fix loop (below); then the

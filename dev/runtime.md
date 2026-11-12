@@ -32,7 +32,13 @@ handoffs, terminals and workers; this section only binds `/dev` state to them. O
 
 **Workspace card mirrors the phase** — write it, never read it to decide
 (ROADMAP.md and the phase file stay the truth). Each write is
-`orca worktree set --worktree active … --json`; a failed write is no error. `<slug>`: the phase name in lower case, only `[a-z0-9-]`, at most 30 characters.
+`orca worktree set --worktree active … --json`; a failed write is no error.
+
+`<slug>` — one slug per phase, the same for display name, branch (`phase-<N>-<slug>` without Orca)
+and SDD file (`execution.md`): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
+ü→ue, ß→ss; every run of other characters outside `[a-z0-9]` becomes one `-`, none at either end;
+over 30 characters → keep the whole words (between `-`) that fit in 30 (a first word longer than 30:
+its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine` → `export-fuer-pruefberichte-und`.
 
 | `/dev` event | Card |
 |---|---|
