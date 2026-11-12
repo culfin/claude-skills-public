@@ -78,7 +78,8 @@ class DevDocsTests(unittest.TestCase):
 
     def test_execution_uses_scripts_and_limits(self):
         e = text("execution.md")
-        for s in ("waves.py", "load-ok.sh", "isolation", "at most 3", "task-reviewer-prompt.md"):
+        for s in ("waves.py", "load-ok.sh", "isolation", "at most 5", "task-reviewer-prompt.md",
+                  "Ruling: <decision> — <why> — <cost if\nwrong>", "every way forward would be a guess"):
             self.assertIn(s, e)
 
     def test_run_blocks_in_state_and_befragung(self):
@@ -293,7 +294,11 @@ class DevDocsTests(unittest.TestCase):
         for word in ("Security review", "rollback path", "smoke test"):
             self.assertIn(word, mig)
         self.assertIn("Security review", next(r for r in rows if r.startswith("| `backend` |")))
-        self.assertIn("| `refactor` |", lines[0].split("## Phase Types")[1])
+        self.assertTrue(any(r.startswith("| `refactor` |") for r in rows), "refactor gate addition missing")
+        # v4.3.0: the planning-hints table is gone (each hint has its home in SKILL.md 4a,
+        # the halt section, tech-stack-triggers.md and the checklist comment).
+        self.assertNotIn("Phase Types — planning hints", g)
+        self.assertIn("not for `@type: docs` with a `*.md`-only diff", g)
         self.assertNotIn("Only Diff review, Typecheck + lint + tests, Gate summary", g)
         self.assertIn("| Any — `gate-tier.py` names `ops files` or `dependency manifest` |", t)
         self.assertIn("`gate-tier.py` reason `ops files` or `dependency manifest`", g)
@@ -352,6 +357,16 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, par)
         self.assertNotIn("/dev next — Phase", text("runtime.md"))
         self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
+
+    def test_claim_never_on_main(self):
+        # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace
+        # instead of handing the phase off; without Orca agents had to guess the way off <main>.
+        pre = " ".join(text("SKILL.md").split("### 2–3. Pre-Phase", 1)[1].split("### 4.", 1)[0].split())
+        for needle in ("**On `<main>`** (`git branch --show-current`) claim nothing there.",
+                       "hand Phase N off as `/dev parallel <N>` does", "this session stays coordinator",
+                       "git switch -c phase-<N>-<slug> origin/<main>"):
+            self.assertIn(needle, pre)
+        self.assertIn("adds one only off `<main>`", text("runtime.md"))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

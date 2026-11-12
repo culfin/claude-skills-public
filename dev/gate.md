@@ -4,23 +4,14 @@ The gate cannot be skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
 
-Step D runs the project's own commands. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
-`$PM` (once per session) from the lock file: `pnpm-lock.yaml` → `pnpm`, `bun.lockb`/`bun.lock` →
-`bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`; none → first of `pnpm`/`bun`/`yarn` in PATH,
-else `npm`. JS/TS script names from `package.json` (or `$PM run …`).
-
-| Stack | Typecheck | Lint (if configured) | Tests | Build |
-|---|---|---|---|---|
-| JS/TS | `$PM tsc --noEmit` | `$PM lint` | `$PM test`, E2E `$PM test:e2e` | Next.js `$PM next build` (or a mapped `$PM build`); Vite, React, Vue, npm library: `$PM build` |
-| Rust | `cargo check` | `cargo clippy -- -D warnings` | `cargo test` | `cargo build` |
-| Swift / iOS / macOS | covered by the Production Build | `swiftlint` | `swift test` or `xcodebuild test` | `xcodebuild build` (or `swift build` for packages) |
-| Go | `go vet ./...` | `golangci-lint run` | `go test ./...` | `go build ./...` |
-| Python | `mypy` / `pyright` | `ruff check` | `pytest` | — |
-| PHP | `php -l` on changed files; `phpstan` | `phpcs` | `phpunit` or the project's test script | — |
-| .NET / WinUI | covered by the Production Build | `dotnet format --verify-no-changes` | `dotnet test` | `dotnet build` |
-
-A `Makefile`, `justfile` or CI workflow defining these steps wins over the table. Build detection: `package.json` `scripts.build`, `Makefile`, `.csproj`, `Package.swift`, `Cargo.toml`,
-`go.mod` — first match; none (pure scripts) → the item's evidence is "no build step".
+Step D runs the project's own commands for typecheck, lint, tests and build. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
+Take them in this order: the CI workflow, then `Makefile`/`justfile` targets, then package scripts
+(`package.json`, `pyproject.toml`, `composer.json`), then the standard command of each tool the
+project configures or its stack always has (`cargo check`/`clippy`/`test`, `go vet`/`test`, `ruff check`,
+`mypy`, `pytest`, `swift test`, `dotnet test`; TypeScript without a typecheck script: `$PM tsc --noEmit`). `$PM` (once per session) from the lock file: `pnpm-lock.yaml` → `pnpm`,
+`bun.lockb`/`bun.lock` → `bun`, `yarn.lock` → `yarn`, `package-lock.json` → `npm`; none → `npm`.
+Swift and .NET typecheck with the build. No build file (`scripts.build`, `Makefile`, `Cargo.toml`,
+`go.mod`, `Package.swift`, `.csproj`) → the item's evidence is "no build step".
 
 ---
 
@@ -40,16 +31,8 @@ header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate
 ## Phase Types
 
 **The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
-Reviewers come from the changed files (Step A) and `gate-tier.py`.
-
-**Phase Types — planning hints:**
-
-| `@type:` | In planning |
-|---|---|
-| `ui`, `landing` | UX clarification and companion (`tech-stack-triggers.md`, 4a) |
-| `migration` | The mandatory halt (`SKILL.md`, "Halt on Irreversible Actions") |
-| `docs` | No interview; no Production Build or E2E Tests — only with a `*.md`-only diff |
-| `refactor` | None; its gate addition is below |
+Reviewers come from the changed files (Step A) and `gate-tier.py`. In planning a type only steers
+4a (`SKILL.md`; `tech-stack-triggers.md` for `ui`/`landing`).
 
 **Gate additions by type (they only add, never remove):**
 
@@ -249,5 +232,4 @@ If one of these thoughts comes up, that is the signal to **do** the step.
 | Thought | Reality |
 |---|---|
 | "The tier script said small, but this touches auth — fine, it said small" | If it missed a sensitive path, rerun the tier with `--gate full` and note the missed path in the gate summary; never argue the tier. |
-| "The analyzer hung, let's skip it" | A timeout is a missing result, not a pass ("Timeouts", Step A). |
 | "The error was already there before" | Then prove it: the **same** failure (same test, same cause) on the unchanged base, in a separate worktree, never by resetting the user's tree; this change neither causes nor hides it; the tests covering this change still run and pass. Record it in the gate summary — *completed with a known pre-existing failure*, never "all green". It never excuses a failing required CI run. |

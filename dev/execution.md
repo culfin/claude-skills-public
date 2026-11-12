@@ -6,7 +6,7 @@ The main session dispatches every implementer and reviewer itself
 ## Setup
 
 - **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development` (active root per
-  `superpowers.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
+  `runtime.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
 - **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
@@ -30,15 +30,15 @@ line the moment it happens — memory does not survive `/clear` or compaction:
 ```
 Task 2: dispatched (worktree /abs/path, branch task-2, BASE 3f9c2a1)
 Task 2: reviewed (2 findings)          or: reviewed clean
-Task 2: fix round 1/3 (1 addressed, 1 open)
+Task 2: fix round 1/5 (1 addressed, 1 open)
 Task 2: complete (merged 8e01b7d)
 Task 4: interrupted (worktree /abs/path, branch task-4)
 ```
 
 **Resume** reads the ledger, then `git worktree list` and the task branches: `complete` → skip.
 `dispatched`, `reviewed`, `fix round` or `interrupted` with its worktree or branch still there →
-continue from that state — review its commits, or redispatch into that same worktree (as in fix round
-3 below) — never a second fresh dispatch, which would leave two branches for one task. Worktree and
+continue from that state — review its commits, or redispatch into that same worktree (as in fix rounds
+4–5 below) — never a second fresh dispatch, which would leave two branches for one task. Worktree and
 branch gone → dispatch fresh.
 
 ## Small phase (no plan)
@@ -87,25 +87,28 @@ Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 **Task review as soon as a task finishes** — do not wait for the rest of the wave:
 `bash "$SDD/scripts/review-package" <plan> <BASE> <task branch or HEAD>`, then a reviewer with
 `$SDD/task-reviewer-prompt.md`, given the brief, the report, the package and the binding constraints
-copied verbatim from the spec. `DONE_WITH_CONCERNS` → read the concerns first; `NEEDS_CONTEXT` →
-answer and resume; `BLOCKED` → change something (context, model one tier up, smaller task) before
-dispatching again.
+copied verbatim from the spec. Report statuses (`DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`):
+`$SDD/SKILL.md`, "Handle the report".
 
-**Fix loop — at most 3 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
-Rounds 1–2 resume the same implementer with the open findings verbatim. Fixers follow
-`receiving-code-review`: verify each finding, push back with reasons. Round 3 dispatches a fresh
+**Fix loop — at most 5 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
+Rounds 1–3 resume the same implementer with the open findings verbatim. Fixers follow
+`receiving-code-review`: verify each finding, push back with reasons. Rounds 4–5 dispatch a fresh
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
 commits are. After each round, a scoped re-review:
 `review-package <plan> <head the last review saw> <new head>` and `$SDD/re-review-prompt.md`, with the
-task's acceptance criteria verbatim: a fix that weakens one (a looser value, a dropped case) is a finding. Still
-open after round 3 → halt and report what remains (one of the run's halts). An implementer or
+task's acceptance criteria verbatim: a fix that weakens one (a looser value, a dropped case) is a finding.
+**Still open after round 5 — rule, don't stall:** stop dispatching for it and rule on each open
+finding, spec first: ledger `Task <N>: parked — <finding> — Ruling: <decision> — <why> — <cost if
+wrong>`, and copy the finding to the phase file's `## Minor (deferred)` (the gate's Step A sees that
+code again); the task then merges as `complete`. A ruling a later task builds on goes into that task's dispatch. Then the run goes on;
+it halts only when every way forward would be a guess, or for "Halt on Irreversible Actions". An implementer or
 reviewer naming a weakness of the task's own tests (one that cannot fail, tests a parameter instead
 of the default) starts a fix round — never `minor`. No RED evidence (new tests failing first) in a
 behavior-changing task's report → run them on its BASE in a temporary worktree; green there
 starts one too. Minor findings go to the ledger as `Task <N>: minor (deferred): …` and to the phase file's `## Minor (deferred)`. Never fix findings in the main session: that skips review.
 
-**Merge after the wave,** once every task in it is reviewed clean: bring the task branches into the
+**Merge after the wave,** once every task in it is reviewed clean or parked: bring the task branches into the
 phase branch one by one in plan order (`git merge --no-ff <task branch>`, or cherry-pick its commits)
 and run the unit tests after each merge, so a red run names the task that broke it — that task goes
 back into its fix loop. A conflict → `git merge --abort`, and run that task again serially on top of

@@ -40,7 +40,7 @@ without an upstream — nothing to watch until it gets one).
 | tauri-v2 | local | `~/.claude/skills/tauri-v2` | `SKILL.md` | O8 |
 | winui-pro | local | `~/.claude/skills/winui-pro` | `SKILL.md` | O8 |
 
-Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `superpowers.md`,
+Where each is used: superpowers — `SKILL.md` 4a–4b, `execution.md`, `companion.md`, `runtime.md`,
 `debugger.md`; design sources — `design/INDEX.md`, `analyzers/motion.md`, `analyzers/design-detector.md`,
 `commands.md` (Pre-Release Review); stack skills — `tech-stack-triggers.md`; stack sources — `stack/INDEX.md`
 (4a, 4c, 5c). Docs in a project's `node_modules` are not
@@ -56,7 +56,7 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
 - **O2** Brainstorming asks every question via `AskUserQuestion`, recommendation first; the Visual Companion
   shows only user interface, never plans or findings (`SKILL.md` 4a, `companion.md`).
 - **O3** The active install is the one Claude Code records, never "the newest cache directory"; no plugin
-  switch mid-phase (`superpowers.md`).
+  switch mid-phase (`runtime.md`).
 - **O4** Emil's skills open with "respond only with: I'm ready …" — `/dev` ignores that and applies the
   content directly (`design/INDEX.md`).
 - **O5** taste is read only for `landing`, by a subagent returning ≤ 40 lines; conflicts with the project's
@@ -82,7 +82,7 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
   commits the spec and continues; the builder check runs, its questions follow O2 (`SKILL.md` 4a).
 - **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).
 - **O16** subagent-driven-development: `execution.md` uses its prompts and scripts — parallel implementers
-  in worktrees (not "never parallel"), at most 3 fix rounds (not 5), no final review or branch finishing
+  in worktrees (not "never parallel"), 5 fix rounds, then rulings instead of a halt, no final review or branch finishing
   (O1). Removing `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`,
   `scripts/task-brief` or `scripts/review-package` is a conflict.
 - **O17** systematic-debugging is `/dev debug`'s method; `debugger.md` wins, its strong wording does not. Kept:

@@ -231,8 +231,8 @@ scenarios with fixtures are in `vibepolish/evals/`; `vibepolish/evals/run.sh` ru
 - **Remove:** delete the links (`rm ~/.claude/skills/<skill>` or `~/.agents/skills/<skill>`) and,
   if registered, the stop hook entry (see [SETUP.md](SETUP.md)).
 - **superpowers:** `/dev` uses the active install and never updates it.
-  [dev/superpowers.md](dev/superpowers.md) explains how to check it, how to update it on each host,
-  and a prepared maintenance prompt you can schedule yourself.
+  [dev/runtime.md](dev/runtime.md) ("Superpowers install") says how it is found and checked;
+  [dev/updates.md](dev/updates.md) is the update path.
 
 ---
 

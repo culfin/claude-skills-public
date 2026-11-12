@@ -1,7 +1,6 @@
 # CI — background watch and repair
 
-Read at the gate commit, before each phase when a phase or gate file of the current milestone has a
-`## CI` SHA, at Milestone End, at Pre-Release Review and in `/dev check` (router in `SKILL.md`).
+Read when the router in `SKILL.md` points here.
 
 ## CI in background
 

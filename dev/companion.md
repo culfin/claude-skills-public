@@ -43,7 +43,7 @@ reading it? If the honest answer is "it is text in a nicer box" → terminal.
 
 ```bash
 # Start server (automatically, without asking) — via the /dev wrapper.
-# The wrapper resolves the ACTIVE superpowers install (superpowers.md) and sets
+# The wrapper resolves the ACTIVE superpowers install (runtime.md) and sets
 # the display host itself: if DEV_COMPANION_URL_HOST is set (e.g. a Tailscale name),
 # the server listens on all interfaces and reports that host, otherwise localhost.
 $DEV_DIR/scripts/companion.sh --project-dir <project-root>
