@@ -18,6 +18,21 @@ After display: AskUserQuestion with Start/Add/Skip/Done options.
 
 ---
 
+## Pick a phase
+
+**Triggered by:** `/dev next <N>` (also the prompt of a parallel workspace). Session Start runs as
+usual; step 6 then takes Phase N instead of the first open one:
+
+- `[x]`/`[—]` → say so, stop.
+- Claimed by another branch → say by whom; AskUserQuestion: leave it (Recommended) or take it over
+  (Pre-Phase step 2, "Takeover").
+- Builds on a phase not yet `[x]` (its line, a line below it or its `Goal:` names that phase) → say
+  so; AskUserQuestion: that phase instead (Recommended), Phase N anyway, stop.
+- Otherwise resume or start it as step 8 does. The run ends after Phase N (step 8: one status line,
+  no next phase): one workspace, one phase.
+
+---
+
 ## State findings
 
 Session Start, step 1: each finding of `state-check.py check`, handled before ROADMAP.md is read.

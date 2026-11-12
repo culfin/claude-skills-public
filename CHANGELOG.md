@@ -2,6 +2,23 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.2.0 — 2026-11-12
+
+**dev** — `/dev next <N>` takes a given phase; `/dev parallel [<N> …]` starts several phases at once in
+their own Orca workspaces.
+
+`/dev next <N>` (`commands.md`, "Pick a phase") takes Phase N instead of the first open one: done →
+say so; claimed by another branch → ask, leaving it recommended; builds on a phase not yet `[x]` → ask,
+that phase recommended. The run ends after Phase N, so one workspace holds one phase. `/dev parallel`
+without numbers offers the free phases of the milestone in one multi-select (claimed and dependent
+ones get a line with the reason), then one full handoff each with `--branch phase-<N>-<slug>` and the
+prompt `/dev next <N>`; the starting session counts them as claimed. Why: a parallel phase had no
+command, only one per request, no fixed branch name, and its prompt `/dev next — Phase <N>` was not a
+rule `/dev next` knew. RED (2 of 2) on v4.1.0: no rule for either; the handoff left out `--branch`,
+and the agent itself saw that the new session could race for the first free phase. GREEN (2 of 2).
+Hot path unchanged in size: the router row for `state-check.py` findings (step 1 already points
+there) and a duplicated tech-stack example were cut.
+
 ## v4.1.0 — 2026-11-12
 
 **dev** — Orca: the main session sees the other phase workspaces and offers to clear merged ones.

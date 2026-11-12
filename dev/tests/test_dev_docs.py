@@ -339,6 +339,20 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, block)
         self.assertIn('"Workspace overview"', text("commands.md"))
 
+    def test_pick_and_parallel_phase(self):
+        # /dev next <N> and /dev parallel: RED 2 of 2 without them (no rule; handoff without --branch,
+        # ambiguous "/dev next — Phase N" prompt, race for the first free phase).
+        pick = text("commands.md").split("## Pick a phase", 1)[1].split("\n---", 1)[0]
+        for needle in ("`/dev next <N>`", "Claimed by another branch", "Builds on a phase not yet `[x]`",
+                       "The run ends after Phase N"):
+            self.assertIn(needle, pick)
+        par = text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0]
+        for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug>",
+                       '--prompt "/dev next <N>"', "counts the handed-off phases as claimed"):
+            self.assertIn(needle, par)
+        self.assertNotIn("/dev next — Phase", text("runtime.md"))
+        self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):
