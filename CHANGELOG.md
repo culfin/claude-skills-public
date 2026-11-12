@@ -87,7 +87,11 @@ source has no rule; E2E tests and a shared dev database; roadmap writing does no
 values; the router no longer says what `/dev` is not for; removing the Spec checker's own agent branch
 (`git branch -D`) is not named as an exception to the halt on deleting branches; a second disagreement
 between analyses in the same run (after the one user question) has no rule; in the old format a STATE.md
-change a phase asks for stays bookkeeping, so the Fix review diff does not show it.
+change a phase asks for stays bookkeeping, so the Fix review diff does not show it. The sentence that an overall
+success proves only what the tool checked was cut for the word budget; the rule that a STATE.md and phase
+file edit is not for either file sits under the old-format section; for a gate made up later it is not
+said whether the Spec checker works on today's HEAD or `Phase head:`; an unclaimed `[!]` in the old
+format after a squash merge falls back to a claim commit that may lie after the code or be gone.
 
 The migration to phase files changes `@state` once (STATE.md turns from bookkeeping into code): ticked
 gate items of a phase in progress go stale and are rerun. Phase lines also match `*` bullets and italic
