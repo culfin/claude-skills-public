@@ -46,7 +46,8 @@
 #   the next hour fall back at once instead of waiting for the timeout each time.
 # Proven on macOS (Seatbelt). On Linux Codex enumerates deny globs only `glob_scan_max_depth`
 # levels deep. DEV_CODEX_BIN selects the Codex binary (default `codex`); DEV_CODEX_TIMEOUT_SEC
-# overrides --timeout-min and DEV_CODEX_PREFIXES the Homebrew prefixes (tests).
+# overrides --timeout-min and DEV_CODEX_PREFIXES the Homebrew prefixes (tests). DEV_CODEX_EFFORT
+# (minimal|low|medium|high|xhigh) sets the reasoning effort; unset, Codex uses its default.
 set -uo pipefail
 RULE_REV=5      # bump when the profile changes: invalidates cached deny checks
 
@@ -75,6 +76,12 @@ done
 [[ "$timeout_min" =~ ^[1-9][0-9]*$ ]] || usage
 limit=${DEV_CODEX_TIMEOUT_SEC:-$((timeout_min * 60))}
 [[ "$limit" =~ ^[1-9][0-9]*$ ]] || usage
+# Optional reasoning effort for Codex (unset: Codex's default without user config).
+effort=()
+if [[ -n "${DEV_CODEX_EFFORT:-}" ]]; then
+    [[ "$DEV_CODEX_EFFORT" =~ ^(minimal|low|medium|high|xhigh)$ ]] || usage
+    effort=(-c "model_reasoning_effort=\"$DEV_CODEX_EFFORT\"")
+fi
 
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 schema="$here/../schemas/review-findings.json"
@@ -152,7 +159,7 @@ run_codex() {
     set -m      # own process group, so the watchdog and the trap reach every Codex child
     ( cd "$dir" && exec "$bin" exec --ephemeral --ignore-user-config --skip-git-repo-check --color never \
         -c 'default_permissions="dev-review"' -c "permissions.dev-review.filesystem=$fs" \
-        -c 'shell_environment_policy.set={GIT_CONFIG_GLOBAL="/dev/null"}' \
+        -c 'shell_environment_policy.set={GIT_CONFIG_GLOBAL="/dev/null"}' ${effort[@]+"${effort[@]}"} \
         "$@" </dev/null >"$log" 2>&1 ) &
     pid=$!
     set +m

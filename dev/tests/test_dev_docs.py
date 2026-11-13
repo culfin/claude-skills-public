@@ -32,10 +32,11 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
                      "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
-                     "Second opinion: codex diff", "Second opinion: codex security",
+                     "Second opinion: codex diff",
                      "Second opinion: codex fix", "Second opinion: codex similar"):
             self.assertIn(f"- [ ] {name}", g)
-        for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check"):
+        for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check",
+                    "- [ ] Second opinion: codex security"):
             self.assertNotIn(old, g)
 
     def test_every_dispatched_role_has_a_model(self):
@@ -413,12 +414,14 @@ class DevDocsTests(unittest.TestCase):
         gate = " ".join(text("gate.md").split())
         codex = gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0]
         for needle in ("`defaults.second-opinion: codex`", "in or outside Orca",
-                       "Diff review, Security review, Fix review or Similar-bugs scan",
-                       "(role `diff`, `security`, `fix`, `similar`)", "in the same message in the background",
+                       "Diff review, Fix review or Similar-bugs scan",
+                       "(role `diff`, `fix`, `similar`)", "run in the background",
                        'bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> '
                        "--head <HEAD sha> --out <file>",
                        "`--prompt`: the Claude item's prompt", "plus untracked files the prompt names",
-                       "Exit 0 → the findings in `--out` count like any analyzer's",
+                       "Exit 0 → its findings count like any analyzer's",
+                       "a critical one only Codex raised is critical only if it breaks a criterion's wording, "
+                       "crashes or loses data; else a note: no question, no round.",
                        "`Result:` line, `codex`, `@…`", "Exit 3 → `skipped: <fallback reason>`",
                        "The Claude item runs regardless."):
             self.assertIn(needle, codex)
