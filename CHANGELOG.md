@@ -2,6 +2,41 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.8.0 — 2026-11-13
+
+**dev** — `defaults.second-opinion: codex` runs selected gate reviews additionally through Codex, in or
+outside Orca; Codex never replaces a Claude review.
+
+The second opinion used to be an Orca worker of another agent (`runtime.md`). Tested with the old text
+and a ROADMAP asking for Codex as reviewer: the agent ignored the key ("/dev does not know this key …
+a second opinion needs `defaults.second-opinion` and runs as an Orca worker"), ran every Step A item
+through Claude subagents and never called Codex. A direct Codex call also needs guards the old text
+did not give (clean checkout without `.env`, closed stdin, read-only profile, answers that read nothing
+treated as failure); `scripts/codex-review.sh` carries them.
+
+- `gate.md`: new paragraph "Codex". With the key, every run of Diff review, Security review, Fix review
+  and Similar-bugs scan gets a checklist item `Second opinion: codex <role>` (`diff`, `security`, `fix`,
+  `similar`), started in the same message as its Claude item, in the background, with the same prompt
+  and diff. Exit 0 → its findings count like any analyzer's, the evidence names `codex`; exit 3 → the
+  item is `skipped: <fallback reason>`, never "no findings". The Claude item runs regardless. The
+  `fix` and `similar` items are rerun on the final state like their Claude items.
+- `runtime.md`: the Orca-worker second opinion is gone. `gate.md` names only the value `codex`;
+  another value adds no item.
+  Other values of `defaults.second-opinion` (e.g. `claude`, `gemini`), which used to start an Orca
+  worker of that agent, now do nothing and are not reported: set `codex` or drop the key.
+- `codex-review.sh` takes `--input` more than once (diff plus an untracked spec): a repeated flag
+  used to replace the earlier file, so Codex could review the spec without the diff and still pass.
+  A missing `--out` directory and an `--input` named `.env` or `.env.*` are usage errors (exit 2):
+  the first used to end as exit 3 and close the item as skipped, the second would have sent a
+  `.env` copy to Codex.
+- `check-evidence.py`: `Second opinion: codex fix` and `codex similar` must carry the final state,
+  like Fix review and Similar-bugs scan; only the Step A Codex items may keep the wave's state.
+- `models.md`: Codex runs with its own default model. To keep the hot path within its budget, the
+  `models.md` lead-in is shorter and the list of former skill names in `defaults.phase-types` moved
+  from `gate.md` to `tech-stack-triggers.md`, next to the key it explains.
+- Tests: the four checklist items, the Codex recipe, the removed Orca wording and the moved list of
+  former skill names are pinned; repeated `--input` and stale Codex fix/similar items were red first.
+
 ## v4.7.0 — 2026-11-13
 
 **dev** — `/dev parallel` starts supervised Orca workers, which close themselves after the phase.

@@ -204,13 +204,13 @@ class EvidenceTests(unittest.TestCase):
                     "- [x] Design detector — skipped: engine not built",
                     f"- [x] Motion review — skipped: animation standards not found @{i}",
                     "- [x] Tech-Stack Review: shadcn — skipped: skill not installed",
-                    "- [x] Second opinion: codex — skipped: not in Orca mode"])
+                    "- [x] Second opinion: codex diff — skipped: quota-exhausted"])
         self.assertEqual(self.run_check(), [])
         self.assertEqual(ce.skipped(self.root / "STATE.md"),
                          [("Design detector", "engine not built"),
                           ("Motion review", "animation standards not found"),
                           ("Tech-Stack Review: shadcn", "skill not installed"),
-                          ("Second opinion: codex", "not in Orca mode")])
+                          ("Second opinion: codex diff", "quota-exhausted")])
 
     def test_skipped_item_survives_a_later_code_change(self):
         self.state(["- [x] Design detector — skipped: engine not built"])
@@ -278,6 +278,20 @@ class EvidenceTests(unittest.TestCase):
         problems = self.run_check()
         self.assertEqual(len(problems), 1)
         self.assertIn("Similar-bugs", problems[0])
+
+    def test_codex_fix_and_similar_never_inherit(self):
+        # Review fix round 1 (I-2): the Codex items of Steps B/C rerun on the final state like
+        # their Claude items; only the Step A Codex items may keep the wave's state.
+        i = self.sid()
+        self.state([f"- [x] Fix review — fix diff clean @{i}",
+                    f"- [x] Second opinion: codex diff — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex security — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex fix — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex similar — none @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 2, problems)
+        self.assertTrue(any("codex fix" in x for x in problems), problems)
+        self.assertTrue(any("codex similar" in x for x in problems), problems)
 
     def test_missing_gate_section_is_reported(self):
         (self.root / "STATE.md").write_text("# State\n\nno gate here\n")

@@ -31,8 +31,7 @@ header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate
 ## Phase Types
 
 **The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
-Reviewers come from the changed files (Step A) and `gate-tier.py`. In planning a type only steers
-4a.
+In planning a type only steers 4a.
 
 **Gate additions by type (they only add, never remove):**
 
@@ -70,10 +69,13 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 - [ ] Motion review
 - [ ] Taste pre-flight
 - [ ] UX review                    <!-- `ux-ui-design` available -->
-- [ ] Second opinion: <agent>     <!-- defaults.second-opinion set; runtime.md "Orca" -->
+- [ ] Second opinion: codex diff      <!-- "Codex" -->
+- [ ] Second opinion: codex security
 <!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
+- [ ] Second opinion: codex fix
+- [ ] Second opinion: codex similar
 <!-- Step D and closing, always; Build and E2E: not for `@type: docs` with a `*.md`-only diff (Phase Types) -->
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
@@ -89,16 +91,17 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too.
-- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight,
-  Second opinion and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
+- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight
+  and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
-  `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a tech skill not installed):
+  `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a tech skill not installed), and Second
+  opinion items when `codex-review.sh` exits 3:
   `- [x] Design detector — skipped: engine not built`. Such an item does not block the phase, never
   counts as "no findings", and is listed under "Skipped checks" in the gate summary.
 - **Evidence belongs to one state of the code.** After a fix, the review items (Step A) stay valid
   as long as a checked `Fix review` carries the current state — that review covered exactly the
-  change since. Typecheck + lint + tests, Production Build, E2E Tests, Similar-bugs scan and Fix
-  review itself are always rerun on the final state. If the scope or the acceptance criteria
+  change since. Typecheck + lint + tests, Production Build, E2E Tests, Similar-bugs scan, Fix
+  review and their Second opinion items are always rerun on the final state. If the scope or the acceptance criteria
   change, rerun the affected reviews: they answered a different question.
 - **A command whose output was not read has not run.** A pipe (`| tail`, `2>/dev/null`) can
   swallow the exit status; when in doubt, rerun without it.
@@ -121,7 +124,6 @@ dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows t
 | Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
 | UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | `ui`/`landing`, UI files changed, `ux-ui-design` available; tier as Accessibility review |
-| Second opinion: `<agent>` | `analyzers/diff-review.md`, run by that agent as an Orca worker (`runtime.md`, "Orca") | either tier, `defaults.second-opinion` set |
 
 **Analyzer dispatch** (also `/dev check`, Milestone End, `/dev ui`). Never open `analyzers/CONTRACT.md`
 or the analyzer file, not even to check a prompt or a reply: this paragraph suffices. The
@@ -132,6 +134,15 @@ as a file, untracked files included (`git ls-files --others --exclude-standard`)
 never hand over why you think the change is right. Its `Result:` line is the item's evidence; a
 finding without file:line, quoted line and failing input is an open question, not a finding. Spec
 checker and Second opinion too.
+
+**Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, in or outside Orca, each run
+of Diff review, Security review, Fix review or Similar-bugs scan gets its Second opinion item (role
+`diff`, `security`, `fix`, `similar`), run in the same message in the background:
+`bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
+`--prompt`: the Claude item's prompt; `--input`: its diff file (Similar-bugs: the fix list) plus
+untracked files the prompt names. Exit 0 → the findings in `--out` count like any analyzer's;
+evidence: its `Result:` line, `codex`, `@…`. Exit 3 → `skipped: <fallback reason>`. The Claude
+item runs regardless.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers
@@ -157,9 +168,6 @@ test → invalid, not passed.
 useful with the scope split in two. Still no report → its item stays open with "timeout", the phase
 stays `[!]`; Step D may go on. Only an independent substitute counts (another subagent with the
 same analyzer file, or an equivalent tool the project uses), never the implementer on its own change.
-
-Former skill names in `defaults.phase-types` lists (`bug-prospector`, `security-audit`, `performance-check`,
-`review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`) mean the matching analyzer.
 
 ## Step B — Fix
 

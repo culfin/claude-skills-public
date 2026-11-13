@@ -32,8 +32,8 @@ what the host actually offers.
 
 Orca mode: `orca worktree current --json` returns `ok: true` and its `result.worktree.path` is
 exactly `git rev-parse --show-toplevel`, both resolved first (`cd <path> && pwd -P`). Otherwise (no
-Orca, or a git worktree inside an Orca workspace, such as `.worktrees/<x>`) skip the card, the
-parallel phase and the second opinion: write no card, start no worker with `--worktree current`.
+Orca, or a git worktree inside an Orca workspace, such as `.worktrees/<x>`) skip the card and the
+parallel phase: write no card, start no worker with `--worktree current`.
 "Orca workers" below applies either way. One phase = one Orca workspace = one branch =
 `.dev/phase-<N>.md`.
 
@@ -82,14 +82,6 @@ named phase, a supervised worker in its own workspace (`orchestration`):
 closes. Report each workspace, then go on with the next free phase, if any; this session
 counts the handed-off phases as claimed. Orca wakes you with a worker's questions and its `worker_done`, after
 which its terminal closes; workspace and branch stay.
-
-**Second opinion.** ROADMAP frontmatter `defaults.second-opinion: <agent>` (e.g. `codex`) adds the
-gate item `Second opinion: <agent>` (`gate.md`, Step A). In the same wave, start it as an Orca worker:
-`orca orchestration worker-start --spec "<spec>" --worktree current --agent <agent>`. The spec names
-`analyzers/CONTRACT.md` and `analyzers/diff-review.md` by absolute path, the diff file and the
-requirement, and says: read only, edit nothing, findings with file:line. End the turn with the rest
-of the wave; Orca wakes you with `worker_done`, whose findings count like any analyzer's. Not in
-Orca mode → `skipped: not an Orca workspace`; agent not installed → `skipped: <reason>`.
 
 ### Asking through the lead
 
