@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -31,11 +32,16 @@ VALID = {
 }
 
 STUB = r'''#!/usr/bin/env python3
-import json, os, subprocess, sys, time
+import json, os, re, subprocess, sys, time
 args = sys.argv[1:]
-mode = os.environ.get("STUB_MODE", "valid")
+if args == ["--version"]:
+    print("codex-cli 0.0.0-stub")
+    sys.exit(0)
+prompt = args[-1]
+kind = "check" if "deny-check" in prompt else "review"
+mode = os.environ.get("STUB_CHECK_MODE" if kind == "check" else "STUB_MODE", "valid")
 cwd = os.getcwd()
-rec = {"argv": args, "cwd": cwd, "env_in_cwd": os.path.exists(os.path.join(cwd, ".env")),
+rec = {"kind": kind, "argv": args, "cwd": cwd, "env_in_cwd": os.path.exists(os.path.join(cwd, ".env")),
        "files": sorted(os.listdir(cwd)), "pid": os.getpid(),
        "head": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()}
 with open(os.environ["STUB_LOG"], "a") as fh:
@@ -49,7 +55,24 @@ if mode == "quota":
 if mode == "fail":
     print("ERROR: something broke", file=sys.stderr)
     sys.exit(1)
-answer = os.environ.get("STUB_ANSWER", "")
+if mode == "fail-ratelimit-text":
+    print("src/limits.py:3: RATE_LIMIT = 429  # rate limit and quota for the API")
+    print("ERROR: stream disconnected")
+    sys.exit(1)
+if kind == "check":
+    # Emulates the sandbox: enforced -> only the control file is readable.
+    lines = []
+    script = open(re.search(r"bash (/\S+)", prompt).group(1)).read()
+    for path in re.findall(r"(/\S+)", script.split("cat ", 1)[1].splitlines()[0]):
+        if mode == "refuse":
+            break
+        if mode == "leak" or os.path.basename(path) == "control.txt":
+            lines.append(open(path).read().strip())
+        else:
+            lines.append(f"cat: {path}: Operation not permitted")
+    answer = "\n".join(lines) if lines else "I will not do that."
+else:
+    answer = os.environ.get("STUB_ANSWER", "")
 with open(out, "w") as fh:
     fh.write(answer)
 sys.exit(0)
@@ -105,17 +128,22 @@ class CodexReviewTests(unittest.TestCase):
                            env=self.env(mode, answer, **extra), timeout=60)
         return p.returncode, p.stdout, p.stderr
 
-    def calls(self):
+    def all_calls(self):
         if not self.log.exists():
             return []
         return [json.loads(line) for line in self.log.read_text().splitlines()]
+
+    def calls(self):
+        return [c for c in self.all_calls() if c["kind"] == "review"]
+
+    def checks(self):
+        return [c for c in self.all_calls() if c["kind"] == "check"]
 
     def assert_clean(self):
         worktrees = [l for l in git(self.root, "worktree", "list", "--porcelain").splitlines()
                      if l.startswith("worktree ")]
         self.assertEqual(len(worktrees), 1, worktrees)
-        self.assertEqual([p.name for p in self.tmpdir.iterdir() if p.name.startswith("dev-codex-")
-                          and not p.name.endswith(".off")], [])
+        self.assertEqual([p.name for p in self.tmpdir.iterdir() if p.is_dir()], [])
 
     # Review Focus 2: Codex sees the clean checkout, never the working directory with its .env
     def test_clean_checkout_has_no_env(self):
@@ -134,27 +162,108 @@ class CodexReviewTests(unittest.TestCase):
             self.assertEqual(rc, 0, out + err)
         calls = self.calls()
         self.assertEqual(len(calls), 4)
-        for call in calls:
+        home = os.environ["HOME"]
+        for call in calls + self.checks():
             argv = call["argv"]
             self.assertEqual(argv[0], "exec")
-            for flag in ("--ephemeral", "--skip-git-repo-check", "--output-schema", "-o"):
+            for flag in ("--ephemeral", "--skip-git-repo-check", "--ignore-user-config", "-o"):
                 self.assertIn(flag, argv)
             overrides = [argv[i + 1] for i, a in enumerate(argv) if a == "-c"]
             self.assertIn('default_permissions="dev-review"', overrides)
             perms = [o for o in overrides if o.startswith("permissions.dev-review.filesystem=")]
             self.assertEqual(len(perms), 1, overrides)
-            self.assertIn('"**/.env"="deny"', perms[0])
-            self.assertIn('"**/.env.*"="deny"', perms[0])
-            self.assertIn('":root"="read"', perms[0])
-            self.assertNotIn("write", perms[0])
+            perm = perms[0]
+            # Codex reads an unparsable value as a plain string and ignores the whole profile
+            tomllib.loads("x = " + perm.split("=", 1)[1])
+            self.assertIn('"**/.env"="deny"', perm)
+            self.assertIn('"**/.env.*"="deny"', perm)
+            self.assertIn('":minimal"="read"', perm)
+            self.assertNotIn('":root"', perm)                 # no blanket read of the disk
+            self.assertIn('":slash_tmp"="deny"', perm)
+            self.assertNotIn('":tmpdir"', perm)     # not readable anyway; a deny there makes the model refuse its own temp dir
+            self.assertIn(f'"{self.root}"="deny"', perm)      # the working directory itself
+            for sub in (".ssh", ".aws", ".config", ".codex", ".gnupg", "Library/Keychains"):
+                self.assertIn(f'"{home}/{sub}"="deny"', perm)
+            self.assertNotIn("write", perm)
+            self.assertIn('shell_environment_policy.set={GIT_CONFIG_GLOBAL="/dev/null"}', overrides)
             # --sandbox would switch Codex back to the legacy sandbox and drop the deny rule
             self.assertFalse({"-s", "--sandbox"} & set(argv), argv)
             self.assertNotIn("--dangerously-bypass-approvals-and-sandbox", argv)
+        for call in calls:
+            self.assertIn("--output-schema", call["argv"])
+            perm = [a for a in call["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
+            self.assertIn(f'"{Path(call["cwd"]).parent}"="read"', perm)   # its own temp dir only
+
+    def test_codex_install_dir_readable_but_never_over_a_deny(self):
+        # Codex re-executes its own binary inside the sandbox: its directory must be readable.
+        rc, out, err = self.run_review()
+        self.assertEqual(rc, 0, out + err)
+        perm = [a for a in self.calls()[0]["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
+        self.assertIn(f'"{self.stub.parent}"="read"', perm)
+        # A binary inside the repository under review does not turn the repository readable.
+        inside = self.root / "codex-stub"
+        inside.write_text(STUB)
+        inside.chmod(0o755)
+        self.log.unlink()
+        rc, out, err = self.run_review(DEV_CODEX_BIN=str(inside))
+        self.assertEqual(rc, 0, out + err)
+        perm = [a for a in self.calls()[0]["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
+        table = tomllib.loads("x = " + perm.split("=", 1)[1])["x"]
+        self.assertEqual(table[str(self.root)], "deny")
+
+    # Capability check: the deny rule must demonstrably work with this binary before any review
+    def test_deny_check_fails_closed(self):
+        for mode, reason in (("leak", "fallback: deny-rule-not-enforced"),
+                             ("refuse", "fallback: deny-check inconclusive"),
+                             ("fail", "fallback: deny-check failed (codex exit 1)")):
+            with self.subTest(mode):
+                rc, out, err = self.run_review(STUB_CHECK_MODE=mode)
+                self.assertEqual((rc, out.strip()), (3, reason), err)
+        rc, out, err = self.run_review(STUB_CHECK_MODE="sleep", DEV_CODEX_TIMEOUT_SEC="2")
+        self.assertEqual((rc, out.strip()), (3, "fallback: deny-check timeout after 2 s"), err)
+        self.assertEqual(self.calls(), [])          # no review ever ran
+        self.assert_clean()
+
+    def test_deny_check_cached_per_binary_version(self):
+        for _ in range(3):
+            rc, out, err = self.run_review()
+            self.assertEqual(rc, 0, out + err)
+        self.assertEqual((len(self.checks()), len(self.calls())), (1, 3))
+        check = self.checks()[0]
+        self.assertNotIn("--output-schema", check["argv"])
+        self.assertNotIn(".env", check["files"])      # the check probes from its own dir
+        self.assert_clean()
+
+    def test_finding_outside_checkout_is_fallback(self):
+        for path in ("/etc/passwd", "../other-repo/secret.py", str(self.root / "calc.py")):
+            with self.subTest(path):
+                bad = dict(VALID, findings=[dict(VALID["findings"][0], file=path)])
+                rc, out, err = self.run_review(answer=json.dumps(bad))
+                self.assertEqual(rc, 3, out + err)
+                self.assertTrue(out.startswith("fallback: finding outside checkout"), out)
+                self.assertFalse(self.out.exists())
+
+    def test_runs_from_linked_worktree(self):
+        linked = self.root.parent / "linked"
+        git(self.root, "worktree", "add", "-q", "--detach", str(linked), self.head)
+        (linked / ".env").write_text("SECRET=linked\n")
+        p = subprocess.run(self.args(), cwd=linked, capture_output=True, text=True, env=self.env(),
+                           timeout=60)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        call, = self.calls()
+        self.assertEqual(call["head"], self.head)
+        self.assertFalse(call["env_in_cwd"])
+        perm = [a for a in call["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
+        tomllib.loads("x = " + perm.split("=", 1)[1])
+        self.assertIn(f'"{linked}"="deny"', perm)
+        self.assertIn(f'"{self.root}"="deny"', perm)    # the shared repository too
 
     # Review Focus 1: exit 0 without having read anything is a fallback, not "no findings"
     def test_exit0_but_unverified_is_fallback(self):
         cases = {
             "timed out": dict(VALID, findings=[], checked="tool attempts timed out; nothing checked"),
+            "commands timed out": dict(VALID, findings=[], checked="all shell commands timed out"),
+            "timed out reading": dict(VALID, findings=[], checked="timed out reading calc.py"),
             "files_read": dict(VALID, findings=[], files_read=0),
             "blocked": dict(VALID, findings=[], blocked_reason="could not open the diff file"),
         }
@@ -198,6 +307,12 @@ class CodexReviewTests(unittest.TestCase):
         rc, out, err = self.run_review(mode="valid")
         self.assertEqual(rc, 0, out + err)
         self.assertEqual(len(self.calls()), 2)
+
+    def test_quota_words_in_tool_output_set_no_marker(self):
+        # Codex echoes tool output into its log; only its own ERROR line may set the marker.
+        rc, out, _ = self.run_review(mode="fail-ratelimit-text")
+        self.assertEqual((rc, out.strip()), (3, "fallback: codex exit 1"))
+        self.assertEqual(list(self.tmpdir.glob("dev-codex-*.off")), [])
 
     # Review Focus 3: parallel reviews use their own checkout and output file
     def test_parallel_calls_use_separate_checkouts(self):
@@ -244,6 +359,24 @@ class CodexReviewTests(unittest.TestCase):
         rc, out, err = self.run_review(answer=json.dumps(dict(VALID, findings=[])))
         self.assertEqual(rc, 0, out + err)
         self.assertIn("Result: no findings", self.out.read_text().splitlines())
+        for checked in ("probes: timeout handling, retries; lenses: logic, timeout",
+                        "could not run the test suite (no node_modules); read calc.py"):
+            with self.subTest(checked):
+                rc, out, err = self.run_review(answer=json.dumps(dict(VALID, checked=checked)))
+                self.assertEqual(rc, 0, out + err)
+
+    def test_absolute_path_inside_checkout_is_made_relative(self):
+        # The stub cannot know the checkout path in advance; codex-result.py is called directly.
+        result = self.root.parent / "answer.json"
+        checkout = self.root.parent / "checkout"
+        finding = dict(VALID["findings"][0], file=str(checkout / "calc.py"))
+        result.write_text(json.dumps(dict(VALID, findings=[finding])))
+        p = subprocess.run([sys.executable, str(DEV / "scripts" / "codex-result.py"), "check", "--schema",
+                            str(DEV / "schemas" / "review-findings.json"), "--result", str(result),
+                            "--role", "diff", "--checkout", str(checkout), "--out", str(self.out)],
+                           capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("| calc.py:2 |", self.out.read_text())
 
     def test_usage_errors_exit2(self):
         rc, _, _ = self.run_review(role="task")

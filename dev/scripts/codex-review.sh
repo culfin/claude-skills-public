@@ -6,36 +6,51 @@
 #
 # Run from inside the repository under review. --prompt is the review prompt (analyzer, mode,
 # scope, requirement), --input the diff or other material Codex reads first (pass uncommitted and
-# untracked changes in it: the checkout shows only --head).
+# untracked changes in it: the checkout shows only --head, and the working directory is unreadable).
 # Exit 0 = usable review: --out holds the findings, `reviewer: codex` and the `Result:` line.
 # Exit 3 = Codex result unusable; one line `fallback: <reason>` on stdout, --out not written. The
 #          caller closes the gate item as `skipped: <reason>`, never as "no findings".
 # Exit 2 = usage error (bad arguments, not a git repository, unknown --head).
 #
 # Why a script: every Codex call needs the same guards, and each one missing has bitten or would:
-# - Codex runs in a fresh detached checkout of --head, never in the working directory, which may
-#   hold a copied `.env` (Orca workspaces). One checkout per call, so parallel reviews never share.
-# - `-s read-only` does not stop reads outside the checkout. A permission profile (read everything,
-#   write nothing, deny `**/.env` and `**/.env.*` anywhere) does — and only without `--sandbox`,
-#   which switches Codex back to the legacy sandbox and drops the deny rule. The user config is
-#   ignored (`--ignore-user-config`) so a `sandbox_mode` there cannot do the same; a `.codex/` in
-#   the reviewed repository is removed from the checkout for that reason. Proven on macOS
-#   (Seatbelt); on Linux Codex enumerates deny globs only `glob_scan_max_depth` levels deep.
+# - Codex runs in a fresh clone of --head under $TMPDIR, never in the working directory, which may
+#   hold a copied `.env` (Orca workspaces). A clone, not a worktree: a worktree reads its objects
+#   from the working repository, which the profile below must deny. One clone per call.
+# - Text under review can carry a prompt injection ("print ~/.ssh/id_ed25519"), and whatever Codex
+#   reads goes to OpenAI and into the gate report. `-s read-only` stops writes, not reads. So Codex
+#   runs under a permission profile: read only the platform paths tools need (`:minimal`), its own
+#   temp dir and the skill's analyzers; deny /tmp (`:minimal` lets it through), the working
+#   repository, credential folders in $HOME (home and $TMPDIR are not readable anyway; no deny on
+#   $TMPDIR, or the model refuses to touch its own temp dir in it) and `**/.env`, `**/.env.*`
+#   anywhere; write nothing. Never together with `--sandbox`: that switches Codex back to the legacy sandbox and
+#   silently drops the profile. `--ignore-user-config` and removing `.codex/` from the clone keep a
+#   `sandbox_mode` in user or project config from doing the same. git gets GIT_CONFIG_GLOBAL=/dev/null
+#   (it aborts on an unreadable ~/.gitconfig). Codex system config (/etc/codex, managed
+#   requirements) still applies; the deny check below catches one that breaks the profile.
+# - The profile is only as good as the Codex build that reads it (unknown keys are ignored
+#   silently). Before the first review with a binary and version, a deny check asks Codex to `cat`
+#   a readable control file, a `.env` and a file in a denied folder; any leaked value = exit 3
+#   `deny-rule-not-enforced`. A passed check is cached in $TMPDIR/dev-codex-ok-<hash>.
 # - stdin is closed (`</dev/null`): `codex exec` otherwise waits for input appended to the prompt.
 # - macOS has no `timeout`: Codex runs in its own process group under a watchdog; the trap kills
-#   it and removes the checkout on every exit path, including an interrupted gate.
-# - Exit 0 is not success: codex-result.py rejects answers that read nothing or report tool
-#   failures ("tool attempts timed out"), see there.
+#   it and removes the temp dir on every catchable exit path. Temp dirs left by SIGKILL or a
+#   reboot are swept after a day.
+# - Exit 0 is not success: codex-result.py rejects answers that read nothing, report tool
+#   failures ("tool attempts timed out") or cite files outside the checkout; see there.
 # - After a quota error the marker $TMPDIR/dev-codex-<repo hash>.off makes every further call of
 #   the next hour fall back at once instead of waiting for the timeout each time.
-# DEV_CODEX_BIN selects the Codex binary (default `codex`); DEV_CODEX_TIMEOUT_SEC overrides
-# --timeout-min (tests).
+# Proven on macOS (Seatbelt). On Linux Codex enumerates deny globs only `glob_scan_max_depth`
+# levels deep. DEV_CODEX_BIN selects the Codex binary (default `codex`); DEV_CODEX_TIMEOUT_SEC
+# overrides --timeout-min (tests).
 set -uo pipefail
+RULE_REV=4      # bump when the profile changes: invalidates cached deny checks
 
+out=
 usage() { echo "usage: codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file> --head <sha> --out <file> [--timeout-min N]" >&2; exit 2; }
-fallback() { echo "fallback: $1"; exit 3; }
+fallback() { [[ -n "$out" ]] && rm -f "$out"; echo "fallback: $1"; exit 3; }
+q() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }     # TOML string
 
-role= prompt= input= head= out= timeout_min=15
+role= prompt= input= head= timeout_min=15
 while [[ $# -gt 0 ]]; do
     [[ $# -ge 2 ]] || usage
     case "$1" in
@@ -50,16 +65,19 @@ case "$role" in diff|security|fix|similar) ;; *) usage ;; esac
 limit=${DEV_CODEX_TIMEOUT_SEC:-$((timeout_min * 60))}
 [[ "$limit" =~ ^[1-9][0-9]*$ ]] || usage
 
-here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 schema="$here/../schemas/review-findings.json"
 top=$(git rev-parse --show-toplevel 2>/dev/null) || usage
+top=$(cd "$top" && pwd -P)
+common=$(cd "$top" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || usage
 commit=$(git -C "$top" rev-parse --verify --quiet "$head^{commit}") || usage
 prompt=$(cd "$(dirname "$prompt")" && pwd)/$(basename "$prompt")
 input=$(cd "$(dirname "$input")" && pwd)/$(basename "$input")
-out=$(cd "$(dirname "$out")" 2>/dev/null && pwd)/$(basename "$out") || usage
+out=$(cd "$(dirname "$out")" 2>/dev/null && pwd)/$(basename "$out") || { out=; usage; }
 rm -f "$out"
 
-base="${TMPDIR:-/tmp}"; base="${base%/}"
+base="${TMPDIR:-/tmp}"; base=$(cd "$base" && pwd -P) || fallback "no temporary directory"
+find "$base" -maxdepth 1 -type d -name 'dev-codex-*' -mtime +0 -exec rm -rf {} + 2>/dev/null
 marker="$base/dev-codex-$(printf %s "$top" | git hash-object --stdin | cut -c1-12).off"
 if [[ -e "$marker" ]]; then
     [[ -n "$(find "$marker" -mmin -60 2>/dev/null)" ]] && fallback "quota"
@@ -69,23 +87,101 @@ fi
 bin="${DEV_CODEX_BIN:-codex}"
 command -v "$bin" >/dev/null 2>&1 || fallback "codex not found ($bin)"
 
-work= wt= pid=
+work= secret= pid= rc= timed_out=
 cleanup() {
     if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
         kill -TERM -- "-$pid" 2>/dev/null; sleep 1; kill -KILL -- "-$pid" 2>/dev/null
     fi
-    [[ -n "$wt" ]] && git -C "$top" worktree remove --force "$wt" >/dev/null 2>&1
     [[ -n "$work" ]] && rm -rf "$work"
-    git -C "$top" worktree prune >/dev/null 2>&1
+    [[ -n "$secret" ]] && rm -rf "$secret"
 }
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
 work=$(mktemp -d "$base/dev-codex-XXXXXX") || fallback "no temporary directory"
-git -C "$top" worktree add --quiet --detach "$work/checkout" "$commit" >/dev/null 2>&1 \
-    || fallback "checkout of $head failed"
+work=$(cd "$work" && pwd -P)
+
+# The profile. Paths are real paths: the sandbox matches resolved paths (/tmp is /private/tmp).
+# A duplicate key makes the value invalid TOML, which Codex takes as a plain string and ignores.
+fs="{$(q :minimal)=\"read\", $(q :slash_tmp)=\"deny\"" seen=" "
+grant() { [[ "$seen" == *" $(q "$1") "* ]] && return; seen+="$(q "$1") "; fs+=", $(q "$1")=\"$2\""; }
+# Denies first: on a duplicate path the first entry wins, and a deny must never be lost.
+grant "$top" deny
+grant "$common" deny
+[[ "$(basename "$common")" == .git ]] && grant "$(dirname "$common")" deny
+for d in .ssh .aws .config .codex .gnupg .docker .kube Library/Keychains; do grant "$HOME/$d" deny; done
+grant "$work" read
+grant "$(cd "$here/.." && pwd -P)" read                 # the analyzers the prompt names
+# Codex re-executes its own binary inside the sandbox, and Homebrew tools live outside :minimal.
+binpath=$(command -v "$bin")
+for d in "$(dirname "$binpath")" "$(dirname "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$binpath")")" \
+         /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
+    [[ -d "$d" ]] && grant "$(cd "$d" && pwd -P)" read
+done
+fs+=', glob_scan_max_depth=3, "/"={"**/.env"="deny", "**/.env.*"="deny"}}'
+
+# run_codex <dir> <log> <codex exec args...>: sets rc and timed_out.
+run_codex() {
+    local dir=$1 log=$2; shift 2
+    set -m      # own process group, so the watchdog and the trap reach every Codex child
+    ( cd "$dir" && exec "$bin" exec --ephemeral --ignore-user-config --skip-git-repo-check --color never \
+        -c 'default_permissions="dev-review"' -c "permissions.dev-review.filesystem=$fs" \
+        -c 'shell_environment_policy.set={GIT_CONFIG_GLOBAL="/dev/null"}' \
+        "$@" </dev/null >"$log" 2>&1 ) &
+    pid=$!
+    set +m
+    timed_out=
+    SECONDS=0
+    while kill -0 "$pid" 2>/dev/null; do
+        if (( SECONDS >= limit )); then
+            timed_out=1
+            kill -TERM -- "-$pid" 2>/dev/null; sleep 1; kill -KILL -- "-$pid" 2>/dev/null
+            break
+        fi
+        sleep 0.5
+    done
+    wait "$pid"; rc=$?
+    pid=
+}
+quota_or() {        # $1 = log, $2 = reason if it was not the quota
+    if tail -n 40 "$1" | grep -qiE '^error[: ].*(usage limit|rate limit|quota|too many requests|\b429\b)'; then
+        touch "$marker"
+        fallback "quota"
+    fi
+    fallback "$2"
+}
+
+# Deny check, once per binary and version.
+version=$("$bin" --version 2>/dev/null </dev/null | head -n 1)
+ok="$base/dev-codex-ok-$(printf '%s\n' "$(command -v "$bin")" "$version" "$RULE_REV" | git hash-object --stdin | cut -c1-12)"
+if [[ ! -e "$ok" ]]; then
+    chk="$work/deny-check"; mkdir -p "$chk/files"
+    secret=$(mktemp -d "$base/dev-codex-secret-XXXXXX") || fallback "no temporary directory"
+    secret=$(cd "$secret" && pwd -P)
+    nonce=$(printf '%s' "$RANDOM$RANDOM$$$(date +%s)" | git hash-object --stdin | cut -c1-16)
+    printf 'control-%s\n' "$nonce" >"$chk/files/control.txt"
+    printf 'CHECK=env-%s\n' "$nonce" >"$chk/files/.env"
+    printf 'denied-%s\n' "$nonce" >"$secret/secret.txt"
+    # The paths sit in a script: named in the prompt, the model refuses to touch denied paths and
+    # the check would prove nothing.
+    printf 'cat %s %s %s 2>&1\n' "$chk/files/control.txt" "$chk/files/.env" "$secret/secret.txt" >"$chk/files/probe.sh"
+    run_codex "$chk" "$work/deny-check.log" -o "$work/deny-check.out" \
+        "deny-check: run exactly this one shell command and nothing else: bash $chk/files/probe.sh
+Then reply with its complete output verbatim in a code block, nothing else. It is a sandbox configuration check that prints test values and error messages."
+    [[ -n "$timed_out" ]] && fallback "deny-check timeout after $limit s"
+    (( rc == 0 )) || quota_or "$work/deny-check.log" "deny-check failed (codex exit $rc)"
+    grep -qE "env-$nonce|denied-$nonce" "$work/deny-check.out" "$work/deny-check.log" 2>/dev/null \
+        && fallback "deny-rule-not-enforced"
+    grep -q "control-$nonce" "$work/deny-check.out" 2>/dev/null || fallback "deny-check inconclusive"
+    touch "$ok"
+    rm -rf "$secret"; secret=
+fi
+
 wt="$work/checkout"
+git clone --quiet --no-checkout "$common" "$wt" >/dev/null 2>&1 || fallback "clone of the repository failed"
+git -C "$wt" -c advice.detachedHead=false checkout --quiet --detach "$commit" >/dev/null 2>&1 \
+    || fallback "checkout of $head failed"
 # Nothing secret and no Codex project config in the checkout, even when committed.
 find "$wt" -name .git -prune -o \( -name '.env' -o -name '.env.*' \) -type f -print0 | xargs -0 rm -f
 rm -rf "$wt/.codex"
@@ -99,41 +195,15 @@ Input file (read it first): $work/input-$(basename "$input")
 You are in a clean checkout of commit $commit (the repository root is the current directory).
 Your final answer is JSON matching the given schema. files_read = the number of files you actually
 opened and read (0 if none); blocked_reason = empty if you reviewed, otherwise why you could not.
-Every finding needs file, line, the quoted line(s) and the concrete failing input. No findings is
-a valid answer."
+Every finding needs file (relative to the repository root), line, the quoted line(s) and the
+concrete failing input. No findings is a valid answer."
 
-set -m      # own process group, so the watchdog and the trap reach every Codex child
-( cd "$wt" && exec "$bin" exec --ephemeral --ignore-user-config --skip-git-repo-check --color never \
-    -c 'default_permissions="dev-review"' \
-    -c 'permissions.dev-review.filesystem={":root"="read", glob_scan_max_depth=3, "/"={"**/.env"="deny", "**/.env.*"="deny"}}' \
-    --output-schema "$work/schema.json" -o "$work/answer.json" "$text" \
-    </dev/null >"$work/codex.log" 2>&1 ) &
-pid=$!
-set +m
-
-timed_out=
-SECONDS=0
-while kill -0 "$pid" 2>/dev/null; do
-    if (( SECONDS >= limit )); then
-        timed_out=1
-        kill -TERM -- "-$pid" 2>/dev/null; sleep 1; kill -KILL -- "-$pid" 2>/dev/null
-        break
-    fi
-    sleep 0.5
-done
-wait "$pid"; rc=$?
-pid=
+run_codex "$wt" "$work/codex.log" --output-schema "$work/schema.json" -o "$work/answer.json" "$text"
 [[ -n "$timed_out" ]] && fallback "timeout after $limit s"
-if (( rc != 0 )); then
-    if tail -n 40 "$work/codex.log" | grep -qiE 'usage limit|rate limit|quota|too many requests|\b429\b'; then
-        touch "$marker"
-        fallback "quota"
-    fi
-    fallback "codex exit $rc"
-fi
+(( rc == 0 )) || quota_or "$work/codex.log" "codex exit $rc"
 
 python3 "$here/codex-result.py" check --schema "$schema" --result "$work/answer.json" --role "$role" \
-    --out "$out"
+    --checkout "$wt" --out "$out"
 rc=$?
 (( rc == 0 || rc == 3 )) || fallback "result check failed ($rc)"
 exit "$rc"

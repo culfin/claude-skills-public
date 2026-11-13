@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Checks the final answer of a Codex review and writes it as an analyzer report. Writes only --out.
 
-    codex-result.py check --schema <file> --result <file> --role <role> --out <file>
+    codex-result.py check --schema <file> --result <file> --role <role> --out <file> [--checkout <dir>]
     codex-result.py model-schema --schema <file>
 
 `check`: exit 0 = the answer is a usable review; --out then holds the findings table, a
 `reviewer: codex` line and the `Result:` line of analyzers/CONTRACT.md. Exit 3 = unusable; one line
 `fallback: <reason>` on stdout and --out is not written. Exit 2 = usage error.
+Every finding must name a file inside the reviewed checkout (relative, or absolute under
+--checkout, which is then made relative). A finding outside it makes the whole answer unusable
+(exit 3), not just that row: Codex then read beyond the review scope — the sign of a prompt
+injection in the reviewed text — and its other findings cannot be trusted either; dropping the row
+silently would also hide the attempt from the gate.
 `model-schema`: prints the schema for Codex's --output-schema without `minimum`/`minLength`, so the
 model can still answer `files_read: 0` honestly instead of being forced into a made-up number; the
 bounds are checked here.
@@ -19,15 +24,19 @@ blocking reason and carries evidence (file, line, quote, failing input) for ever
 """
 import argparse
 import json
+import os
 import re
 import sys
 
 TITLES = {"diff": "Diff review", "security": "Security review", "fix": "Fix review",
           "similar": "Similar bugs"}
-# Phrases in the model's own summary that mean it did not get to look at the code.
-UNVERIFIED = re.compile(r"timed? ?out|could(?: not|n't) (?:read|open|access|run)|unable to (?:read|open|access|run)"
-                        r"|not able to (?:read|open|access)|nothing (?:was )?(?:read|checked)|no files? (?:were |was )?read"
-                        r"|tool (?:attempts?|calls?) failed|sandbox (?:denied|blocked)", re.I)
+# Phrases in the model's own summary that mean it did not get to look at the code. Kept narrow:
+# "timeout handling" or "could not run the tests" are normal parts of a review.
+UNVERIFIED = re.compile(
+    r"\b(?:tools?|commands?|calls?|attempts?|reads?|shell)(?: \w+){0,2} (?:timed out|failed)"
+    r"|\btimed out (?:while |when )?(?:reading|running|opening|executing|calling)"
+    r"|could(?: not|n't) (?:read|open|access)|unable to (?:read|open|access)|not able to (?:read|open|access)"
+    r"|nothing (?:was )?(?:read|checked)|no files? (?:were |was )?read|sandbox (?:denied|blocked)", re.I)
 
 
 def errors(value, schema, path="$"):
@@ -71,6 +80,22 @@ def cell(text):
     return " ".join(str(text).split()).replace("|", "\\|")
 
 
+def inside(path, checkout):
+    """The finding's path relative to the checkout, or None if it points outside."""
+    if os.path.isabs(path):
+        if not checkout:
+            return None
+        real_root = os.path.realpath(checkout)
+        for root in {os.path.normpath(checkout), real_root}:
+            if path == root or path.startswith(root + os.sep):
+                path = os.path.relpath(path, root)
+                break
+        else:
+            return None
+    path = os.path.normpath(path)
+    return None if path == ".." or path.startswith(".." + os.sep) else path
+
+
 def report(answer, role):
     findings = answer["findings"]
     crit = sum(f["severity"] == "critical" for f in findings)
@@ -111,8 +136,14 @@ def check(args):
     problems = errors(answer, schema)
     if problems:
         return "answer does not match schema: " + "; ".join(problems[:3])
+    for f in answer["findings"]:
+        rel = inside(f["file"], args.checkout)
+        if rel is None:
+            return "finding outside checkout: " + cell(f["file"])[:120]
+        f["file"] = rel
+    text = report(answer, args.role)
     with open(args.out, "w", encoding="utf-8") as fh:
-        fh.write(report(answer, args.role))
+        fh.write(text)
     return None
 
 
@@ -124,6 +155,7 @@ def main():
     c.add_argument("--result", required=True)
     c.add_argument("--role", required=True, choices=sorted(TITLES))
     c.add_argument("--out", required=True)
+    c.add_argument("--checkout", help="the reviewed checkout; absolute finding paths must lie inside it")
     m = sub.add_parser("model-schema")
     m.add_argument("--schema", required=True)
     args = p.parse_args()
