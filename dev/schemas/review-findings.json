@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dev gate review by Codex",
+  "description": "Final answer of one /dev gate review run through scripts/codex-review.sh. Every finding carries its evidence; files_read and blocked_reason tell whether the review could look at the code at all.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["checked", "files_read", "blocked_reason", "findings"],
+  "properties": {
+    "checked": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Checked: line of the analyzer contract: probes run, candidates found and confirmed, lenses covered."
+    },
+    "files_read": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of files you actually opened and read (the input file and repository files). 0 if you could not read anything; never estimate."
+    },
+    "blocked_reason": {
+      "type": "string",
+      "description": "Empty if the review was carried out. Otherwise why you could not review (tool failures, timeouts, unreadable files)."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "line", "quote", "failing_input", "finding", "fix"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["critical", "note"]},
+          "file": {"type": "string", "minLength": 1, "description": "Path relative to the repository root."},
+          "line": {"type": "integer", "minimum": 1},
+          "quote": {"type": "string", "minLength": 1, "description": "The quoted line(s) from the file."},
+          "failing_input": {"type": "string", "minLength": 1, "description": "The concrete input or sequence that makes it fail."},
+          "finding": {"type": "string", "minLength": 1, "description": "One sentence."},
+          "fix": {"type": "string", "minLength": 1, "description": "One sentence."}
+        }
+      }
+    }
+  }
+}
