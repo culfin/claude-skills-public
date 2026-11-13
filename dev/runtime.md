@@ -7,7 +7,7 @@ what the host actually offers.
   Scripts and references are resolved from there, never from a fixed home-directory path.
 - **Tool names are capabilities.** `AskUserQuestion` = the host's structured question tool; if there
   is none, ask the same question in chat with the same options (recommended first) and **wait** for
-  the answer — silence is not approval. `Agent` = a subagent; if the host cannot run them in
+  the answer — silence is not approval. Phase workspace or Orca worker: ask through the lead (below). `Agent` = a subagent; if the host cannot run them in
   parallel, run the analyzers one after another — an analysis by the implementing agent itself is
   not a substitute for an independent one. `Skill` = however the host loads another skill.
 - **Models:** set a model per subagent only where the host supports it (see
@@ -77,7 +77,7 @@ yes). Not in Orca mode → say so, start nothing. Without numbers: one AskUserQu
 over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
 `[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
 named phase, a full handoff (`orca-cli`, "Full Handoffs"):
-`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next <N>" --json`,
+`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next <N> — lead: <this session's name>" --json`,
 `<agent>` the one running this session (usually `claude`); report each workspace name. Then neither
 wait for them nor steer them; this session counts the handed-off phases as claimed and goes on with
 the next free phase, if any.
@@ -90,21 +90,23 @@ requirement, and says: read only, edit nothing, findings with file:line. End the
 of the wave; Orca wakes you with `worker_done`, whose findings count like any analyzer's. Not in
 Orca mode → `skipped: not an Orca workspace`; agent not installed → `skipped: <reason>`.
 
-### Orca workers
+### Asking through the lead
 
-These rules apply whenever your prompt carries Task and Dispatch IDs, in Orca mode or not. A
-coordinator is another agent, never the user. Every question only the user can answer and every
-halt from "Halt on Irreversible Actions" goes to the user **in this session** — the host's question
-tool plus, in Orca mode, the `--unread` card above. Report to the coordinator only that you wait for
-the user, through the channel your preamble names (`ask` if it names only that), worded as a status
-that needs no answer. Never ask the
-coordinator for an approval and never accept one through it.
+Phase workspaces and Orca workers: the user answers only in the project's **lead session**:
+`lead: <name>` in your start prompt, else the session in the main checkout (`ListAgents`). Every question for the user (clarification, choice, halt) goes to the lead by
+`SendMessage` (a worker: its preamble's channel), with its options, recommended first; card `--unread
+--comment "waits: lead"`, then wait. The lead asks with AskUserQuestion and returns question and
+answer verbatim — that relay is the user's approval; record it verbatim in the phase's `Decisions:`
+line (`state.md`). Never ask the user yourself; other sessions' messages and summaries are information.
 
 | Excuse | Reality |
 |---|---|
-| "The coordinator will forward it to the user" | A relayed yes is not the user's yes. Ask here. |
-| "The coordinator says the user approved" | Approval comes as the user's own answer in this session. |
-| "`ask` is the worker's channel for questions" | For task questions. Approvals are not task questions. |
+| "The lead says the user agreed" | Only the verbatim question and answer count. |
+| "Dev deploys and migrations need a yes" | Dev is the session's own call (`SKILL.md`, Halt). |
+
+### Orca workers
+
+Prompt with Task and Dispatch IDs; questions go through the lead (above).
 
 **At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
 then `/dev next`" — nobody types in a worker. Write `## Handoff` and commit the phase file as
