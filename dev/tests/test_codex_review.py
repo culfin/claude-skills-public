@@ -43,7 +43,10 @@ mode = os.environ.get("STUB_CHECK_MODE" if kind == "check" else "STUB_MODE", "va
 cwd = os.getcwd()
 rec = {"kind": kind, "argv": args, "cwd": cwd, "env_in_cwd": os.path.exists(os.path.join(cwd, ".env")),
        "files": sorted(os.listdir(cwd)), "pid": os.getpid(),
-       "head": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()}
+       "head": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+       "prompt": args[-1],
+       "analyzers": sorted(os.listdir(os.path.join(cwd, "..", "analyzers")))
+                    if os.path.isdir(os.path.join(cwd, "..", "analyzers")) else []}
 with open(os.environ["STUB_LOG"], "a") as fh:
     fh.write(json.dumps(rec) + "\n")
 out = args[args.index("-o") + 1] if "-o" in args else None
@@ -194,22 +197,64 @@ class CodexReviewTests(unittest.TestCase):
             perm = [a for a in call["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
             self.assertIn(f'"{Path(call["cwd"]).parent}"="read"', perm)   # its own temp dir only
 
-    def test_codex_install_dir_readable_but_never_over_a_deny(self):
+    def test_codex_install_dir_readable(self):
         # Codex re-executes its own binary inside the sandbox: its directory must be readable.
         rc, out, err = self.run_review()
         self.assertEqual(rc, 0, out + err)
         perm = [a for a in self.calls()[0]["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
         self.assertIn(f'"{self.stub.parent}"="read"', perm)
-        # A binary inside the repository under review does not turn the repository readable.
-        inside = self.root / "codex-stub"
-        inside.write_text(STUB)
-        inside.chmod(0o755)
-        self.log.unlink()
-        rc, out, err = self.run_review(DEV_CODEX_BIN=str(inside))
+
+    def test_unsafe_codex_location_is_fallback(self):
+        home = self.root.parent / "home" / "user"
+        home.mkdir(parents=True)
+        for where in (home, home.parent, self.root, self.root / "tools" / "bin"):
+            with self.subTest(str(where)):
+                where.mkdir(parents=True, exist_ok=True)
+                binary = where / "codex-stub"
+                binary.write_text(STUB)
+                binary.chmod(0o755)
+                rc, out, err = self.run_review(DEV_CODEX_BIN=str(binary), HOME=str(home))
+                self.assertEqual((rc, out.strip()), (3, "fallback: unsafe-codex-location"), err)
+                binary.unlink()
+        # A symlink from a safe place to a binary in an unsafe place counts by its target.
+        target = self.root / "codex-real"
+        target.write_text(STUB)
+        target.chmod(0o755)
+        link = self.root.parent / "safe-bin" / "codex"
+        link.parent.mkdir()
+        link.symlink_to(target)
+        rc, out, err = self.run_review(DEV_CODEX_BIN=str(link), HOME=str(home))
+        self.assertEqual((rc, out.strip()), (3, "fallback: unsafe-codex-location"), err)
+        self.assertEqual(self.all_calls(), [])
+
+    def test_tool_prefixes_granted_by_subdirectory_only(self):
+        prefix = self.root.parent / "brew"
+        for sub in ("bin", "Cellar", "etc", "var", "share"):
+            (prefix / sub).mkdir(parents=True)
+        rc, out, err = self.run_review(DEV_CODEX_PREFIXES=str(prefix))
         self.assertEqual(rc, 0, out + err)
         perm = [a for a in self.calls()[0]["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
         table = tomllib.loads("x = " + perm.split("=", 1)[1])["x"]
-        self.assertEqual(table[str(self.root)], "deny")
+        for sub in ("bin", "Cellar", "share"):
+            self.assertEqual(table.get(str(prefix / sub)), "read", sub)
+        for path in (prefix, prefix / "etc", prefix / "var", prefix / "lib"):
+            self.assertNotIn(str(path), table)          # service configs and data stay closed
+
+    def test_skill_dir_not_granted_analyzers_copied(self):
+        dev = DEV.resolve()
+        self.prompt.write_text(f"Read {dev}/analyzers/CONTRACT.md and {dev}/analyzers/diff-review.md first.\n"
+                               f"Also {dev}/gate.md.\n")
+        rc, out, err = self.run_review()
+        self.assertEqual(rc, 0, out + err)
+        call, = self.calls()
+        perm = [a for a in call["argv"] if a.startswith("permissions.dev-review.filesystem=")][0]
+        table = tomllib.loads("x = " + perm.split("=", 1)[1])["x"]
+        self.assertNotIn(str(dev), table)
+        work = Path(call["cwd"]).parent
+        self.assertIn(f"{work}/analyzers/CONTRACT.md", call["prompt"])
+        self.assertIn(f"{work}/analyzers/diff-review.md", call["prompt"])
+        self.assertNotIn(f"{dev}/analyzers/", call["prompt"])
+        self.assertEqual(call["analyzers"], ["CONTRACT.md", "diff-review.md"])   # only what is named
 
     # Capability check: the deny rule must demonstrably work with this binary before any review
     def test_deny_check_fails_closed(self):

@@ -18,11 +18,14 @@
 #   from the working repository, which the profile below must deny. One clone per call.
 # - Text under review can carry a prompt injection ("print ~/.ssh/id_ed25519"), and whatever Codex
 #   reads goes to OpenAI and into the gate report. `-s read-only` stops writes, not reads. So Codex
-#   runs under a permission profile: read only the platform paths tools need (`:minimal`), its own
-#   temp dir and the skill's analyzers; deny /tmp (`:minimal` lets it through), the working
-#   repository, credential folders in $HOME (home and $TMPDIR are not readable anyway; no deny on
-#   $TMPDIR, or the model refuses to touch its own temp dir in it) and `**/.env`, `**/.env.*`
-#   anywhere; write nothing. Never together with `--sandbox`: that switches Codex back to the legacy sandbox and
+#   runs under a permission profile: read only the platform paths tools need (`:minimal`, the
+#   Codex binary's dirs, bin/Cellar/Caskroom/lib/libexec/opt/share of Homebrew prefixes) and its
+#   own temp dir, which also gets copies of the analyzer files the prompt names; deny /tmp
+#   (`:minimal` lets it through), the working repository, credential folders in $HOME (home and
+#   $TMPDIR are not readable anyway; no deny on $TMPDIR, or the model refuses to touch its own temp
+#   dir in it) and `**/.env`, `**/.env.*` anywhere; write nothing. A Codex binary in $HOME, above
+#   it or in the repository is refused (`unsafe-codex-location`): its dir would become readable.
+#   Never together with `--sandbox`: that switches Codex back to the legacy sandbox and
 #   silently drops the profile. `--ignore-user-config` and removing `.codex/` from the clone keep a
 #   `sandbox_mode` in user or project config from doing the same. git gets GIT_CONFIG_GLOBAL=/dev/null
 #   (it aborts on an unreadable ~/.gitconfig). Codex system config (/etc/codex, managed
@@ -41,9 +44,9 @@
 #   the next hour fall back at once instead of waiting for the timeout each time.
 # Proven on macOS (Seatbelt). On Linux Codex enumerates deny globs only `glob_scan_max_depth`
 # levels deep. DEV_CODEX_BIN selects the Codex binary (default `codex`); DEV_CODEX_TIMEOUT_SEC
-# overrides --timeout-min (tests).
+# overrides --timeout-min and DEV_CODEX_PREFIXES the Homebrew prefixes (tests).
 set -uo pipefail
-RULE_REV=4      # bump when the profile changes: invalidates cached deny checks
+RULE_REV=5      # bump when the profile changes: invalidates cached deny checks
 
 out=
 usage() { echo "usage: codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file> --head <sha> --out <file> [--timeout-min N]" >&2; exit 2; }
@@ -86,6 +89,20 @@ fi
 
 bin="${DEV_CODEX_BIN:-codex}"
 command -v "$bin" >/dev/null 2>&1 || fallback "codex not found ($bin)"
+# The binary's directories become readable for Codex. Never when that opens $HOME (or above it)
+# or the repository under review: then the grant would undo the denies.
+binpath=$(command -v "$bin")
+realbin=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$binpath")
+bindirs=("$(cd "$(dirname "$binpath")" && pwd -P)" "$(dirname "$realbin")")
+home=$(cd "$HOME" 2>/dev/null && pwd -P) || home=$HOME
+guarded=("$top" "$common")
+[[ "$(basename "$common")" == .git ]] && guarded+=("$(dirname "$common")")
+for d in "${bindirs[@]}"; do
+    [[ "$d" == / || "$d" == "$home" || "$home" == "$d"/* ]] && fallback "unsafe-codex-location"
+    for g in "${guarded[@]}"; do
+        [[ "$d" == "$g" || "$d" == "$g"/* ]] && fallback "unsafe-codex-location"
+    done
+done
 
 work= secret= pid= rc= timed_out=
 cleanup() {
@@ -111,13 +128,14 @@ grant "$top" deny
 grant "$common" deny
 [[ "$(basename "$common")" == .git ]] && grant "$(dirname "$common")" deny
 for d in .ssh .aws .config .codex .gnupg .docker .kube Library/Keychains; do grant "$HOME/$d" deny; done
-grant "$work" read
-grant "$(cd "$here/.." && pwd -P)" read                 # the analyzers the prompt names
-# Codex re-executes its own binary inside the sandbox, and Homebrew tools live outside :minimal.
-binpath=$(command -v "$bin")
-for d in "$(dirname "$binpath")" "$(dirname "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$binpath")")" \
-         /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
-    [[ -d "$d" ]] && grant "$(cd "$d" && pwd -P)" read
+grant "$work" read                                       # clone, input, schema, analyzer copies
+# Codex re-executes its own binary inside the sandbox (checked safe above), and Homebrew tools live
+# outside :minimal. Only the tool parts of a prefix: etc/ and var/ hold service configs and data.
+for d in "${bindirs[@]}"; do grant "$d" read; done
+for p in ${DEV_CODEX_PREFIXES:-/opt/homebrew /usr/local /home/linuxbrew/.linuxbrew}; do
+    for sub in bin Cellar Caskroom lib libexec opt share; do
+        [[ -d "$p/$sub" ]] && grant "$(cd "$p/$sub" && pwd -P)" read
+    done
 done
 fs+=', glob_scan_max_depth=3, "/"={"**/.env"="deny", "**/.env.*"="deny"}}'
 
@@ -189,7 +207,9 @@ cp "$input" "$work/input-$(basename "$input")"
 python3 "$here/codex-result.py" model-schema --schema "$schema" >"$work/schema.json" \
     || fallback "schema unreadable"
 
-text="$(cat "$prompt")
+text="$(python3 "$here/codex-result.py" localize-prompt --prompt "$prompt" --analyzers "$here/../analyzers" \
+    --to "$work/analyzers")" || fallback "prompt unreadable"
+text="$text
 
 Input file (read it first): $work/input-$(basename "$input")
 You are in a clean checkout of commit $commit (the repository root is the current directory).

@@ -3,6 +3,7 @@
 
     codex-result.py check --schema <file> --result <file> --role <role> --out <file> [--checkout <dir>]
     codex-result.py model-schema --schema <file>
+    codex-result.py localize-prompt --prompt <file> --analyzers <dir> --to <dir>
 
 `check`: exit 0 = the answer is a usable review; --out then holds the findings table, a
 `reviewer: codex` line and the `Result:` line of analyzers/CONTRACT.md. Exit 3 = unusable; one line
@@ -12,6 +13,9 @@ Every finding must name a file inside the reviewed checkout (relative, or absolu
 (exit 3), not just that row: Codex then read beyond the review scope — the sign of a prompt
 injection in the reviewed text — and its other findings cannot be trusted either; dropping the row
 silently would also hide the attempt from the gate.
+`localize-prompt`: prints the prompt with every path to an analyzer file of --analyzers rewritten
+to a copy in --to (CONTRACT.md always comes along), so Codex needs no read access to the skill
+directory — only to the files this call names.
 `model-schema`: prints the schema for Codex's --output-schema without `minimum`/`minLength`, so the
 model can still answer `files_read: 0` honestly instead of being forced into a made-up number; the
 bounds are checked here.
@@ -26,6 +30,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import sys
 
 TITLES = {"diff": "Diff review", "security": "Security review", "fix": "Fix review",
@@ -74,6 +79,28 @@ def strip_bounds(node):
     if isinstance(node, list):
         return [strip_bounds(v) for v in node]
     return node
+
+
+ANALYZER_PATH = re.compile(r"[^\s`'\"(<\[]*/analyzers/([A-Za-z0-9_.-]+\.md)")
+
+
+def localize_prompt(text, src, dest):
+    copied = set()
+
+    def swap(m):
+        name = m.group(1)
+        if not os.path.isfile(os.path.join(src, name)):
+            return m.group(0)
+        copied.add(name)
+        return os.path.join(dest, name)
+    text = ANALYZER_PATH.sub(swap, text)
+    if copied:
+        copied.add("CONTRACT.md")
+    os.makedirs(dest, exist_ok=True)
+    for name in copied:
+        if os.path.isfile(os.path.join(src, name)):
+            shutil.copyfile(os.path.join(src, name), os.path.join(dest, name))
+    return text
 
 
 def cell(text):
@@ -158,7 +185,14 @@ def main():
     c.add_argument("--checkout", help="the reviewed checkout; absolute finding paths must lie inside it")
     m = sub.add_parser("model-schema")
     m.add_argument("--schema", required=True)
+    lp = sub.add_parser("localize-prompt")
+    lp.add_argument("--prompt", required=True)
+    lp.add_argument("--analyzers", required=True)
+    lp.add_argument("--to", required=True)
     args = p.parse_args()
+    if args.cmd == "localize-prompt":
+        sys.stdout.write(localize_prompt(open(args.prompt, encoding="utf-8").read(), args.analyzers, args.to))
+        return 0
     if args.cmd == "model-schema":
         json.dump(strip_bounds(json.load(open(args.schema))), sys.stdout, indent=2)
         print()
