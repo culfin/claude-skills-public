@@ -32,7 +32,8 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
                      "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
-                     "Second opinion: <agent>"):
+                     "Second opinion: codex diff", "Second opinion: codex security",
+                     "Second opinion: codex fix", "Second opinion: codex similar"):
             self.assertIn(f"- [ ] {name}", g)
         for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check"):
             self.assertNotIn(old, g)
@@ -377,7 +378,7 @@ class DevDocsTests(unittest.TestCase):
         for needle in ("`/dev next <N>`", "Claimed by another branch", "Builds on a phase not yet `[x]`",
                        "The run ends after Phase N"):
             self.assertIn(needle, pick)
-        par = text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0]
+        par = text("runtime.md").split("**Parallel phase**", 1)[1].split("### Asking through the lead", 1)[0]
         for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug>",
                        '--prompt "/dev next <N> — lead: <this session\'s name>"', "counts the handed-off phases as claimed"):
             self.assertIn(needle, par)
@@ -393,6 +394,30 @@ class DevDocsTests(unittest.TestCase):
                        "git switch -c phase-<N>-<slug> origin/<main>"):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
+
+    def test_codex_second_opinion_runs_beside_claude(self):
+        # v4.7.0 RED: with only an Orca-worker second opinion the agent ignored a Codex request and
+        # never called Codex. Codex adds to the Claude items, never replaces them; works outside Orca.
+        gate = " ".join(text("gate.md").split())
+        codex = gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0]
+        for needle in ("`defaults.second-opinion: codex`", "in or outside Orca",
+                       "Diff review, Security review, Fix review or Similar-bugs scan",
+                       "(role `diff`, `security`, `fix`, `similar`)", "in the same message in the background",
+                       'bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> '
+                       "--head <HEAD sha> --out <file>",
+                       "`--prompt`: the Claude item's prompt", "plus untracked files the prompt names",
+                       "Exit 0 → the findings in `--out` count like any analyzer's",
+                       "`Result:` line, `codex`, `@…`", "Exit 3 → `skipped: <fallback reason>`",
+                       "The Claude item runs regardless."):
+            self.assertIn(needle, codex)
+        self.assertIn("and Second opinion items when `codex-review.sh` exits 3", gate)
+        self.assertIn("Similar-bugs scan, Fix review and their Second opinion items are always rerun", gate)
+        self.assertIn("| Second opinion (gate, `codex-review.sh`) | Codex's default |", text("models.md"))
+        r = text("runtime.md")
+        self.assertNotIn("Second opinion", r)
+        self.assertNotIn("second opinion", r)
+        self.assertNotIn("Orca worker", gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0])
+        self.assertTrue((DEV / "scripts" / "codex-review.sh").exists())
 
     def test_main_session_never_reads_the_analyzer_contract(self):
         # v4.5.0: the contract is for the analyzer subagents; the dispatcher's part lives in gate.md.

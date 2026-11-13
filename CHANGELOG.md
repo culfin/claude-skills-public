@@ -2,6 +2,30 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.7.0 — 2026-11-13
+
+**dev** — `defaults.second-opinion: codex` runs selected gate reviews additionally through Codex, in or
+outside Orca; Codex never replaces a Claude review.
+
+The second opinion used to be an Orca worker of another agent (`runtime.md`). Tested with the old text
+and a ROADMAP asking for Codex as reviewer: the agent ignored the key ("/dev does not know this key …
+a second opinion needs `defaults.second-opinion` and runs as an Orca worker"), ran every Step A item
+through Claude subagents and never called Codex. A direct Codex call also needs guards the old text
+did not give (clean checkout without `.env`, closed stdin, read-only profile, answers that read nothing
+treated as failure); `scripts/codex-review.sh` carries them.
+
+- `gate.md`: new paragraph "Codex". With the key, every run of Diff review, Security review, Fix review
+  and Similar-bugs scan gets a checklist item `Second opinion: codex <role>` (`diff`, `security`, `fix`,
+  `similar`), started in the same message as its Claude item, in the background, with the same prompt
+  and diff. Exit 0 → its findings count like any analyzer's, the evidence names `codex`; exit 3 → the
+  item is `skipped: <fallback reason>`, never "no findings". The Claude item runs regardless. The
+  `fix` and `similar` items are rerun on the final state like their Claude items.
+- `runtime.md`: the Orca-worker second opinion is gone; `defaults.second-opinion` takes only `codex`.
+- `models.md`: Codex runs with its own default model. To keep the hot path within its budget, the
+  `models.md` lead-in is shorter and the list of former skill names in `defaults.phase-types` moved
+  from `gate.md` to `tech-stack-triggers.md`, next to the key it explains.
+- Tests: the four checklist items, the Codex recipe and the removed Orca wording are pinned.
+
 ## v4.6.0 — 2026-11-13
 
 **dev** — the user answers only in the project's lead session; dev deploys and dev-database migrations

@@ -204,13 +204,13 @@ class EvidenceTests(unittest.TestCase):
                     "- [x] Design detector — skipped: engine not built",
                     f"- [x] Motion review — skipped: animation standards not found @{i}",
                     "- [x] Tech-Stack Review: shadcn — skipped: skill not installed",
-                    "- [x] Second opinion: codex — skipped: not in Orca mode"])
+                    "- [x] Second opinion: codex diff — skipped: quota-exhausted"])
         self.assertEqual(self.run_check(), [])
         self.assertEqual(ce.skipped(self.root / "STATE.md"),
                          [("Design detector", "engine not built"),
                           ("Motion review", "animation standards not found"),
                           ("Tech-Stack Review: shadcn", "skill not installed"),
-                          ("Second opinion: codex", "not in Orca mode")])
+                          ("Second opinion: codex diff", "quota-exhausted")])
 
     def test_skipped_item_survives_a_later_code_change(self):
         self.state(["- [x] Design detector — skipped: engine not built"])

@@ -82,7 +82,7 @@ ops and dependency row reads the tier script's reasons, not a path list here.
 
 **Analyzers:** each analysis is a subagent with its file from `analyzers/` (dispatch: `gate.md`,
 "Analyzer dispatch"), for every stack, with short notes per language. Extra stack-specific
-analyses go into `defaults.phase-types` in ROADMAP.md; `/dev` depends on none.
+analyses go into `defaults.phase-types` in ROADMAP.md; `/dev` depends on none. Former skill names in those lists (`bug-prospector`, `security-audit`, `performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, `ui-scan`) mean the matching analyzer.
 
 **Rules:**
 - Tech-Stack Reviews and Security Review are **read-only** — they flag, never fix.
