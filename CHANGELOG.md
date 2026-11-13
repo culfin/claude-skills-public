@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.9.0 — 2026-11-13
+
+**dev** — After a three-phase Codex pilot, Codex runs as Second opinion only for Diff review, Fix review and
+Similar-bugs scan; the security role found nothing in three runs and is dropped from the gate. A critical
+finding only Codex raised stays critical only if it breaks a criterion's wording, crashes or loses data;
+otherwise it is a note, with no question and no fix round. In the pilot, Codex-only findings outside the
+criteria drove a phase from two to seven fix rounds, and a fix for one of them broke intended behaviour.
+Baseline: two of three agents asked the user about such a finding instead of deciding. `codex-review.sh`
+takes `DEV_CODEX_EFFORT` to measure whether more reasoning effort finds what Codex missed.
+
 ## v4.8.1 — 2026-11-13
 
 **dev** — `codex-review.sh` prints `tokens used: <n>` on stderr after each Codex run, also on exit 3.

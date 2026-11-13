@@ -70,7 +70,6 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 - [ ] Taste pre-flight
 - [ ] UX review                    <!-- `ux-ui-design` available -->
 - [ ] Second opinion: codex diff      <!-- "Codex" -->
-- [ ] Second opinion: codex security
 <!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
@@ -99,8 +98,8 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   `- [x] Design detector — skipped: engine not built`. Such an item does not block the phase, never
   counts as "no findings", and is listed under "Skipped checks" in the gate summary.
 - **Evidence belongs to one state of the code.** After a fix, the review items (Step A) stay valid
-  as long as a checked `Fix review` carries the current state — that review covered exactly the
-  change since. Typecheck + lint + tests, Production Build, E2E Tests, Similar-bugs scan, Fix
+  as long as a checked `Fix review` carries the current state.
+  Typecheck + lint + tests, Production Build, E2E Tests, Similar-bugs scan, Fix
   review and their Second opinion items are always rerun on the final state. If the scope or the acceptance criteria
   change, rerun the affected reviews: they answered a different question.
 - **A command whose output was not read has not run.** A pipe (`| tail`, `2>/dev/null`) can
@@ -136,13 +135,14 @@ finding without file:line, quoted line and failing input is an open question, no
 checker and Second opinion too.
 
 **Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, in or outside Orca, each run
-of Diff review, Security review, Fix review or Similar-bugs scan gets its Second opinion item (role
-`diff`, `security`, `fix`, `similar`), run in the same message in the background:
+of Diff review, Fix review or Similar-bugs scan gets its Second opinion item (role `diff`, `fix`,
+`similar`), run in the background:
 `bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
 `--prompt`: the Claude item's prompt; `--input`: its diff file (Similar-bugs: the fix list) plus
-untracked files the prompt names. Exit 0 → the findings in `--out` count like any analyzer's;
-evidence: its `Result:` line, `codex`, `@…`. Exit 3 → `skipped: <fallback reason>`. The Claude
-item runs regardless.
+untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
+only Codex raised is critical only if it breaks a criterion's wording, crashes or loses data; else
+a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`.
+Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers

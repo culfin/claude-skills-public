@@ -411,6 +411,16 @@ class CodexReviewTests(unittest.TestCase):
                 rc, out, err = self.run_review(answer=json.dumps(dict(VALID, checked=checked)))
                 self.assertEqual(rc, 0, out + err)
 
+    def test_reasoning_effort_only_when_set(self):
+        rc, out, err = self.run_review()
+        self.assertEqual(rc, 0, out + err)
+        self.assertFalse(any("model_reasoning_effort" in a for a in self.calls()[-1]["argv"]))
+        rc, out, err = self.run_review(DEV_CODEX_EFFORT="medium")
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn('model_reasoning_effort="medium"', self.calls()[-1]["argv"])
+        rc, out, err = self.run_review(DEV_CODEX_EFFORT="medium; rm -rf /")
+        self.assertEqual(rc, 2, out + err)
+
     def test_tokens_used_reported_on_stderr(self):
         rc, out, err = self.run_review()
         self.assertEqual(rc, 0, out + err)
