@@ -20,11 +20,17 @@ treated as failure); `scripts/codex-review.sh` carries them.
   and diff. Exit 0 → its findings count like any analyzer's, the evidence names `codex`; exit 3 → the
   item is `skipped: <fallback reason>`, never "no findings". The Claude item runs regardless. The
   `fix` and `similar` items are rerun on the final state like their Claude items.
-- `runtime.md`: the Orca-worker second opinion is gone; `defaults.second-opinion` takes only `codex`.
+- `runtime.md`: the Orca-worker second opinion is gone. `gate.md` names only the value `codex`;
+  another value adds no item.
+- `codex-review.sh` takes `--input` more than once (diff plus an untracked spec): a repeated flag
+  used to replace the earlier file, so Codex could review the spec without the diff and still pass.
+- `check-evidence.py`: `Second opinion: codex fix` and `codex similar` must carry the final state,
+  like Fix review and Similar-bugs scan; only the Step A Codex items may keep the wave's state.
 - `models.md`: Codex runs with its own default model. To keep the hot path within its budget, the
   `models.md` lead-in is shorter and the list of former skill names in `defaults.phase-types` moved
   from `gate.md` to `tech-stack-triggers.md`, next to the key it explains.
-- Tests: the four checklist items, the Codex recipe and the removed Orca wording are pinned.
+- Tests: the four checklist items, the Codex recipe, the removed Orca wording and the moved list of
+  former skill names are pinned; repeated `--input` and stale Codex fix/similar items were red first.
 
 ## v4.6.0 — 2026-11-13
 

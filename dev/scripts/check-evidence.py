@@ -45,7 +45,8 @@ green" proves nothing when zero tests ran — a runner that finds no tests often
 
 After a bundled fix the gate reviews only the fix diff ("Fix review"). So when a checked Fix review
 carries the current @state, the review items in REVIEW_ITEMS (diff, spec, security, ...) may keep
-an older @state; tests, build, E2E, similar-bugs scan and the Fix review itself must stay current.
+an older @state; tests, build, E2E, similar-bugs scan, the Fix review itself and their Codex
+items must stay current.
 Without that, a full re-run of every analysis would be forced after every fix.
 
 Exit 0 = consistent. Exit 1 = problems, one per line. What it cannot know: whether the evidence
@@ -86,10 +87,11 @@ COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
 NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
 SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "tech-stack review",
              "second opinion")
-# Analyses that may keep an older @state when a current "Fix review" covers the fix diff.
+# Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
+# Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
 REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
                 "performance review", "accessibility review", "design detector", "motion review",
-                "taste pre-flight", "second opinion")
+                "taste pre-flight", "second opinion: codex diff", "second opinion: codex security")
 
 
 def state_id(root):

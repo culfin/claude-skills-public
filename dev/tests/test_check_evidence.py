@@ -279,6 +279,20 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(len(problems), 1)
         self.assertIn("Similar-bugs", problems[0])
 
+    def test_codex_fix_and_similar_never_inherit(self):
+        # Review fix round 1 (I-2): the Codex items of Steps B/C rerun on the final state like
+        # their Claude items; only the Step A Codex items may keep the wave's state.
+        i = self.sid()
+        self.state([f"- [x] Fix review — fix diff clean @{i}",
+                    f"- [x] Second opinion: codex diff — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex security — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex fix — 0 critical @{self.OLD}",
+                    f"- [x] Second opinion: codex similar — none @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual(len(problems), 2, problems)
+        self.assertTrue(any("codex fix" in x for x in problems), problems)
+        self.assertTrue(any("codex similar" in x for x in problems), problems)
+
     def test_missing_gate_section_is_reported(self):
         (self.root / "STATE.md").write_text("# State\n\nno gate here\n")
         self.assertIn("no gate checklist", self.run_check()[0])

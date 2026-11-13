@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # codex-review.sh — runs one gate review through Codex, in addition to the Claude review.
 #
-#   codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file> --head <sha>
+#   codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file>... --head <sha>
 #                   --out <file> [--timeout-min 15]
 #
 # Run from inside the repository under review. --prompt is the review prompt (analyzer, mode,
 # scope, requirement), --input the diff or other material Codex reads first (pass uncommitted and
 # untracked changes in it: the checkout shows only --head, and the working directory is unreadable).
+# --input may repeat (diff plus an untracked spec); every file reaches Codex, none replaces another.
 # Exit 0 = usable review: --out holds the findings, `reviewer: codex` and the `Result:` line.
 # Exit 3 = Codex result unusable; one line `fallback: <reason>` on stdout, --out not written. The
 #          caller closes the gate item as `skipped: <reason>`, never as "no findings".
@@ -49,21 +50,22 @@ set -uo pipefail
 RULE_REV=5      # bump when the profile changes: invalidates cached deny checks
 
 out=
-usage() { echo "usage: codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file> --head <sha> --out <file> [--timeout-min N]" >&2; exit 2; }
+usage() { echo "usage: codex-review.sh --role <diff|security|fix|similar> --prompt <file> --input <file>... --head <sha> --out <file> [--timeout-min N]" >&2; exit 2; }
 fallback() { [[ -n "$out" ]] && rm -f "$out"; echo "fallback: $1"; exit 3; }
 q() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }     # TOML string
 
-role= prompt= input= head= timeout_min=15
+role= prompt= head= timeout_min=15 inputs=()
 while [[ $# -gt 0 ]]; do
     [[ $# -ge 2 ]] || usage
     case "$1" in
-        --role) role=$2 ;; --prompt) prompt=$2 ;; --input) input=$2 ;; --head) head=$2 ;;
+        --role) role=$2 ;; --prompt) prompt=$2 ;; --input) inputs+=("$2") ;; --head) head=$2 ;;
         --out) out=$2 ;; --timeout-min) timeout_min=$2 ;; *) usage ;;
     esac
     shift 2
 done
 case "$role" in diff|security|fix|similar) ;; *) usage ;; esac
-[[ -f "$prompt" && -f "$input" && -n "$head" && -n "$out" ]] || usage
+[[ -f "$prompt" && ${#inputs[@]} -gt 0 && -n "$head" && -n "$out" ]] || usage
+for f in "${inputs[@]}"; do [[ -f "$f" ]] || usage; done
 [[ "$timeout_min" =~ ^[1-9][0-9]*$ ]] || usage
 limit=${DEV_CODEX_TIMEOUT_SEC:-$((timeout_min * 60))}
 [[ "$limit" =~ ^[1-9][0-9]*$ ]] || usage
@@ -75,7 +77,6 @@ top=$(cd "$top" && pwd -P)
 common=$(cd "$top" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || usage
 commit=$(git -C "$top" rev-parse --verify --quiet "$head^{commit}") || usage
 prompt=$(cd "$(dirname "$prompt")" && pwd)/$(basename "$prompt")
-input=$(cd "$(dirname "$input")" && pwd)/$(basename "$input")
 out=$(cd "$(dirname "$out")" 2>/dev/null && pwd)/$(basename "$out") || { out=; usage; }
 rm -f "$out"
 
@@ -203,7 +204,13 @@ git -C "$wt" -c advice.detachedHead=false checkout --quiet --detach "$commit" >/
 # Nothing secret and no Codex project config in the checkout, even when committed.
 find "$wt" -name .git -prune -o \( -name '.env' -o -name '.env.*' \) -type f -print0 | xargs -0 rm -f
 rm -rf "$wt/.codex"
-cp "$input" "$work/input-$(basename "$input")"
+listed= n=0
+for f in "${inputs[@]}"; do
+    n=$((n + 1)); copy="$work/input-$n-$(basename "$f")"
+    cp "$f" "$copy" || fallback "input unreadable"
+    listed+="Input file (read it first): $copy
+"
+done
 python3 "$here/codex-result.py" model-schema --schema "$schema" >"$work/schema.json" \
     || fallback "schema unreadable"
 
@@ -211,8 +218,7 @@ text="$(python3 "$here/codex-result.py" localize-prompt --prompt "$prompt" --ana
     --to "$work/analyzers")" || fallback "prompt unreadable"
 text="$text
 
-Input file (read it first): $work/input-$(basename "$input")
-You are in a clean checkout of commit $commit (the repository root is the current directory).
+${listed}You are in a clean checkout of commit $commit (the repository root is the current directory).
 Your final answer is JSON matching the given schema. files_read = the number of files you actually
 opened and read (0 if none); blocked_reason = empty if you reviewed, otherwise why you could not.
 Every finding needs file (relative to the repository root), line, the quoted line(s) and the

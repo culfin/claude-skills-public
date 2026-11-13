@@ -418,6 +418,10 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("second opinion", r)
         self.assertNotIn("Orca worker", gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0])
         self.assertTrue((DEV / "scripts" / "codex-review.sh").exists())
+        # Moved out of gate.md for the hot-path budget; keep it from getting lost in the next trim.
+        self.assertIn("Former skill names in those lists (`bug-prospector`, `security-audit`, "
+                      "`performance-check`, `review-changes`, `scan-similar-bugs`, `dead-code-scanner`, "
+                      "`ui-scan`) mean the matching analyzer.", " ".join(text("tech-stack-triggers.md").split()))
 
     def test_main_session_never_reads_the_analyzer_contract(self):
         # v4.5.0: the contract is for the analyzer subagents; the dispatcher's part lives in gate.md.

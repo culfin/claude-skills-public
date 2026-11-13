@@ -435,6 +435,20 @@ class CodexReviewTests(unittest.TestCase):
         self.assertEqual(p.returncode, 2)
         self.assertEqual(self.calls(), [])
 
+    def test_every_input_file_reaches_codex(self):
+        # Review fix round 1 (I-1): a repeated --input used to replace the earlier one, so Codex
+        # reviewed the spec without the diff and could still answer with a valid "no findings".
+        spec = self.input.parent / "sub"
+        spec.mkdir()
+        spec = spec / "phase.diff"                  # same basename as the diff: both must survive
+        spec.write_text("C1: add returns the sum\n")
+        p = subprocess.run(self.args() + ["--input", str(spec)], cwd=self.root, capture_output=True,
+                           text=True, env=self.env(), timeout=60)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        prompt = self.calls()[-1]["prompt"]
+        named = [l.split(": ", 1)[1] for l in prompt.splitlines() if l.startswith("Input file")]
+        self.assertEqual(len(set(named)), 2, prompt)
+
     def test_missing_codex_is_fallback(self):
         rc, out, _ = self.run_review(DEV_CODEX_BIN=str(self.root / "no-such-codex"))
         self.assertEqual(rc, 3)
