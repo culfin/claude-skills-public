@@ -2,6 +2,27 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.7.0 — 2026-11-13
+
+**dev** — `/dev parallel` starts supervised Orca workers, which close themselves after the phase.
+
+Handed-off phase agents (`orca worktree create --agent`) stayed open after their phase was merged,
+each a full agent session with its tool servers; on a shared machine a few dozen idle sessions fill the
+memory. Tested without the change (two scenarios, no commands run): the lead knew no way to close a
+finished worker and would have asked the user; the worker ended idle with its terminal open. With
+v4.7.0 the lead started both phases as supervised workers in their own workspaces, the worker reported
+`worker_done` after the merge and claimed no further phase. Checked against a live Orca: a worker in an
+existing workspace is released about two minutes after `worker_done`; workspace and branch stay.
+
+- `runtime.md`, "Parallel phase": `orca worktree create` without `--agent`, then
+  `orca orchestration worker-start --worktree "id:<worktreeId>"`; never `worktree create --agent`
+  (a worker in a new workspace started by `worker-start` itself is also kept open). Orca wakes the
+  lead with questions and `worker_done`.
+- `runtime.md`, "Orca workers": "Phase done" — `worker_done` after `[x]` and merge, no further claim.
+  Questions go by `orca orchestration ask`. The context-hint case "right after a phase completion"
+  is gone; it is now the phase-done case.
+- Tests: the worker start and the phase-done report are pinned.
+
 ## v4.6.0 — 2026-11-13
 
 **dev** — the user answers only in the project's lead session; dev deploys and dev-database migrations

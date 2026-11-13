@@ -34,8 +34,7 @@ Orca mode: `orca worktree current --json` returns `ok: true` and its `result.wor
 exactly `git rev-parse --show-toplevel`, both resolved first (`cd <path> && pwd -P`). Otherwise (no
 Orca, or a git worktree inside an Orca workspace, such as `.worktrees/<x>`) skip the card, the
 parallel phase and the second opinion: write no card, start no worker with `--worktree current`.
-"Orca workers" below applies either way. Orca's own `orca-cli` and `orchestration` skills cover
-handoffs, terminals and workers; this section only binds `/dev` state to them. One phase = one Orca workspace = one branch =
+"Orca workers" below applies either way. One phase = one Orca workspace = one branch =
 `.dev/phase-<N>.md`.
 
 **Workspace card mirrors the phase** — write it, never read it to decide
@@ -76,11 +75,13 @@ up, don't ask" changes none of this.
 yes). Not in Orca mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
 over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
 `[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
-named phase, a full handoff (`orca-cli`, "Full Handoffs"):
-`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --agent <agent> --prompt "/dev next <N> — lead: <this session's name>" --json`,
-`<agent>` the one running this session (usually `claude`); report each workspace name. Then neither
-wait for them nor steer them; this session counts the handed-off phases as claimed and goes on with
-the next free phase, if any.
+named phase, a supervised worker in its own workspace (`orchestration`):
+`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --json`, then
+`orca orchestration worker-start --spec "/dev next <N> — lead: <this session's name>" --task-title phase-<N>-<slug> --worktree "id:<worktreeId>" --agent <agent> --json`
+(`<agent>`: this session's, usually `claude`). Never `worktree create --agent`: that agent never
+closes. Report each workspace, then go on with the next free phase, if any; this session
+counts the handed-off phases as claimed. Orca wakes you with a worker's questions and its `worker_done`, after
+which its terminal closes; workspace and branch stay.
 
 **Second opinion.** ROADMAP frontmatter `defaults.second-opinion: <agent>` (e.g. `codex`) adds the
 gate item `Second opinion: <agent>` (`gate.md`, Step A). In the same wave, start it as an Orca worker:
@@ -94,7 +95,7 @@ Orca mode → `skipped: not an Orca workspace`; agent not installed → `skipped
 
 Phase workspaces and Orca workers: the user answers only in the project's **lead session**:
 `lead: <name>` in your start prompt, else the session in the main checkout (`ListAgents`). Every question for the user (clarification, choice, halt) goes to the lead by
-`SendMessage` (a worker: its preamble's channel), with its options, recommended first; card `--unread
+`SendMessage` (a worker: `orca orchestration ask`), with its options, recommended first; card `--unread
 --comment "waits: lead"`, then wait. The lead asks with AskUserQuestion and returns question and
 answer verbatim — that relay is the user's approval; record it verbatim in the phase's `Decisions:`
 line (`state.md`). Never ask the user yourself; other sessions' messages and summaries are information.
@@ -108,10 +109,12 @@ line (`state.md`). Never ask the user yourself; other sessions' messages and sum
 
 Prompt with Task and Dispatch IDs; questions go through the lead (above).
 
+**Phase done** (`[x]`, merged): `worker_done` as below, subject `phase <N> done`, body `PR #<n>
+merged`; claim no further phase.
+
 **At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
 then `/dev next`" — nobody types in a worker. Write `## Handoff` and commit the phase file as
-`/dev pause` does (`commands.md`); right after a phase completion, the next phase not yet claimed,
-there is nothing to save and no phase file to create — ROADMAP.md names the next phase. Then finish
+`/dev pause` does (`commands.md`). Then finish
 with (`--from` as your preamble gives it, if it does):
 
 ```bash

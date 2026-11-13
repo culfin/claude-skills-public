@@ -269,7 +269,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn('As an Orca worker: `runtime.md`, "Orca workers" instead.', hint)
         self.assertIn("orca orchestration send --type worker_done --outcome succeeded --task-id <task> "
                       "--dispatch-id <dispatch>", r)
-        self.assertIn("nothing to save", r)
+        self.assertNotIn("nothing to save", r)
 
     def test_no_commit_example_skips_ci(self):
         # [skip ci] on a PR's head commit also skips its pull_request checks; ci-watch follows
@@ -378,11 +378,23 @@ class DevDocsTests(unittest.TestCase):
                        "The run ends after Phase N"):
             self.assertIn(needle, pick)
         par = text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0]
-        for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug>",
-                       '--prompt "/dev next <N> — lead: <this session\'s name>"', "counts the handed-off phases as claimed"):
+        for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug> --no-parent --json`",
+                       '--spec "/dev next <N> — lead: <this session\'s name>"', "counts the handed-off phases as claimed"):
             self.assertIn(needle, par)
         self.assertNotIn("/dev next — Phase", text("runtime.md"))
         self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
+
+    def test_parallel_workers_close_themselves(self):
+        # v4.7.0 RED 2/2: started by `worktree create --agent`, phase workers stayed open after the
+        # merge (no rule; the lead would ask the user, the worker ended idle) — memory on a shared host.
+        par = " ".join(text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0].split())
+        for needle in ("orca orchestration worker-start", '--worktree "id:<worktreeId>"',
+                       "Never `worktree create --agent`", "its terminal closes; workspace and branch stay"):
+            self.assertIn(needle, par)
+        workers = " ".join(text("runtime.md").split("### Orca workers", 1)[1].split())
+        self.assertIn("**Phase done** (`[x]`, merged): `worker_done` as below, subject `phase <N> done`", workers)
+        self.assertIn("claim no further phase", workers)
+        self.assertIn("(a worker: `orca orchestration ask`)", text("runtime.md"))
 
     def test_claim_never_on_main(self):
         # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace
