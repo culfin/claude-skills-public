@@ -11,7 +11,8 @@
 # Exit 0 = usable review: --out holds the findings, `reviewer: codex` and the `Result:` line.
 # Exit 3 = Codex result unusable; one line `fallback: <reason>` on stdout, --out not written. The
 #          caller closes the gate item as `skipped: <reason>`, never as "no findings".
-# Exit 2 = usage error (bad arguments, not a git repository, unknown --head).
+# Exit 2 = usage error (bad arguments, not a git repository, unknown --head, missing --out
+#          directory, an --input named .env or .env.*).
 #
 # Why a script: every Codex call needs the same guards, and each one missing has bitten or would:
 # - Codex runs in a fresh clone of --head under $TMPDIR, never in the working directory, which may
@@ -65,7 +66,12 @@ while [[ $# -gt 0 ]]; do
 done
 case "$role" in diff|security|fix|similar) ;; *) usage ;; esac
 [[ -f "$prompt" && ${#inputs[@]} -gt 0 && -n "$head" && -n "$out" ]] || usage
-for f in "${inputs[@]}"; do [[ -f "$f" ]] || usage; done
+# A .env never goes to Codex, not even as an input copy (the deny glob would not match input-1-.env).
+for f in "${inputs[@]}"; do
+    [[ -f "$f" ]] || usage
+    case "$(basename "$f")" in .env|.env.*) usage ;; esac
+done
+[[ -d "$(dirname "$out")" ]] || usage
 [[ "$timeout_min" =~ ^[1-9][0-9]*$ ]] || usage
 limit=${DEV_CODEX_TIMEOUT_SEC:-$((timeout_min * 60))}
 [[ "$limit" =~ ^[1-9][0-9]*$ ]] || usage
@@ -77,7 +83,7 @@ top=$(cd "$top" && pwd -P)
 common=$(cd "$top" && cd "$(git rev-parse --git-common-dir)" && pwd -P) || usage
 commit=$(git -C "$top" rev-parse --verify --quiet "$head^{commit}") || usage
 prompt=$(cd "$(dirname "$prompt")" && pwd)/$(basename "$prompt")
-out=$(cd "$(dirname "$out")" 2>/dev/null && pwd)/$(basename "$out") || { out=; usage; }
+out=$(cd "$(dirname "$out")" && pwd)/$(basename "$out")
 rm -f "$out"
 
 base="${TMPDIR:-/tmp}"; base=$(cd "$base" && pwd -P) || fallback "no temporary directory"

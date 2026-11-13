@@ -26,6 +26,9 @@ treated as failure); `scripts/codex-review.sh` carries them.
   worker of that agent, now do nothing and are not reported: set `codex` or drop the key.
 - `codex-review.sh` takes `--input` more than once (diff plus an untracked spec): a repeated flag
   used to replace the earlier file, so Codex could review the spec without the diff and still pass.
+  A missing `--out` directory and an `--input` named `.env` or `.env.*` are usage errors (exit 2):
+  the first used to end as exit 3 and close the item as skipped, the second would have sent a
+  `.env` copy to Codex.
 - `check-evidence.py`: `Second opinion: codex fix` and `codex similar` must carry the final state,
   like Fix review and Similar-bugs scan; only the Step A Codex items may keep the wave's state.
 - `models.md`: Codex runs with its own default model. To keep the hot path within its budget, the

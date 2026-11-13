@@ -449,6 +449,24 @@ class CodexReviewTests(unittest.TestCase):
         named = [l.split(": ", 1)[1] for l in prompt.splitlines() if l.startswith("Input file")]
         self.assertEqual(len(set(named)), 2, prompt)
 
+    def test_out_dir_missing_is_usage_error(self):
+        # Final review minor 1: a missing --out directory ended as exit 3 (skipped), not exit 2.
+        rc, out, _ = self.run_review(out=self.out.parent / "no-such-dir" / "review.md")
+        self.assertEqual((rc, out), (2, ""))
+        self.assertEqual(self.calls(), [])
+
+    def test_env_named_input_is_refused(self):
+        # Final review minor 2: Codex never reads a .env, also not as a copied --input.
+        for name in (".env", ".env.local"):
+            with self.subTest(name):
+                env = self.input.parent / name
+                env.write_text("SECRET=input-canary\n")
+                p = subprocess.run(self.args() + ["--input", str(env)], cwd=self.root,
+                                   capture_output=True, text=True, env=self.env(), timeout=60)
+                self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+                self.assertNotIn("input-canary", self.log.read_text() if self.log.exists() else "")
+        self.assertEqual(self.calls(), [])
+
     def test_missing_codex_is_fallback(self):
         rc, out, _ = self.run_review(DEV_CODEX_BIN=str(self.root / "no-such-codex"))
         self.assertEqual(rc, 3)
