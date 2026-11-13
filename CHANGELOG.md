@@ -2,7 +2,7 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
-## v4.7.0 — 2026-11-13
+## v4.8.0 — 2026-11-13
 
 **dev** — `defaults.second-opinion: codex` runs selected gate reviews additionally through Codex, in or
 outside Orca; Codex never replaces a Claude review.
@@ -22,6 +22,8 @@ treated as failure); `scripts/codex-review.sh` carries them.
   `fix` and `similar` items are rerun on the final state like their Claude items.
 - `runtime.md`: the Orca-worker second opinion is gone. `gate.md` names only the value `codex`;
   another value adds no item.
+  Other values of `defaults.second-opinion` (e.g. `claude`, `gemini`), which used to start an Orca
+  worker of that agent, now do nothing and are not reported: set `codex` or drop the key.
 - `codex-review.sh` takes `--input` more than once (diff plus an untracked spec): a repeated flag
   used to replace the earlier file, so Codex could review the spec without the diff and still pass.
 - `check-evidence.py`: `Second opinion: codex fix` and `codex similar` must carry the final state,
@@ -31,6 +33,27 @@ treated as failure); `scripts/codex-review.sh` carries them.
   from `gate.md` to `tech-stack-triggers.md`, next to the key it explains.
 - Tests: the four checklist items, the Codex recipe, the removed Orca wording and the moved list of
   former skill names are pinned; repeated `--input` and stale Codex fix/similar items were red first.
+
+## v4.7.0 — 2026-11-13
+
+**dev** — `/dev parallel` starts supervised Orca workers, which close themselves after the phase.
+
+Handed-off phase agents (`orca worktree create --agent`) stayed open after their phase was merged,
+each a full agent session with its tool servers; on a shared machine a few dozen idle sessions fill the
+memory. Tested without the change (two scenarios, no commands run): the lead knew no way to close a
+finished worker and would have asked the user; the worker ended idle with its terminal open. With
+v4.7.0 the lead started both phases as supervised workers in their own workspaces, the worker reported
+`worker_done` after the merge and claimed no further phase. Checked against a live Orca: a worker in an
+existing workspace is released about two minutes after `worker_done`; workspace and branch stay.
+
+- `runtime.md`, "Parallel phase": `orca worktree create` without `--agent`, then
+  `orca orchestration worker-start --worktree "id:<worktreeId>"`; never `worktree create --agent`
+  (a worker in a new workspace started by `worker-start` itself is also kept open). Orca wakes the
+  lead with questions and `worker_done`.
+- `runtime.md`, "Orca workers": "Phase done" — `worker_done` after `[x]` and merge, no further claim.
+  Questions go by `orca orchestration ask`. The context-hint case "right after a phase completion"
+  is gone; it is now the phase-done case.
+- Tests: the worker start and the phase-done report are pinned.
 
 ## v4.6.0 — 2026-11-13
 
