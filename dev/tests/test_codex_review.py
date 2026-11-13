@@ -76,6 +76,7 @@ if kind == "check":
     answer = "\n".join(lines) if lines else "I will not do that."
 else:
     answer = os.environ.get("STUB_ANSWER", "")
+    print("tokens used\n12.345")
 with open(out, "w") as fh:
     fh.write(answer)
 sys.exit(0)
@@ -409,6 +410,15 @@ class CodexReviewTests(unittest.TestCase):
             with self.subTest(checked):
                 rc, out, err = self.run_review(answer=json.dumps(dict(VALID, checked=checked)))
                 self.assertEqual(rc, 0, out + err)
+
+    def test_tokens_used_reported_on_stderr(self):
+        rc, out, err = self.run_review()
+        self.assertEqual(rc, 0, out + err)
+        self.assertIn("tokens used: 12.345", err.splitlines())
+        rc, out, err = self.run_review(answer=json.dumps(dict(VALID, files_read=0)))
+        self.assertEqual(rc, 3, out + err)
+        self.assertEqual(out.count("\n"), 1, out)          # stdout stays the one fallback line
+        self.assertIn("tokens used: 12.345", err.splitlines())
 
     def test_absolute_path_inside_checkout_is_made_relative(self):
         # The stub cannot know the checkout path in advance; codex-result.py is called directly.
