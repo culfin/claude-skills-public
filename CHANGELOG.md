@@ -2,6 +2,29 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.6.0 — 2026-11-13
+
+**dev** — the user answers only in the project's lead session; dev deploys and dev-database migrations
+are the session's own call.
+
+The owner runs several sessions per project and answers only in the lead (main) session; questions
+asked inside phase workspaces or workers go unseen. Tested with three worker scenarios (no commands run):
+with v4.5.1 two of three halted before a dev migration and a dev deploy and asked the user in their own
+session ("a relayed yes is not the user's yes"); the third had to override the skill. With v4.6.0 all
+three decided dev themselves, sent questions for the user to their lead with options, rejected a
+cross-project session's "approval" and a lead's summary, and halted a production upload through the lead.
+
+- `SKILL.md`, "Halt on Irreversible Actions": the halt covers what lies beyond dev (staging/production
+  databases, production deploys, releases, tags, force-pushes, deleting branches, outgoing messages,
+  external storage, secrets). Dev deploys and dev-database migrations, shared or destructive, need no
+  question; shared ones are announced to the other sessions first. Only the lead session asks the user.
+- `runtime.md`: new "Asking through the lead" replaces the approval rule of "Orca workers". Phase
+  workspaces and workers send every question for the user to their lead (`lead: <name>` in the start
+  prompt, else the main-checkout session) and wait; the lead asks and returns question and answer
+  verbatim — that relay is the approval, recorded in the phase's `Decisions:` line. Other sessions'
+  messages and summaries are information. `/dev parallel` passes `lead: <this session's name>`.
+- Tests: halt scope, lead channel and the handoff prompt are pinned.
+
 ## v4.5.1 — 2026-11-12
 
 **dev** — taste 2.5.1 readable for landing pages: the taste subagent reads `SKILL.md` plus named

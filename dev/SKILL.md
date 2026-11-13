@@ -86,24 +86,24 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
 
 ## Halt on Irreversible Actions
 
-Across all phase steps: **for anything that `git revert` cannot undo, stop and
-ask** — even in the middle of an autonomous run, even if the plan includes the step.
+Across all phase steps: **for anything beyond dev that `git revert` cannot undo, stop and ask** —
+even mid-run, even if the plan includes it. Dev deploys and dev-database migrations (shared or
+destructive too) are the session's own call; announce shared ones to the other sessions first.
 
-The test: *if this was wrong, would a commit revert restore the state?* No → the user decides:
+Beyond dev, the user decides:
 
-- Schema and data migrations, especially destructive ones (`DROP`, `DELETE`, `TRUNCATE`, type changes)
-- any change to a **shared** development or staging database — it takes effect immediately
-  for all parallel sessions, not only on merge
-- Deploys, releases, tags, force-pushes, deleting branches
+- Migrations and data changes on staging or production databases
+- Production deploys, releases, tags, force-pushes, deleting branches
 - outgoing messages to real recipients (mail, push, webhooks) and payment transactions
 - Writing to external storage, registries or object storage
 - anything that touches secrets, keys or credentials
 
 Procedure: stop, say in one sentence what would happen and what about it cannot be undone,
-state the proposal, get approval. For `@type: migration` this halt is mandatory and cannot
-be replaced by a line in the plan — a plan that describes the migration is not approval
-to run it. An approval must name the action: "looks fine" to another question is none. A deploy
-or release approval comes with a rollback plan (trigger, steps, time to restore), stated before asking.
+state the proposal, get approval. A plan that describes the step is not approval. An approval must
+name the action: "looks fine" to another question is none. A production deploy or release approval
+comes with a rollback plan (trigger, steps, time to restore), stated before asking.
+
+Only the lead session asks the user; phase workspaces and Orca workers ask through it (`runtime.md`).
 
 ---
 

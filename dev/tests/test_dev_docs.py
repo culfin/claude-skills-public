@@ -357,6 +357,19 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, block)
         self.assertIn('"Workspace overview"', text("commands.md"))
 
+    def test_lead_asks_and_dev_is_own_call(self):
+        # Lead-only questions (owner 13.11.2026): RED 2 of 3 without it (worker asked the user in its own
+        # session and halted on dev migration/deploy; "a relayed yes is not the user's yes").
+        halt = text("SKILL.md").split("## Halt on Irreversible Actions", 1)[1].split("\n---", 1)[0]
+        for needle in ("beyond dev", "Dev deploys and dev-database migrations", "announce shared ones",
+                       "Production deploys, releases", "Only the lead session asks the user"):
+            self.assertIn(needle, halt)
+        lead = text("runtime.md").split("### Asking through the lead", 1)[1].split("### Orca workers", 1)[0]
+        for needle in ("**lead session**", "`lead: <name>`", "`SendMessage`", "verbatim",
+                       "`Decisions:`", "Never ask the user yourself", "summaries are information"):
+            self.assertIn(needle, lead)
+        self.assertNotIn("A relayed yes is not the user's yes", text("runtime.md"))
+
     def test_pick_and_parallel_phase(self):
         # /dev next <N> and /dev parallel: RED 2 of 2 without them (no rule; handoff without --branch,
         # ambiguous "/dev next — Phase N" prompt, race for the first free phase).
@@ -366,7 +379,7 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, pick)
         par = text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0]
         for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug>",
-                       '--prompt "/dev next <N>"', "counts the handed-off phases as claimed"):
+                       '--prompt "/dev next <N> — lead: <this session\'s name>"', "counts the handed-off phases as claimed"):
             self.assertIn(needle, par)
         self.assertNotIn("/dev next — Phase", text("runtime.md"))
         self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
