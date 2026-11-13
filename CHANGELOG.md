@@ -2,6 +2,12 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.8.1 — 2026-11-13
+
+**dev** — `codex-review.sh` prints `tokens used: <n>` on stderr after each Codex run, also on exit 3.
+The Codex log lives in the run's temporary directory and is removed with it, so the caller had no way
+to record usage; stdout keeps its one `fallback:` line.
+
 ## v4.8.0 — 2026-11-13
 
 **dev** — `defaults.second-opinion: codex` runs selected gate reviews additionally through Codex, in or

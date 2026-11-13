@@ -231,6 +231,9 @@ Every finding needs file (relative to the repository root), line, the quoted lin
 concrete failing input. No findings is a valid answer."
 
 run_codex "$wt" "$work/codex.log" --output-schema "$work/schema.json" -o "$work/answer.json" "$text"
+# Usage for the caller (stderr: stdout stays the one fallback line); the log goes with $work.
+tokens=$(awk 'f { print; exit } /^tokens used$/ { f = 1 }' "$work/codex.log" 2>/dev/null)
+[[ -n "$tokens" ]] && echo "tokens used: $tokens" >&2
 [[ -n "$timed_out" ]] && fallback "timeout after $limit s"
 (( rc == 0 )) || quota_or "$work/codex.log" "codex exit $rc"
 
