@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.10.1 — 2026-11-14
+
+**dev** — A critical finding only Codex raised now also stays critical when it breaks a hard rule of the
+project's instructions (the "must/never" rules in `AGENTS.md`), not only a criterion's wording. In a pilot
+phase Codex alone found an explicit `any` that broke the project rule "no `any`"; the v4.9.0 wording
+turned it into a note and the phase passed without a fix round (3 of 3 agents read it that way). With the
+change 3 of 3 keep it critical, while a Codex-only naming wish stays a note. The owner decided the change
+after the pilot. `test_agent_skills_ideas_present` no longer reads hidden tool directories such as
+`dev/.pytest_cache`, which turned it red after a local test run.
+
 ## v4.10.0 — 2026-11-14
 
 **dev** — Every change that touches UI files now runs through UX and accessibility review, whatever the

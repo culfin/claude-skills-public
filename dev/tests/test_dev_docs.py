@@ -104,7 +104,8 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("UNVERIFIED", text("stack/docs.md"))
         self.assertIn("three questions", text("befragung.md"))
         for p in DEV.rglob("*"):
-            if p.is_file() and not {"tests", "__pycache__"} & set(p.parts):
+            rel = p.relative_to(DEV).parts  # hidden dirs (.pytest_cache) are tool artefacts
+            if p.is_file() and not {"tests", "__pycache__"} & set(rel) and not any(x.startswith(".") for x in rel):
                 body = p.read_text(errors="ignore").lower()
                 for name in ("ponytail", "dietrichgebert", "addyosmani/agent-skills"):
                     self.assertNotIn(name, body, str(p.relative_to(DEV)))
@@ -443,7 +444,7 @@ class DevDocsTests(unittest.TestCase):
                        "--head <HEAD sha> --out <file>",
                        "`--prompt`: the Claude item's prompt", "plus untracked files the prompt names",
                        "Exit 0 → its findings count like any analyzer's",
-                       "a critical one only Codex raised is critical only if it breaks a criterion's wording, "
+                       "a critical one only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, "
                        "crashes or loses data; else a note: no question, no round.",
                        "`Result:` line, `codex`, `@…`", "Exit 3 → `skipped: <fallback reason>`",
                        "The Claude item runs regardless."):
