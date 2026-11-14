@@ -41,7 +41,7 @@ In planning a type only steers 4a.
 | `backend` | Large tier: Security review; with `postgres` also `pg:design-postgres-tables` when migrations or SQL changed |
 | `data` | `pg:design-postgres-tables` with `postgres`, when migrations or SQL changed |
 | `auth`, `security`, `data` | Security review in full scope, not phase scope |
-| `landing` | Accessibility review, Design detector and Taste pre-flight in either tier; Taste findings are notes |
+| `landing` | Design detector and Taste pre-flight in either tier; Taste findings are notes |
 | `refactor` | Similar-bugs scan also when code moved (Step C) |
 
 The rollback check and the smoke test also apply whenever `gate-tier.py` names `DB change:`.
@@ -59,7 +59,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 <!-- Step A, always -->
 - [ ] Diff review
 - [ ] Spec checker
-<!-- Step A, conditional: trigger and, except Security review, large tier (Step A) -->
+<!-- Step A, conditional: trigger and, except Security, Accessibility, UX and Polish review, large tier (Step A) -->
 - [ ] Security review
 - [ ] Tech-Stack Review: Next.js docs
 - [ ] Tech-Stack Review: <stack id>  <!-- one per matching stack (except `nextjs`, which has the item above), e.g. shadcn -->
@@ -68,7 +68,8 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 - [ ] Design detector
 - [ ] Motion review
 - [ ] Taste pre-flight
-- [ ] UX review                    <!-- `ux-ui-design` available -->
+- [ ] UX review
+- [ ] Polish review                <!-- web UI -->
 - [ ] Second opinion: codex diff      <!-- "Codex" -->
 <!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
@@ -90,10 +91,10 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too.
-- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight
+- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight, UX review, Polish review
   and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
-  `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a tech skill not installed), and Second
+  `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a skill not installed), and Second
   opinion items when `codex-review.sh` exits 3:
   `- [x] Design detector — skipped: engine not built`. Such an item does not block the phase, never
   counts as "no findings", and is listed under "Skipped checks" in the gate summary.
@@ -120,9 +121,14 @@ dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows t
 | Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`, or a gate addition by type; full scope for `auth`/`security`/`data` |
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
-| Accessibility review, Design detector, Motion review | `analyzers/accessibility.md`, `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Accessibility review and Design detector in either tier |
+| Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |
+| Design detector, Motion review | `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Design detector in either tier |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
-| UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | `ui`/`landing`, UI files changed, `ux-ui-design` available; tier as Accessibility review |
+| UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | UI files changed, **either tier, any `@type:`** |
+| Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), on the changed views and their direct dependencies; its confirmed Critical → critical, the rest notes | web UI files changed (Design detector's row), either tier; native UI: not run, UX review covers it |
+
+**UI files** are those of the Accessibility review and Design detector rows in `tech-stack-triggers.md`;
+the diff decides, not `@type:`.
 
 **Analyzer dispatch** (also `/dev check`, Milestone End, `/dev ui`). Never open `analyzers/CONTRACT.md`
 or the analyzer file, not even to check a prompt or a reply: this paragraph suffices. The

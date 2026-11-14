@@ -170,6 +170,7 @@ class TriggerTests(unittest.TestCase):
         out = trigger_output(self, self.nextjs_postgres(), "4a", "backend")
         expected = (block("**Stack sources") + block("**Next.js — where")
                     + ["**During Brainstorming (step 4a):**",
+                       line("If the phase builds or changes UI, whatever its `@type:`"),
                        line("If phase `@type:` is `backend` and `postgres`"),
                        line("If phase involves new pages/routes and `nextjs`")]
                     + ["| Trigger | Load | How |", "|---|---|---|",
@@ -204,6 +205,8 @@ class TriggerTests(unittest.TestCase):
         out = trigger_output(self, root, "4a", "weird")
         self.assertFalse([l for l in out if "`@type:` is" in l], out)
         self.assertIn(line("If phase involves new pages/routes and `nextjs`"), out)
+        # v4.10.0: ux-ui-design follows the UI work, not the type.
+        self.assertIn(line("If the phase builds or changes UI, whatever its `@type:`"), out)
         self.assertEqual(out, trigger_output(self, root, "4a"))
 
     def test_ui_phase_gets_design_and_motion_rules(self):
@@ -211,7 +214,7 @@ class TriggerTests(unittest.TestCase):
         out = trigger_output(self, root, "4a", "ui")
         for text in ("If phase `@type:` is `ui` and `shadcn`", "If phase `@type:` is `ui` →",
                      "**Motion — which source wins.**", "`ux-ui-design` available → the rows",
-                     "If phase `@type:` is `ui` or `landing` and `ux-ui-design`"):
+                     "If the phase builds or changes UI, whatever its `@type:`"):
             self.assertIn(line(text), out, text)
         self.assertNotIn(line("If phase `@type:` is `landing` →"), out)
         self.assertNotIn(line("Svelte tasks"), out)

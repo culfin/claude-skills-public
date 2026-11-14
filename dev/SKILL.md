@@ -173,7 +173,9 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    approvals, write and commit the spec (`sources.md` O14). Its hand-off to `writing-plans` carries the
    4b instruction. After the spec is committed: add `@spec:` to ROADMAP.md.
 
-Both: matching tech skills first (`--triggers --step 4a`, router). Questions with a
+Both: matching tech skills first (`--triggers --step 4a`, router). The phase builds or changes UI
+(criteria or spec name a screen, page, view, dialog or component; any `@type:`) and `ux-ui-design` is
+available → invoke it in planning mode before the criteria or spec; its UX questions join the round. Questions with a
 UI/UX side: ensure the companion via "Show screen" and pass on the hand-off note's companion
 sentences (`befragung.md`, step 5).
 
