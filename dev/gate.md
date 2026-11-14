@@ -146,8 +146,8 @@ of Diff review, Fix review or Similar-bugs scan gets its Second opinion item (ro
 `bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
 `--prompt`: the Claude item's prompt; `--input`: its diff file (Similar-bugs: the fix list) plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
-only Codex raised is critical only if it breaks a criterion's wording, crashes or loses data; else
-a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`.
+only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
+or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`.
 Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
