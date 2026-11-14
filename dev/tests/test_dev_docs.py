@@ -32,7 +32,7 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
                      "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
-                     "Second opinion: codex diff",
+                     "UX review", "Polish review", "Second opinion: codex diff",
                      "Second opinion: codex fix", "Second opinion: codex similar"):
             self.assertIn(f"- [ ] {name}", g)
         for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check",
@@ -166,6 +166,29 @@ class DevDocsTests(unittest.TestCase):
         e = " ".join(text("execution.md").split())
         self.assertIn("`ux-ui-design` is among the available skills → invoke it before designing", t)
         self.assertIn("whoever writes the UI code invokes `ux-ui-design` first; the dispatch says so", e)
+
+    def test_every_ui_change_gets_ux_and_accessibility_review(self):
+        # v4.10.0 RED: a small `feature` phase changing two .tsx files got no Accessibility, UX or polish
+        # review ("large tier", "`ui`/`landing`"), and a `backend` phase with a new dialog neither clarified
+        # nor built it with ux-ui-design. Owner decision: the diff decides, every tier, vibepolish by default.
+        g = " ".join(text("gate.md").split())
+        e = " ".join(text("execution.md").split())
+        s = " ".join(text("SKILL.md").split())
+        self.assertIn("| Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |", g)
+        self.assertIn("| UI files changed, **either tier, any `@type:`** |", g)
+        self.assertIn("| Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), "
+                      "on the changed views and their direct dependencies; its confirmed Critical → critical, "
+                      "the rest notes | web UI files changed (Design detector's row), either tier; native UI: "
+                      "not run, UX review covers it |", g)
+        self.assertIn("the diff decides, not `@type:`", g)
+        self.assertIn("Taste pre-flight, UX review, Polish review and Tech-Stack Review items", g)
+        self.assertNotIn("tier as Accessibility review", g)
+        self.assertNotIn("`ui`/`landing`, UI files changed", g)
+        self.assertIn("(the task creates or changes UI files, `gate.md`, whatever the phase `@type:`)", e)
+        self.assertNotIn("Phase `@type:` `ui` or `landing` and", e)
+        self.assertIn("The phase builds or changes UI (criteria or spec name a screen, page, view, dialog or "
+                      "component; any `@type:`) and `ux-ui-design` is available → invoke it in planning mode", s)
+        self.assertIn("Polish review", text("models.md"))
 
     def test_phase_file_holds_per_phase_state(self):
         # v4: per-phase state lives in .dev/phase-<N>.md (line 1 `Branch:`); STATE.md keeps only shared parts.
@@ -389,7 +412,7 @@ class DevDocsTests(unittest.TestCase):
     def test_parallel_workers_close_themselves(self):
         # v4.7.0 RED 2/2: started by `worktree create --agent`, phase workers stayed open after the
         # merge (no rule; the lead would ask the user, the worker ended idle) — memory on a shared host.
-        par = " ".join(text("runtime.md").split("**Parallel phase**", 1)[1].split("**Second opinion.**", 1)[0].split())
+        par = " ".join(text("runtime.md").split("**Parallel phase**", 1)[1].split("### Asking through the lead", 1)[0].split())
         for needle in ("orca orchestration worker-start", '--worktree "id:<worktreeId>"',
                        "Never `worktree create --agent`", "its terminal closes; workspace and branch stay"):
             self.assertIn(needle, par)
@@ -484,8 +507,9 @@ class DevDocsTests(unittest.TestCase):
                  and not any(p.startswith(".") for p in f.relative_to(DEV).parts)]
         sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
         total = sum(n for n, _ in sizes)
-        msg = f"hot path {hot}/7500, total {total}/38189; largest: {sizes[:5]}"
-        self.assertLessEqual(hot, 7500, msg)
+        # Hot path raised 2026-11-14 by owner decision for always-on UI/UX review (7500 → 7650).
+        msg = f"hot path {hot}/7650, total {total}/38189; largest: {sizes[:5]}"
+        self.assertLessEqual(hot, 7650, msg)
         self.assertLessEqual(total, 38189, msg)
 
 

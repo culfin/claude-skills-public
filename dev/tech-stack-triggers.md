@@ -33,7 +33,7 @@ one; neither → the item is ticked as `skipped: <reason>`.
 - If phase `@type:` is `ui` and `shadcn` is in `$TECH_STACKS` → invoke `/shadcn` for component discovery and usage examples before designing
 - If phase `@type:` is `ui` → consult `design/INDEX.md`, load only the rows whose trigger matches the phase (forms, states, onboarding, writing, platform of `$TECH_STACKS`); show variants per the prototype row; rate drafts with `design/density-critique.md`
 - If phase `@type:` is `landing` → a subagent reads taste (`design/INDEX.md`, row and note "4a landing") and returns only the rules relevant to this page (≤ 40 lines); conflicts with the project's component library (icons, dark mode) become interview questions, never silent overrides; copy in drafts per the row "4a ui/landing: copy in drafts"
-- If phase `@type:` is `ui` or `landing` and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks"
+- If the phase builds or changes UI, whatever its `@type:`, and `ux-ui-design` is among the available skills → invoke it before designing; 4c: `execution.md`, "UI tasks"
 - If phase `@type:` is `backend` and `postgres` is in `$TECH_STACKS` → invoke `pg:design-postgres-tables` for schema guidance when DB changes are planned
 - If phase involves new pages/routes and `nextjs` is in `$TECH_STACKS` → include Next.js context (RSC boundaries, file conventions, data patterns) from the source named under "Next.js" above
 
@@ -50,7 +50,7 @@ ops and dependency row reads the tier script's reasons, not a path list here.
 |-------------------|-----------|-------|-------|
 | `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" above) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
-| `src/components/**`, `src/app/**` UI files, SwiftUI views | UI files changed | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
+| Web UI files (row below), SwiftUI/UIKit views, `*.xaml`, Android layouts and Compose screens | UI files changed, either tier | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
 | `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css`, `*.scss`, `*.less` | Web UI files changed | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → skipped |
 | Files hit by the motion probes (`transition`, `animation`, `@keyframes`, `motion.`, `animate(`, `withSpring`, …) | A motion sweep probe hits in the changed files | Motion review (`analyzers/motion.md`) | Judges each animation against Emil Kowalski's standards read from `$DEV_DESIGN_DIR` |
 | `src/db/migrations/**`, SQL files, schema changes | `postgres` in `$TECH_STACKS` | `pg:design-postgres-tables` | Check indexing, constraints, type choices |

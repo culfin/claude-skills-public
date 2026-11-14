@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.10.0 — 2026-11-14
+
+**dev** — Every change that touches UI files now runs through UX and accessibility review, whatever the
+phase type and tier; web UI also gets a focused `vibepolish` review by default. The owner decided that
+all UI and UX work goes through these filters, and raised the hot-path word budget for it (7500 → 7650).
+Baseline: a small `feature` phase changing two `.tsx` files got no Accessibility, UX or polish review
+(the rows said "large tier" and "`ui`/`landing`"), and a `backend` phase with a new dialog neither
+clarified the dialog with `ux-ui-design` in 4a nor told the implementer to use it ("gated on `@type`").
+Now 4a, 4c and the gate key on the work, not the type: 4a invokes `ux-ui-design` in planning mode when
+the phase builds UI, every UI task's implementer invokes it first, and the gate runs Accessibility review,
+UX review and the new Polish review (`vibepolish`, audit only, changed views and direct dependencies;
+confirmed Critical → critical, the rest notes) in either tier. Native UI gets no Polish review: vibepolish
+is web only and UX review covers it. A missing skill closes the item as `skipped`.
+`test_parallel_workers_close_themselves` split `runtime.md` at "**Second opinion.**", which no longer
+exists since v4.9.0, so it checked the rest of the file; it now stops at "### Asking through the lead".
+
 ## v4.9.0 — 2026-11-13
 
 **dev** — After a three-phase Codex pilot, Codex runs as Second opinion only for Diff review, Fix review and
