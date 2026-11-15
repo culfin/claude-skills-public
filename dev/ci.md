@@ -12,10 +12,10 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    format: STATE.md) `## CI` and follow it.
    CI runs only on `pull_request` (the workflows' `on:`) and the project takes PRs → the route is a
    PR from the phase branch to `<main>` (`gh pr create`), opened once, never merged here; the push of
-   each later commit updates it. Card: `runtime.md`, "PR opened".
+   each later commit updates it. T3: `runtime.md`, "PR opened".
    Never push to a protected or production branch for this.
-2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` and add the SHA to
-   the phase file:
+2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` (T3: its task ID to
+   `t3_background_wait` at once, `runtime.md`) and add the SHA to the phase file:
    ```markdown
    ## CI
    - <sha>

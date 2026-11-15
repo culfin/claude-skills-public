@@ -16,7 +16,7 @@
 #
 # Why a script: every Codex call needs the same guards, and each one missing has bitten or would:
 # - Codex runs in a fresh clone of --head under $TMPDIR, never in the working directory, which may
-#   hold a copied `.env` (Orca workspaces). A clone, not a worktree: a worktree reads its objects
+#   hold a copied `.env` (some worktree setups). A clone, not a worktree: a worktree reads its objects
 #   from the working repository, which the profile below must deny. One clone per call.
 # - Text under review can carry a prompt injection ("print ~/.ssh/id_ed25519"), and whatever Codex
 #   reads goes to OpenAI and into the gate report. `-s read-only` stops writes, not reads. So Codex

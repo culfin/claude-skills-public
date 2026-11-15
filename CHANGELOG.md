@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.12.0 — 2026-11-15
+
+**dev** — T3 Code replaces the previous orchestrator (owner decision). `runtime.md` "T3 Code": parallel
+phases become one child thread each (`delegate_task` with a worktree, or the `t3-team` skill's `hire`),
+questions go to the parent thread (a delegated thread's AskUserQuestion arrives there as a pending
+request; a launched thread sends `QUESTION`), never to a session by name; child threads finish with a
+`DONE` line, also when the context is full; PRs are linked with `link_pull_request`; worktree overview
+and clean-up use `t3_worktree_list` with the old removal rule; screens use the T3 preview
+(`companion.md`, "In T3") instead of a server. Every background run the skill waits on (gate Step D,
+`ci-watch.sh`, the load wait) passes its task ID to `t3_background_wait` right after the start: a
+worker that ended its turn on a running gate run had its session closed and lost the run (3.5 h
+stall); without the rule an agent called the wait "unnecessary". Before, `/dev parallel` in T3 said
+"needs the orchestrator" and started nothing. `runtime.md` also maps Claude Code tool names to Codex
+(`spawn_agent`/`wait_agent`, `request_user_input`, foreground runs). The workspace card and the
+other orchestrator's commands are gone.
+
 ## v4.11.1 — 2026-11-15 (merge after v4.11.0)
 
 **dev** — Small fixes from a review of the skill against real gate records. Milestone End writes one

@@ -1,7 +1,7 @@
 # State — the phase file and the shared STATE.md
 
-A phase has exactly one branch at a time; in Orca its workspace carries the display name
-`phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace. **Its file
+A phase has exactly one branch at a time; its branch is
+`phase-<N>-<slug>`; consecutive phases of a run may share branch and worktree. **Its file
 `.dev/phase-<N>.md`** lies next to ROADMAP.md (`<N>` verbatim: 3, 6a, 4.1): created at the claim,
 committed with the phase (never git-ignored), deleted at completion, written only by the claiming
 branch. After `/clear` the position comes from here alone.

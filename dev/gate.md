@@ -141,7 +141,7 @@ never hand over why you think the change is right. Its `Result:` line is the ite
 finding without file:line, quoted line and failing input is an open question, not a finding. Spec
 checker and Second opinion too.
 
-**Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, in or outside Orca, each run
+**Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, on every host, each run
 of Diff review, Fix review or Similar-bugs scan gets its Second opinion item (role `diff`, `fix`,
 `similar`), run in the background:
 `bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
@@ -206,7 +206,7 @@ input, whole codebase. A confirmed twin goes back through Step B; complex ones g
 ## Step D — Verify
 
 1. **Typecheck + lint + tests and Production Build in parallel** — two background commands
-   ("Project Commands per Stack"); one after the other only if both write the same output directory.
+   ("Project Commands per Stack"; T3: task IDs to `t3_background_wait`); one after the other only if both write the same output directory.
    Before `[gate-pass]` also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>` (`--root` as for the tier); its result
    (`floor-guard: 0 critical` or the list) joins that evidence. Full runs that rules send to CI: affected suites locally, evidence `<n> passed; full: CI <sha>`; `[x]` waits for that SHA `green` (`ci.md`). A critical finding blocks: undo it,
    or record it in `.floor-guard-allow` with the reason after the user's explicit approval. Notes

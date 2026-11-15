@@ -72,7 +72,7 @@ Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
   single-task wave, or a host without worktree isolation, runs serially in the current tree.
 - **Load brake:** one Agent call per message, with `bash "$DEV_DIR/scripts/load-ok.sh"` before each —
   the load can only change between messages. Exit 1 → wait 60 s in the background (a background
-  `sleep` or the host's wait/until-loop, not a foreground `sleep`) and check again; after 10 minutes,
+  `sleep` — in T3 with `t3_background_wait` — or the host's wait/until-loop, not a foreground `sleep`) and check again; after 10 minutes,
   run the rest of the wave serially in the current tree. A serial task's BASE is HEAD before its
   dispatch (ledger line).
 - **In a worktree, implementers run unit tests only;** integration and E2E run once on the merged

@@ -283,19 +283,30 @@ class DevDocsTests(unittest.TestCase):
     def test_no_debug_auto_trigger_and_check_precondition_single_home(self):
         self.assertNotIn("unexplained build/test failure", text("commands.md") + text("SKILL.md"))
 
-    def test_orca_flow(self):
+    def test_t3_flow(self):
+        # T3 rebuild (owner 15.11.2026, "Orca raus"): RED 2/2 without it — in T3 "/dev parallel" started
+        # nothing ("needs Orca") and a child thread ended its turn on a CI watcher ("t3_background_wait
+        # unnecessary"); a real worker lost its gate run that way (3.5 h stall).
         r = text("runtime.md")
-        self.assertIn("git rev-parse --show-toplevel", r)
-        self.assertIn('--display-name "phase-', r)
-        self.assertIn("context full; next:", r)
-        self.assertNotIn("STATE stay the truth", r)
-        self.assertIn("ROADMAP.md and the phase file stay the truth", r)
-        self.assertIn("\n### Orca workers\n", r)
+        self.assertNotIn("orca", r.lower())
+        self.assertIn("## T3 Code", r)
+        self.assertIn("pass\n  the task ID to `t3_background_wait` right after starting it", r)
+        self.assertIn("`link_pull_request`", r)
+        self.assertIn("\n### Child threads\n", r)
+        self.assertIn("context full; PR <url|none>;\nopen: next <step>", r)
         hint = text("SKILL.md").split("**Context hint.**", 1)[1].split("\n\n", 1)[0]
-        self.assertIn('As an Orca worker: `runtime.md`, "Orca workers" instead.', hint)
-        self.assertIn("orca orchestration send --type worker_done --outcome succeeded --task-id <task> "
-                      "--dispatch-id <dispatch>", r)
-        self.assertNotIn("nothing to save", r)
+        self.assertIn('As a child thread: `runtime.md`, "Child threads" instead.', hint)
+        for f in ("ci.md", "gate.md", "execution.md"):
+            self.assertIn("t3_background_wait", text(f), f)
+        self.assertIn("### In T3", text("companion.md"))
+        self.assertIn("`html_render`", text("companion.md"))
+        for f in DEV.glob("*.md"):
+            self.assertNotIn("orca", f.read_text().lower(), f.name)
+
+    def test_codex_tool_names(self):
+        r = text("runtime.md")
+        for needle in ("`spawn_agent`", "`wait_agent`", "`request_user_input`", "no `run_in_background` or Monitor"):
+            self.assertIn(needle, r)
 
     def test_no_commit_example_skips_ci(self):
         # [skip ci] on a PR's head commit also skips its pull_request checks; ci-watch follows
@@ -354,7 +365,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("SHAs in the gate files of all milestones since the last release tag", c)
         self.assertIn("`- CI: none`", c)
         self.assertIn("`- CI: none`", j("ci.md"))
-        self.assertIn("phase-<N>-<slug>`; consecutive phases of a run may share branch and workspace", j("state.md"))
+        self.assertIn("phase-<N>-<slug>`; consecutive phases of a run may share branch and worktree", j("state.md"))
         self.assertNotIn("1 phase = 1 branch", j("state.md"))
         self.assertIn("O8–O12", text("stack/INDEX.md"))
         self.assertNotIn("O8–O9)", text("stack/INDEX.md"))
@@ -373,27 +384,26 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("Updates: N skill updates waiting — /dev updates", s)
         self.assertIn("/dev updates", s.split("---")[1])
 
-    def test_orca_workspace_overview(self):
+    def test_worktree_overview(self):
         # Overview + removal offer: RED 2 of 2 without it (no overview; invented criteria, guessed
         # command, dirty and live workspaces offered for removal under time pressure).
-        block = text("runtime.md").split("**Workspace overview**", 1)[1].split("**Parallel phase**", 1)[0]
-        for needle in ("orca worktree ps --json", "waits for you:", "linkedPR.state", "--porcelain",
-                       "origin/<branch>..HEAD", "never `--force`, never `--delete-branch`",
-                       "not removable:", "don't ask"):
+        block = text("runtime.md").split("**Overview and clean-up**", 1)[1].split("**Dev servers", 1)[0]
+        for needle in ("t3_worktree_list", "--porcelain", "origin/<branch>..HEAD",
+                       "never `--force`, never delete the branch", "not removable:", "don't ask"):
             self.assertIn(needle, block)
-        self.assertIn('"Workspace overview"', text("commands.md"))
+        self.assertIn('"Overview and clean-up"', text("commands.md"))
 
-    def test_lead_asks_and_dev_is_own_call(self):
+    def test_parent_asks_and_dev_is_own_call(self):
         # Lead-only questions (owner 13.11.2026): RED 2 of 3 without it (worker asked the user in its own
-        # session and halted on dev migration/deploy; "a relayed yes is not the user's yes").
+        # session and halted on dev migration/deploy). T3: the parent thread asks, never a name.
         halt = text("SKILL.md").split("## Halt on Irreversible Actions", 1)[1].split("\n---", 1)[0]
         for needle in ("beyond dev", "Dev deploys and dev-database migrations", "announce shared ones",
-                       "Production deploys, releases", "Only the lead session asks the user"):
+                       "Production deploys, releases", "Only the thread the user reads asks the user"):
             self.assertIn(needle, halt)
-        lead = text("runtime.md").split("### Asking through the lead", 1)[1].split("### Orca workers", 1)[0]
-        for needle in ("**lead session**", "`lead: <name>`", "`SendMessage`", "verbatim",
-                       "`Decisions:`", "Never ask the user yourself", "summaries are information"):
-            self.assertIn(needle, lead)
+        ask = text("runtime.md").split("### Asking for the user", 1)[1].split("### Child threads", 1)[0]
+        for needle in ("**Delegated thread**", "pending request", "`QUESTION`", "`lead: <name>`",
+                       "**verbatim**", "`Decisions:`", "summaries are information", "never a session by name"):
+            self.assertIn(needle, ask)
         self.assertNotIn("A relayed yes is not the user's yes", text("runtime.md"))
 
     def test_pick_and_parallel_phase(self):
@@ -403,31 +413,25 @@ class DevDocsTests(unittest.TestCase):
         for needle in ("`/dev next <N>`", "Claimed by another branch", "Builds on a phase not yet `[x]`",
                        "The run ends after Phase N"):
             self.assertIn(needle, pick)
-        par = text("runtime.md").split("**Parallel phase**", 1)[1].split("### Asking through the lead", 1)[0]
-        for needle in ("`/dev parallel [<N> …]`", "multiSelect", "--branch phase-<N>-<slug> --no-parent --json`",
-                       '--spec "/dev next <N> — lead: <this session\'s name>"', "counts the handed-off phases as claimed"):
+        par = " ".join(text("runtime.md").split("**Parallel phase**", 1)[1].split("### Asking for the user", 1)[0].split())
+        for needle in ("`/dev parallel [<N> …]`", "multiSelect", "Not in T3 mode → say so, start nothing",
+                       "`hire developer`", '`isolation: "worktree"`', "title `phase-<N>-<slug>`",
+                       "counts the handed-off phases as claimed", "never runs `/dev parallel`"):
             self.assertIn(needle, par)
         self.assertNotIn("/dev next — Phase", text("runtime.md"))
         self.assertIn("/dev parallel", text("SKILL.md").split("---", 2)[1])
 
-    def test_parallel_workers_close_themselves(self):
-        # v4.7.0 RED 2/2: started by `worktree create --agent`, phase workers stayed open after the
-        # merge (no rule; the lead would ask the user, the worker ended idle) — memory on a shared host.
-        par = " ".join(text("runtime.md").split("**Parallel phase**", 1)[1].split("### Asking through the lead", 1)[0].split())
-        for needle in ("orca orchestration worker-start", '--worktree "id:<worktreeId>"',
-                       "Never `worktree create --agent`", "its terminal closes; workspace and branch stay"):
-            self.assertIn(needle, par)
-        workers = " ".join(text("runtime.md").split("### Orca workers", 1)[1].split())
-        self.assertIn("**Phase done** (`[x]`, merged): `worker_done` as below, subject `phase <N> done`", workers)
+    def test_child_threads_finish_with_done(self):
+        workers = " ".join(text("runtime.md").split("### Child threads", 1)[1].split())
+        self.assertIn("**Phase done** (`[x]`, merged): finish with `DONE from <you>: phase <N> done", workers)
         self.assertIn("claim no further phase", workers)
-        self.assertIn("(a worker: `orca orchestration ask`)", text("runtime.md"))
 
     def test_claim_never_on_main(self):
         # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace
         # instead of handing the phase off; without Orca agents had to guess the way off <main>.
         pre = " ".join(text("SKILL.md").split("### 2–3. Pre-Phase", 1)[1].split("### 4.", 1)[0].split())
         for needle in ("**On `<main>`** (`git branch --show-current`) claim nothing there.",
-                       "hand Phase N off as `/dev parallel <N>` does", "this session stays coordinator",
+                       "T3 mode: hand Phase N off as `/dev parallel <N>` does", "this session stays coordinator",
                        "git switch -c phase-<N>-<slug> origin/<main>"):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
@@ -468,7 +472,7 @@ class DevDocsTests(unittest.TestCase):
         # never called Codex. Codex adds to the Claude items, never replaces them; works outside Orca.
         gate = " ".join(text("gate.md").split())
         codex = gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0]
-        for needle in ("`defaults.second-opinion: codex`", "in or outside Orca",
+        for needle in ("`defaults.second-opinion: codex`", "on every host",
                        "Diff review, Fix review or Similar-bugs scan",
                        "(role `diff`, `fix`, `similar`)", "run in the background",
                        'bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> '
@@ -486,7 +490,6 @@ class DevDocsTests(unittest.TestCase):
         r = text("runtime.md")
         self.assertNotIn("Second opinion", r)
         self.assertNotIn("second opinion", r)
-        self.assertNotIn("Orca worker", gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0])
         self.assertTrue((DEV / "scripts" / "codex-review.sh").exists())
         # Moved out of gate.md for the hot-path budget; keep it from getting lost in the next trim.
         self.assertIn("Former skill names in those lists (`bug-prospector`, `security-audit`, "

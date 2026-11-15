@@ -103,7 +103,7 @@ state the proposal, get approval. A plan that describes the step is not approval
 name the action: "looks fine" to another question is none. A production deploy or release approval
 comes with a rollback plan (trigger, steps, time to restore), stated before asking.
 
-Only the lead session asks the user; phase workspaces and Orca workers ask through it (`runtime.md`).
+Only the thread the user reads asks the user; child threads ask their parent (`runtime.md`, "Asking for the user").
 
 ---
 
@@ -126,7 +126,7 @@ phases.
 
 **Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
 context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
-`/dev next`; the position is in `## Position` of the phase file." As an Orca worker: `runtime.md`, "Orca workers" instead.
+`/dev next`; the position is in `## Position` of the phase file." As a child thread: `runtime.md`, "Child threads" instead.
 
 ---
 
@@ -143,11 +143,11 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 ### 2–3. Pre-Phase and pre-skill handoff
 
 1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Of their `## Minor (deferred)`, read only the items whose files this phase touches, as traps for this phase.
-2. **On `<main>`** (`git branch --show-current`) claim nothing there. Orca mode: hand Phase N off as
-   `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the workspace and end the run —
+2. **On `<main>`** (`git branch --show-current`) claim nothing there. T3 mode: hand Phase N off as
+   `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the child thread and end the run —
    this session stays coordinator. Otherwise `git fetch -q && git switch -c phase-<N>-<slug>
    origin/<main>` (slug: `runtime.md`), then claim there.
-   Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch. Orca mode: name and mark this workspace's card, never create one (`runtime.md`, "Orca").
+   Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types (gate additions that never remove a check) and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
 

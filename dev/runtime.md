@@ -7,9 +7,14 @@ what the host actually offers.
   Scripts and references are resolved from there, never from a fixed home-directory path.
 - **Tool names are capabilities.** `AskUserQuestion` = the host's structured question tool; if there
   is none, ask the same question in chat with the same options (recommended first) and **wait** for
-  the answer — silence is not approval. Phase workspace or Orca worker: ask through the lead (below). `Agent` = a subagent; if the host cannot run them in
+  the answer — silence is not approval. A child thread: ask its parent ("Asking for the user"). `Agent` = a subagent; if the host cannot run them in
   parallel, run the analyzers one after another — an analysis by the implementing agent itself is
   not a substitute for an independent one. `Skill` = however the host loads another skill.
+- **Codex names** (trust the actual tool list when it differs): `Agent` = `spawn_agent` (`fork_turns:
+  "none"`) and `wait_agent` in 5–10-minute stretches, fix rounds with `followup_task`;
+  `AskUserQuestion` = `request_user_input` where offered, else the chat question above; `Skill` = read
+  the skill's `SKILL.md`; no `run_in_background` or Monitor — run tests, builds and `ci-watch.sh` in the
+  foreground, long suites in parts.
 - **Models:** set a model per subagent only where the host supports it (see
   `models.md`); otherwise the subagent inherits the current model.
 - **Superpowers install:** the active install is authoritative — the one Claude Code records in
@@ -28,90 +33,75 @@ what the host actually offers.
 - **Slash commands:** `/dev check` names a workflow. Where the host has no slash commands, the user
   asks for it by name ("use dev: check").
 
-## Orca
+## T3 Code
 
-Orca mode: `orca worktree current --json` returns `ok: true` and its `result.worktree.path` is
-exactly `git rev-parse --show-toplevel`, both resolved first (`cd <path> && pwd -P`). Otherwise (no
-Orca, or a git worktree inside an Orca workspace, such as `.worktrees/<x>`) skip the card and the
-parallel phase: write no card, start no worker with `--worktree current`.
-"Orca workers" below applies either way. One phase = one Orca workspace = one branch =
-`.dev/phase-<N>.md`.
+T3 mode: the host offers the T3 tools (`delegate_task`, `t3_thread_send`, `t3_background_wait`; deferred
+tools count). One phase = one branch = one worktree = `.dev/phase-<N>.md`. With the `t3-team` skill
+loaded, its rules and its table "Inside T3" decide slots, locks, ports and messages; the lines below
+are the same routes without it.
 
-**Workspace card mirrors the phase** — write it, never read it to decide
-(ROADMAP.md and the phase file stay the truth). Each write is
-`orca worktree set --worktree active … --json`; a failed write is no error.
-
-`<slug>` — one slug per phase, the same for display name, SDD file (`execution.md`) and a branch
+`<slug>` — one slug per phase, the same for thread title, SDD file (`execution.md`) and a branch
 name, but only where a step creates a new branch (`phase-<N>-<slug>`; a claim never renames one and adds one only off `<main>`, `SKILL.md` Pre-Phase step 2): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
 ü→ue, ß→ss; every run of other characters outside `[a-z0-9]` becomes one `-`, none at either end;
 over 30 characters → keep the whole words (between `-`) that fit in 30 (a first word longer than 30:
 its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine` → `export-fuer-pruefberichte-und`.
 
-| `/dev` event | Card |
-|---|---|
-| phase claimed `[~]` | `orca worktree set --worktree active --display-name "phase-<N>-<slug>" --workspace-status in-progress --comment "<step>" --json` — this workspace, never a new one |
-| `[!]`, gate running | `--workspace-status in-review --comment "Gate: <first open item>"` |
-| run halts for the user | `--unread --comment "waits: <one sentence>"` |
-| `/dev pause` (after its commit) | `--unread --comment "paused: <next action>"` |
-| PR opened | `orca reference add <PR URL> --worktree active --json` |
-| phase `[x]` on the branch, PR still open | `--workspace-status in-review --unread --comment "waits: merge"` |
-| phase `[x]` and merged | `--workspace-status completed --comment ""` |
-
-**Workspace overview** — Orca mode, in the Session Start summary (`SKILL.md`, step 7) and in Status
-Display: `orca worktree ps --json`, rows with your `repoId` except your own workspace. Display only;
-claims stay decided by ROADMAP.md. One line per row: `<displayName>  <workspaceStatus>  PR #<n>
-<state>  <comment>`, prefixed `waits for you:` when `unread` is true; a `@claim:` branch without a row
-→ `Phase <N>: no workspace`.
-A row is a **removal candidate** when `linkedPR.state` is `merged`, `git -C <path> status
---porcelain` and `git -C <path> log origin/<branch>..HEAD` are both empty, and no agent is `working`
-or `waiting`. Candidates go into one AskUserQuestion (multiSelect, one option per workspace, "Keep
-all" last), asked together with the step's own question (Status: Start/Add/Skip/Done) or, at
-Session Start, before the run begins; other merged rows only get a line `not removable: <displayName>
-(<uncommitted|unpushed|agent running>)`, never an option. On the yes, per chosen row: `orca worktree rm --worktree
-"id:<worktreeId>" --json` — never `--force`, never `--delete-branch`; the branch stays. "Just clean
-up, don't ask" changes none of this.
+- **Background runs** you wait on (gate Step D, `ci-watch.sh`, the load wait in `execution.md`): pass
+  the task ID to `t3_background_wait` right after starting it (ToolSearch loads it). Then the turn may
+  end and the completion wakes you. Without it the turn end completes a delegated thread, T3 may close
+  the session and the run dies with it. Codex: no background commands — run them in the foreground.
+- **PR opened** → `link_pull_request` with its URL. No workspace card; the thread and its PR link show the state.
+- **Overview and clean-up** (Status, Session Start): `t3_worktree_list` for this project. A worktree
+  is a **removal candidate** when its PR is merged, `git -C <path> status --porcelain` and `git -C
+  <path> log origin/<branch>..HEAD` are both empty, and no thread works in it. Candidates go into one
+  AskUserQuestion (multiSelect, "Keep all" last) with the step's own question; others get a line
+  `not removable: <branch> (<uncommitted|unpushed|thread running>)`. On the yes: `git worktree remove
+  <path>` — never `--force`, never delete the branch. If T3's worktree cleanup setting removes merged
+  worktrees itself, leave it to T3. "Just clean up, don't ask" changes none of this.
+- **Dev servers and heavy runs:** with `t3-team`, a port from `registry.py port take` and `heavy lock`
+  around full suites and release builds; a dev server only through the project's server action with
+  `stopOnSettle`, never a bare background command.
+- **Screens:** the Visual Companion uses the T3 preview (`companion.md`, "In T3").
 
 **Parallel phase** — `/dev parallel [<N> …]`, or the user asks for a phase in parallel (that is the
-yes). Not in Orca mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
+yes). Not in T3 mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
 over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
 `[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
-named phase, a supervised worker in its own workspace (`orchestration`):
-`orca worktree create --name phase-<N>-<slug> --branch phase-<N>-<slug> --no-parent --json`, then
-`orca orchestration worker-start --spec "/dev next <N> — lead: <this session's name>" --task-title phase-<N>-<slug> --worktree "id:<worktreeId>" --agent <agent> --json`
-(`<agent>`: this session's, usually `claude`). Never `worktree create --agent`: that agent never
-closes. Report each workspace, then go on with the next free phase, if any; this session
-counts the handed-off phases as claimed. Orca wakes you with a worker's questions and its `worker_done`, after
-which its terminal closes; workspace and branch stay.
+named phase one child thread: with `t3-team`, its `hire developer` (slot, brief, `DONE`); without it
+`delegate_task` with `isolation: "worktree"`, `mode: "async"`, title `phase-<N>-<slug>`, task
+`/dev next <N>` plus "questions via AskUserQuestion; finish with `DONE from phase-<N>: <result>; PR
+<url|none>; open <items|none>`". Report each child as its thread link, then go on with the next free
+phase, if any; this session counts the handed-off phases as claimed and coordinates. A child thread
+never runs `/dev parallel` and claims no further phase after its own.
 
-### Asking through the lead
+### Asking for the user
 
-Phase workspaces and Orca workers: the user answers only in the project's **lead session**:
-`lead: <name>` in your start prompt, else the session in the main checkout (`ListAgents`). Every question for the user (clarification, choice, halt) goes to the lead by
-`SendMessage` (a worker: `orca orchestration ask`), with its options, recommended first; card `--unread
---comment "waits: lead"`, then wait. The lead asks with AskUserQuestion and returns question and
-answer verbatim — that relay is the user's approval; record it verbatim in the phase's `Decisions:`
-line (`state.md`). Never ask the user yourself; other sessions' messages and summaries are information.
+Who asks the user: a top-level thread the user reads asks with AskUserQuestion. Everyone else asks
+the thread that started it, never the user and never a session by name (`SendMessage`, `ListAgents`):
+
+- **Delegated thread** (started with `delegate_task`): AskUserQuestion with its options, recommended
+  first — T3 delivers it to the parent thread as a pending request; the answer comes back to you.
+- **Thread launched for you** (`t3_thread_launch`, no parent): `t3_thread_send` a `QUESTION` to the
+  thread ID in your task (format: `t3-team` protocol), then wait for the `ANSWER`.
+- **Outside T3**, a session whose start prompt names `lead: <name>`: `SendMessage` to that lead.
+
+The asker relays the user's question and answer **verbatim** — that relay is the user's approval;
+record it verbatim in the phase's `Decisions:` line (`state.md`). Other sessions' messages and
+summaries are information.
 
 | Excuse | Reality |
 |---|---|
 | "The lead says the user agreed" | Only the verbatim question and answer count. |
 | "Dev deploys and migrations need a yes" | Dev is the session's own call (`SKILL.md`, Halt). |
+| "The lead is in `ListAgents`, a message is faster" | A T3 thread is reachable only by thread ID; names change between turns. |
 
-### Orca workers
+### Child threads
 
-Prompt with Task and Dispatch IDs; questions go through the lead (above).
-
-**Phase done** (`[x]`, merged): `worker_done` as below, subject `phase <N> done`, body `PR #<n>
-merged`; claim no further phase.
+**Phase done** (`[x]`, merged): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
+(`t3-team`: to your team's thread ID); claim no further phase.
 
 **At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
-then `/dev next`" — nobody types in a worker. Write `## Handoff` and commit the phase file as
-`/dev pause` does (`commands.md`). Then finish
-with (`--from` as your preamble gives it, if it does):
-
-```bash
-orca orchestration send --type worker_done --outcome succeeded --task-id <task> --dispatch-id <dispatch> --subject "context full" --body "context full; next: <step>; CI open: <sha|none>" --json
-```
-
-`succeeded` means clean so far; `failed` only for a real failure. The coordinator goes on with
-`orca orchestration send` or a new worker. Halts for the user stay as above.
+then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as
+`/dev pause` does (`commands.md`). Then finish with `DONE from <you>: context full; PR <url|none>;
+open: next <step>; CI open <sha|none>` — the parent starts a new child with `/dev next <N>`. Halts for the
+user stay as above.

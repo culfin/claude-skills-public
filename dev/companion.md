@@ -39,6 +39,14 @@ reading it? If the honest answer is "it is text in a nicer box" → terminal.
 
 **When a question has a UI/UX side:** when the answer becomes visible — layout, navigation, a user's flow through views, forms, feedback (error, loading, empty), rendering across sizes and themes. Not: data model, library choice, naming — then no screen, question in the terminal only.
 
+### In T3
+
+In T3 mode (`runtime.md`) no server runs: "Show screen" writes the screen as a complete HTML page
+(the fragment wrapped in a page with the building blocks' styles) into a directory outside the repo
+(`${TMPDIR:-/tmp}/dev-screens/<repo name>/`), then shows it in the thread with `html_preview` (the file path) and `html_render`.
+No URL line. The rules above (user interface only, triggers) stay. A child thread's screen shows in its
+own thread: a question about it names that thread's link.
+
 ### How the Server Is Started
 
 ```bash
