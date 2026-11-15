@@ -9,7 +9,7 @@ with `$CHECK_SCOPE` in place of the phase-changed files — the step definitions
 **Triggered by:** `/dev check`
 
 **Precondition:** No active phase.
-- If ROADMAP.md exists and contains a phase with `[~]` or `[!]` not claimed by another branch: stop with "Phase N is still active (`[~]`/`[!]`). Use `/dev next` to complete the quality gate of the running phase."
+- If ROADMAP.md exists and contains a phase with `[~]` or `[!]` claimed by the current branch: stop with "Phase N is still active (`[~]`/`[!]`). Use `/dev next` to complete the quality gate of the running phase."
 - If ROADMAP.md exists and all phases are `[x]` or `[—]` (dormant): proceed normally.
 - If no ROADMAP.md: proceed, but write no Check summary file. Check-Commit is still created.
 
@@ -35,7 +35,7 @@ If `$CHECK_SCOPE` is empty: AskUserQuestion — "No changes found since the last
 | A | Diff review | `analyzers/diff-review.md`, scope `$CHECK_SCOPE` |
 | A | Spec checker | Only if the user names a spec; otherwise skipped with the note "no spec" |
 | A | Security review | Either tier, when the security trigger matrix matches `$CHECK_SCOPE` |
-| A | Tech-Stack, Performance, design reviews | Large tier only — same trigger matrix as the gate, evaluated against `$CHECK_SCOPE` |
+| A | Tech-Stack, Performance, design, Accessibility, UX, Polish reviews, Codex | Per the Step A table in `gate.md`, evaluated against `$CHECK_SCOPE` |
 | B | Fix + Fix review | Bundled fix of all critical findings, Fix review on the fix diff |
 | C | Similar-bugs scan | Only if Step B fixed a defect |
 | D | Typecheck + lint + tests, Production Build, E2E Tests | Full suite; tests and build in parallel |

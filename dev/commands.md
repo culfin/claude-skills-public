@@ -64,15 +64,15 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
 3. **Mandatory: Dead-code scan** (`analyzers/dead-code.md`, quick mode), regardless of configuration.
    Show the findings; fix the safe ones (unused imports, unreferenced functions), ask before larger removals.
 4. Re-run typecheck + lint (`gate.md`, "Project Commands per Stack") after any fixes from steps 2–3.
-   Gather the `## Minor (deferred)` lines from `docs/gates/phase-<N>.md` of this milestone into
-   STATE.md Blockers & Risks (`- Phase N: …`).
+   STATE.md Blockers & Risks gets one line per phase (`- Phase N: K deferred — docs/gates/phase-N.md`);
+   copy a single item only if it is a risk.
 5. **Archive:** tell the
    user, run `python3 "$DEV_DIR/scripts/state-check.py" archive "<milestone heading>"` (moves the
    milestone from ROADMAP.md and old gate summaries from STATE.md to `docs/roadmap-archive/`;
    `docs/gates/` stays), commit `roadmap: archive <milestone>`.
    `check` still reports `size:` → offer to move the STATE.md sections it names there too.
 6. **Show summary** — in the terminal: milestone name + goal at the top, completed phases with highlights of their `docs/gates/` summaries (critical findings/fixes), next steps. If the milestone changed the user interface, additionally **Show screen** with real screenshots of the changed views (building block "Real screen" or "Before/After"). Before proposing a deploy, add its rollback plan.
-7. Remove this milestone's `Milestone End pending:` line from STATE.md (the others stay), then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause. `brag` installed → after a `landing` phase, mention `/brag` once at Milestone End.
+7. Remove this milestone's `Milestone End pending:` line from STATE.md (the others stay), then AskUserQuestion: Next milestone (Recommended), Pre-release review (if configured), Pause.
 
 ---
 

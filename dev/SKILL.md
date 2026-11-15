@@ -93,7 +93,7 @@ destructive too) are the session's own call; announce shared ones to the other s
 Beyond dev, the user decides:
 
 - Migrations and data changes on staging or production databases
-- Production deploys, releases, tags, force-pushes, deleting branches
+- Production deploys, releases, tags, force-pushes, deleting branches (except the run's own task and agent branches)
 - outgoing messages to real recipients (mail, push, webhooks) and payment transactions
 - Writing to external storage, registries or object storage
 - anything that touches secrets, keys or credentials
@@ -117,9 +117,7 @@ bundled round (`befragung.md`). **The run halts only for:**
 - a gate finding still critical after 3 attempts (or 6 gate rounds in total, `gate.md` Step B), or a task finding after 5 fix rounds that every ruling would only guess (`execution.md`);
 - the context hint (below);
 - Milestone End (`commands.md`);
-- plus the gate's own stops (`gate.md`, `ci.md`): wrong branch at the gate commit, unclear staging, no
-  authorized route for CI (once per run), a review item that timed out twice, a floor-guard
-  critical that is not undone (needs approval).
+- plus the gate's own stops (`gate.md`, `ci.md`).
 
 CI `red` or `timeout` halts its repairer (`ci.md`), then the run continues; `none` does not halt.
 
@@ -144,7 +142,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 
 ### 2–3. Pre-Phase and pre-skill handoff
 
-1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Read the gate files' `## Minor (deferred)` too, as traps for this phase.
+1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Of their `## Minor (deferred)`, read only the items whose files this phase touches, as traps for this phase.
 2. **On `<main>`** (`git branch --show-current`) claim nothing there. Orca mode: hand Phase N off as
    `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the workspace and end the run —
    this session stays coordinator. Otherwise `git fetch -q && git switch -c phase-<N>-<slug>

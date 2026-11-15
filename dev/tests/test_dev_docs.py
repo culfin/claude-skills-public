@@ -444,6 +444,25 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("On a Codex host a Claude subagent gives it", gate)
         self.assertIn("`skipped: host is codex`", gate)
 
+    def test_small_fixes_v4_11_1(self):
+        # Review of 15.11.2026: contradictions and stale spots found in gate records and texts.
+        skill = text("SKILL.md")
+        self.assertIn("deleting branches (except the run's own task and agent branches)", skill)
+        gate = text("gate.md")
+        self.assertIn("Motion review: a motion probe hits", gate)
+        self.assertIn("A trigger that does not fire → the item is not listed.", gate)
+        commands = text("commands.md")
+        self.assertNotIn("/brag", commands)
+        self.assertIn("one line per phase", commands)
+        self.assertNotIn("Gather the `## Minor (deferred)` lines", commands)
+        check = text("dev-check.md")
+        self.assertIn("claimed by the current branch", check)
+        self.assertNotIn("Large tier only — same trigger matrix", check)
+        triggers = text("tech-stack-triggers.md")
+        self.assertIn("`app/**`", triggers)
+        self.assertNotIn("built-in types in `gate.md`", text("roadmap-creation.md"))
+        self.assertIn("only the items whose files this phase touches", skill)
+
     def test_codex_second_opinion_runs_beside_claude(self):
         # v4.7.0 RED: with only an Orca-worker second opinion the agent ignored a Codex request and
         # never called Codex. Codex adds to the Claude items, never replaces them; works outside Orca.

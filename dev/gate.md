@@ -91,6 +91,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too.
+- A trigger that does not fire → the item is not listed.
 - **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight, UX review, Polish review
   and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
@@ -122,7 +123,7 @@ dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows t
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |
-| Design detector, Motion review | `analyzers/design-detector.md`, `analyzers/motion.md` | large tier, UI files changed; `landing`: Design detector in either tier |
+| Design detector, Motion review | `analyzers/design-detector.md`, `analyzers/motion.md` | large tier; Design detector: UI files changed (`landing`: either tier); Motion review: a motion probe hits |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
 | UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | UI files changed, **either tier, any `@type:`** |
 | Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), on the changed views and their direct dependencies; its confirmed Critical → critical, the rest notes | web UI files changed (Design detector's row), either tier; native UI: not run, UX review covers it |
