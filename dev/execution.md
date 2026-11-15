@@ -13,7 +13,7 @@ The main session dispatches every implementer and reviewer itself
   this phase. Ledger, tasks JSON, wave output, briefs, reports and review packages live there as files;
   the chat gets one status line per task (`Task 3: complete — 2 commits, review clean`). When the phase
   reaches `[x]`, delete its workspace.
-- **Models:** every dispatch names its model per `models.md` (omitted = the most expensive).
+- **Models:** every dispatch names its model per `models.md`.
 - **UI tasks** (the task creates or changes UI files, `gate.md`, whatever the phase `@type:`): pass the
   `design/INDEX.md` and `stack/INDEX.md` rows marked `4c` whose trigger the task meets (`--triggers --step 4c`,
   `SKILL.md` router). `ux-ui-design` among the available skills → whoever writes the UI code invokes

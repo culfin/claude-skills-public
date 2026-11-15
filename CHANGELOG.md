@@ -2,6 +2,17 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.11.0 — 2026-11-15 (merge after the running Orca phases)
+
+**dev** — Two owner decisions. (1) Full test runs that the project's or host's rules send to CI: the gate
+runs the affected suites locally, records `<n> passed; full: CI <sha>`, and the phase reaches `[x]` only
+when that SHA is `green` in `ci.md`. Gate records showed agents omitting the full local run under the
+owner's "full runs via CI" rule while still writing "Skipped checks: none"; the gate had no rule for it.
+(2) On a Codex host the Codex second opinion would have Codex review Codex; a Claude subagent now gives
+it with the same prompt and input, and without one the item is `skipped: host is codex`. Paid for in
+words by dropping two checklist comments that repeated the Step A table and Step D, and a
+`models.md` repeat in `execution.md`.
+
 ## v4.10.2 — 2026-11-15
 
 **dev** — The gate's evidence check now accepts `UX review` and `Polish review` closed as

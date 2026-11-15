@@ -59,7 +59,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 <!-- Step A, always -->
 - [ ] Diff review
 - [ ] Spec checker
-<!-- Step A, conditional: trigger and, except Security, Accessibility, UX and Polish review, large tier (Step A) -->
+<!-- Step A, conditional: per the Step A table -->
 - [ ] Security review
 - [ ] Tech-Stack Review: Next.js docs
 - [ ] Tech-Stack Review: <stack id>  <!-- one per matching stack (except `nextjs`, which has the item above), e.g. shadcn -->
@@ -79,7 +79,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items t
 <!-- Step D and closing, always; Build and E2E: not for `@type: docs` with a `*.md`-only diff (Phase Types) -->
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
-- [ ] E2E Tests                      <!-- small tier: only if UI files or a user flow changed -->
+- [ ] E2E Tests
 - [ ] Gate summary (docs/gates/phase-N.md)
 - [ ] Gate commit
 ```
@@ -147,7 +147,7 @@ of Diff review, Fix review or Similar-bugs scan gets its Second opinion item (ro
 `--prompt`: the Claude item's prompt; `--input`: its diff file (Similar-bugs: the fix list) plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
-or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`.
+or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host a Claude subagent gives it (same prompt, input); none: `skipped: host is codex`.
 Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
@@ -207,7 +207,7 @@ input, whole codebase. A confirmed twin goes back through Step B; complex ones g
 1. **Typecheck + lint + tests and Production Build in parallel** — two background commands
    ("Project Commands per Stack"); one after the other only if both write the same output directory.
    Before `[gate-pass]` also run `python3 "$DEV_DIR/scripts/floor-guard.py" --base <phase base>` (`--root` as for the tier); its result
-   (`floor-guard: 0 critical` or the list) joins that evidence. A critical finding blocks: undo it,
+   (`floor-guard: 0 critical` or the list) joins that evidence. Full runs that rules send to CI: affected suites locally, evidence `<n> passed; full: CI <sha>`; `[x]` waits for that SHA `green` (`ci.md`). A critical finding blocks: undo it,
    or record it in `.floor-guard-allow` with the reason after the user's explicit approval. Notes
    (type or lint suppressions) never block; list them in the gate summary.
 2. **E2E Tests** after the build — small tier only if UI files or a user flow changed, large tier

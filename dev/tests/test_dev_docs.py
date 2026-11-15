@@ -432,6 +432,18 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
 
+    def test_full_runs_sent_to_ci_wait_for_green(self):
+        # v4.11.0: gate records showed "full local run omitted, runs in CI" while the phase reached [x]
+        # and claimed "Skipped checks: none"; the gate now names this case and ties [x] to the CI SHA.
+        gate = text("gate.md")
+        self.assertIn("full: CI <sha>", gate)
+        self.assertIn("`[x]` waits for that SHA `green`", gate)
+
+    def test_codex_host_gets_a_claude_second_opinion(self):
+        gate = text("gate.md")
+        self.assertIn("On a Codex host a Claude subagent gives it", gate)
+        self.assertIn("`skipped: host is codex`", gate)
+
     def test_codex_second_opinion_runs_beside_claude(self):
         # v4.7.0 RED: with only an Orca-worker second opinion the agent ignored a Codex request and
         # never called Codex. Codex adds to the Claude items, never replaces them; works outside Orca.

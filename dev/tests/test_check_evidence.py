@@ -262,6 +262,11 @@ class EvidenceTests(unittest.TestCase):
         items = ["tech-stack review" if i.startswith("tech-stack review") else i for i in items]
         self.assertEqual(sorted(set(items)), sorted(ce.REVIEW_ITEMS))
 
+    def test_full_run_in_ci_is_valid_test_evidence(self):
+        i = self.sid()
+        self.state([f"- [x] Typecheck + lint + tests — 37 passed; full: CI 1a2b3c4 @{i}"])
+        self.assertEqual(self.run_check(), [])
+
     OLD = "0123456789ab"
 
     def test_review_items_valid_with_current_fix_review(self):
