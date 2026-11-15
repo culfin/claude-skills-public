@@ -2,6 +2,15 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.12.1 — 2026-11-15
+
+**dev** — UI hints follow the work, not the phase type. `detect-stack.py --triggers` takes `--ui` when
+the phase builds or changes UI (criteria or spec name a screen, page, view, dialog or component); the
+`ui` lines (design index rows, `/shadcn` discovery, density critique, the motion rule) then apply to any
+type but `landing`, which keeps its own design source. Before, a `feature` phase that built a dialog got
+none of the four design lines a `ui` phase gets, while `ux-ui-design` already followed the work.
+Paid for in words by nothing: the hot path had room for the six words.
+
 ## v4.12.0 — 2026-11-15
 
 **dev** — T3 Code replaces the previous orchestrator (owner decision). `runtime.md` "T3 Code": parallel

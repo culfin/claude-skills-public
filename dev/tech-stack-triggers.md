@@ -2,8 +2,9 @@
 
 `5c` in the index files = the gate's review wave (Step A). **Detection** (`$TECH_STACKS`) is
 `scripts/detect-stack.py` over section 1 of `stack/INDEX.md`, once per session; `detect-stack.py
---triggers --step <4a|4c|gate> --type <@type>` prints only the lines of this file and the section-2
-rows of `stack/INDEX.md` that match the stacks, the step and the type. This file says which files and
+--triggers --step <4a|4c|gate> --type <@type> [--ui]` prints only the lines of this file and the section-2
+rows of `stack/INDEX.md` that match the stacks, the step and the type; `--ui` (the phase builds or changes
+UI) adds the `ui` lines to any type but `landing`. This file says which files and
 stacks trigger a source or review; when each review runs (tier, phase type) and how a missing source
 is closed is `gate.md` (Step A, Evidence rules) alone.
 
