@@ -2,6 +2,15 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.10.2 — 2026-11-15
+
+**dev** — The gate's evidence check now accepts `UX review` and `Polish review` closed as
+`skipped: <reason>`, as `gate.md` has allowed since v4.10.0, and lets both keep their state when a
+current Fix review covers the fix diff, like the other Step A analyses. Before, a UI phase on a host
+without `ux-ui-design` or `vibepolish` could never pass the gate (`not skippable: UX review`), and every
+fix round reran the two most expensive UI reviewers. The removed v4.9.0 role `codex security` left the
+script's list. Two new tests compare the script's lists with `gate.md`, so the two cannot drift apart again.
+
 ## v4.10.1 — 2026-11-14
 
 **dev** — A critical finding only Codex raised now also stays critical when it breaks a hard rule of the
