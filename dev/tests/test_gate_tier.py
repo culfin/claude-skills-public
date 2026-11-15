@@ -38,6 +38,17 @@ class GateTierTests(unittest.TestCase):
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text("".join(f"line {i}\n" for i in range(lines)))
 
+    def test_test_files_are_not_sensitive(self):
+        self.write("tests/api/users.test.ts", 20)
+        self.write("src/lib/auth/__tests__/session.test.ts", 20)
+        rc, out, _ = self.run_tier("--tasks", "1", "--type", "feature")
+        self.assertEqual(out[0], "small", out)
+
+    def test_auth_code_stays_sensitive(self):
+        self.write("src/lib/auth/session.ts", 20)
+        rc, out, _ = self.run_tier("--tasks", "1", "--type", "feature")
+        self.assertEqual(out[0], "large", out)
+
     def test_small_change_is_small(self):
         self.write("app.py", 20)
         rc, out, _ = self.run_tier("--tasks", "2", "--type", "ui")

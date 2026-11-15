@@ -48,7 +48,7 @@ ops and dependency row reads the tier script's reasons, not a path list here.
 
 | Changed files | Condition | Skill | Mode |
 |-------------------|-----------|-------|-------|
-| `src/app/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" above) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
+| `app/**`, `src/app/**`, `pages/**`, `src/pages/**`, `next.config.*` | `nextjs` in `$TECH_STACKS` | Next.js docs (see "Next.js" above) | Check changed files against Next.js patterns (RSC boundaries, metadata, route handlers) |
 | `src/components/**` with shadcn imports | `shadcn` in `$TECH_STACKS` | `shadcn` | Check correct usage, missing variants, accessibility |
 | Web UI files (row below), SwiftUI/UIKit views, `*.xaml`, Android layouts and Compose screens | UI files changed, either tier | Accessibility review (`analyzers/accessibility.md`) | Accessibility scan: missing ARIA labels, contrast, keyboard navigation, screen-reader support, target size |
 | `*.tsx`, `*.jsx`, `*.svelte`, `*.vue`, `*.astro`, `*.html`, `*.css`, `*.scss`, `*.less` | Web UI files changed | Design detector (`analyzers/design-detector.md`) | Runs `scripts/design-detect.sh` over the changed files (impeccable's deterministic rules, built locally); exit 3 → skipped |

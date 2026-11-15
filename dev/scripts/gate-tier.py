@@ -28,6 +28,9 @@ SENSITIVE = re.compile(
     r"(^|/)(auth|login|logout|session|sessions|middleware|security|permissions?)(/|\.|$)"
     r"|(^|/)api/|(^|/)(routes?|actions?|controllers?)/"
     r"|(^|/)migrations?/|\.sql$", re.I)
+# Test files count toward size, not sensitivity: floor-guard catches weakened tests.
+TEST_PATH = re.compile(r"(^|/)(tests?|__tests__|spec|specs|e2e)/|\.(test|spec)\.[cm]?[jt]sx?$"
+                       r"|(^|/)test_[^/]*\.py$|_test\.(py|go|rs)$", re.I)
 OPS = re.compile(
     r"(^|/)\.github/workflows/|(^|/)(?i:dockerfile)[^/]*$|(^|/)(docker-)?compose[^/]*\.ya?ml$"
     r"|(^|/)(deploy|infra(structure)?|ops|k8s|helm|terraform)(/|$)|\.tf$"
@@ -86,7 +89,7 @@ def main():
     db = sorted({p for p, _ in rows if DB_CHANGE.search(p)})
     if db:
         reasons.append("DB change: " + listed(db))
-    hits = sorted({p for p, _ in rows if SENSITIVE.search(p)})
+    hits = sorted({p for p, _ in rows if SENSITIVE.search(p) and not TEST_PATH.search(p)})
     if hits:
         reasons.append("sensitive files: " + listed(hits))
     code = [p for p, _ in rows if not p.lower().endswith(".md")]

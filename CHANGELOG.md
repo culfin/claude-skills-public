@@ -2,6 +2,24 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.11.1 — 2026-11-15 (merge after v4.11.0)
+
+**dev** — Small fixes from a review of the skill against real gate records. Milestone End writes one
+line per phase into STATE.md Blockers & Risks (`- Phase N: K deferred — docs/gates/phase-N.md`) and
+copies a single item only if it is a risk; Pre-Phase reads only deferred items whose files the phase
+touches (one project's STATE.md had reached 14,611 words against its 3,000 limit). The halt list exempts
+the run's own task and agent branches, which execution and gate delete themselves (open since v4.0.0).
+Motion review runs when a motion probe hits, as `tech-stack-triggers.md` already said; a trigger that
+does not fire is not listed (gate records showed it dispatched or "skipped" anyway). `gate-tier.py`
+no longer counts test files as sensitive (17 of 21 recorded gates were large, often for test paths
+alone; floor-guard still guards weakened tests). `/dev check` stops only for a phase the current branch
+claims and points at the gate's Step A table instead of a stale copy. `floor-guard.py` prints
+`floor-guard: 0 critical`, the line the gate quotes. The Next.js trigger also matches root `app/` and
+`pages/`. Removed: the `/brag` hint (skill gone since v4.0) and "built-in types in `gate.md`" in
+roadmap creation. Paid for by dropping the halt-list copy of the gate's own stops in SKILL.md (they stay
+in `gate.md` and `ci.md`). Not done here: keying the UI planning rows on the work instead of `@type`
+needs a `detect-stack.py` change and goes with the T3 rebuild.
+
 ## v4.11.0 — 2026-11-15 (merge after the running Orca phases)
 
 **dev** — Two owner decisions. (1) Full test runs that the project's or host's rules send to CI: the gate

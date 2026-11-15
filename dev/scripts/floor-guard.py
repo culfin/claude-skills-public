@@ -3,7 +3,7 @@
 
     floor-guard.py --base <ref> [--root <dir>]
 
-One finding per line on stdout: `<path>:<line>: <severity>: <kind>: <text>`. Exit 0 = no critical
+One finding per line on stdout: `<path>:<line>: <severity>: <kind>: <text>`, then `floor-guard: 0 critical` when nothing critical was found. Exit 0 = no critical
 finding (notes may be printed), 1 = at least one critical, 2 = usage or git error (nothing on
 stdout, so a caller never reads a failure as "clean").
 critical: skipped-test (generic skips only in test paths), removed-assertion (test paths),
@@ -187,7 +187,10 @@ def main():
                 findings.append((path, n, kind, text.strip()[:100]))
     for path, n, kind, text in findings:
         print(f"{path}:{n}: {'critical' if kind in CRITICAL else 'note'}: {kind}: {text}")
-    sys.exit(1 if any(f[2] in CRITICAL for f in findings) else 0)
+    critical = any(f[2] in CRITICAL for f in findings)
+    if not critical:
+        print("floor-guard: 0 critical")
+    sys.exit(1 if critical else 0)
 
 
 if __name__ == "__main__":

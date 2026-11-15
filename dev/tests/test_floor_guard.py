@@ -39,7 +39,15 @@ class FloorGuardTests(unittest.TestCase):
     def run_guard(self, base=None):
         out = subprocess.run([sys.executable, str(SCRIPT), "--base", base or self.base, "--root", str(self.root)],
                              capture_output=True, text=True)
-        return out.returncode, out.stdout.splitlines()
+        return out.returncode, [l for l in out.stdout.splitlines() if not l.startswith("floor-guard: ")]
+
+    def test_clean_change_prints_zero_critical(self):
+        self.commit_base(a__py="x = 1\n")
+        self.put("a.py", "x = 2\n")
+        out = subprocess.run([sys.executable, str(SCRIPT), "--base", self.base, "--root", str(self.root)],
+                             capture_output=True, text=True)
+        self.assertEqual(out.returncode, 0)
+        self.assertIn("floor-guard: 0 critical", out.stdout.splitlines())
 
     def kinds(self, lines):
         return [l.split(": ", 3)[2] for l in lines]
