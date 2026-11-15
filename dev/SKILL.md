@@ -37,7 +37,7 @@ current step needs.
 | Visual Companion ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
 | Host adapter, superpowers install | `runtime.md` | First explicit `/dev` run |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start, architectural 4a; gate Step D |
-| Tech, design, security triggers and sources | `python3 "$DEV_DIR/scripts/detect-stack.py" --triggers --step <step> --type <@type>` (fails → read `tech-stack-triggers.md`, say so) → `stack/docs.md`, `design/INDEX.md` | Steps `4a`, `4c`, `gate` (Step A) |
+| Tech, design, security triggers and sources | `python3 "$DEV_DIR/scripts/detect-stack.py" --triggers --step <step> --type <@type> [--ui]` (fails → read `tech-stack-triggers.md`, say so) → `stack/docs.md`, `design/INDEX.md` | Steps `4a`, `4c`, `gate` (Step A) |
 | Analyzer dispatch | `gate.md`, "Analyzer dispatch" — `analyzers/CONTRACT.md` only by path, for the subagent | Every analyzer dispatch |
 
 ---
@@ -172,7 +172,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    4b instruction. After the spec is committed: add `@spec:` to ROADMAP.md.
 
 Both: matching tech skills first (`--triggers --step 4a`, router). The phase builds or changes UI
-(criteria or spec name a screen, page, view, dialog or component; any `@type:`) and `ux-ui-design` is
+(criteria or spec name a screen, page, view, dialog or component; any `@type:`; then `--ui` in every step) and `ux-ui-design` is
 available → invoke it in planning mode before the criteria or spec; its UX questions join the round. Questions with a
 UI/UX side: ensure the companion via "Show screen" and pass on the hand-off note's companion
 sentences (`befragung.md`, step 5).

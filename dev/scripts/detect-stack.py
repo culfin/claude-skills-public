@@ -2,7 +2,7 @@
 """Detects a project's `$TECH_STACKS` from section 1 of stack/INDEX.md. Read-only.
 
     detect-stack.py [--root <dir>] [--json] [--index <stack/INDEX.md>]
-    detect-stack.py --triggers --step <4a|4c|gate> [--type <@type>] [--root <dir>]
+    detect-stack.py --triggers --step <4a|4c|gate> [--type <@type>] [--ui] [--root <dir>]
 
 Prints `stacks: <id>, …` and `groups: <group>, …` (`none` when empty), or with `--json`
 {"stacks": [...], "groups": [...]}; ids in the order of the index rows. Exit 0 = detected,
@@ -311,7 +311,9 @@ def emit(selected):
     return out
 
 
-def trigger_lines(path, stacks, step, type_):
+def trigger_lines(path, stacks, step, type_, ui=False):
+    # --ui: the phase builds or changes UI whatever its type; it then gets the `ui` lines too (not on landing).
+    kinds = {type_} | ({"ui"} if ui and type_ != "landing" else set())
     selected, section, lead, lead_types, pending = [], {"4a", "4c", "gate"}, None, [], []
     for b in blocks(Path(path).read_text(), skip_preamble=True):
         steps = lead_in_steps(b)
@@ -322,7 +324,7 @@ def trigger_lines(path, stacks, step, type_):
             continue
         text = " ".join(b["lines"])
         types = types_of(text) or lead_types
-        if not set(STACK_COND.findall(text)) <= set(stacks) or (types and type_ not in types):
+        if not set(STACK_COND.findall(text)) <= set(stacks) or (types and not kinds & set(types)):
             continue
         if lead is not None and lead not in selected:
             selected.append(lead)
@@ -359,6 +361,7 @@ def main(argv=None):
     ap.add_argument("--triggers", action="store_true", help="print the matching trigger lines")
     ap.add_argument("--step", choices=sorted(STEPS))
     ap.add_argument("--type", dest="type_", default=None, metavar="TYPE")
+    ap.add_argument("--ui", action="store_true", help="the phase builds or changes UI, whatever its type")
     args = ap.parse_args(argv)
     if args.triggers and not args.step:
         ap.error("--triggers needs --step")
@@ -374,13 +377,14 @@ def main(argv=None):
     stacks, groups = detect(root.resolve(), rows)
     if args.triggers:
         try:
-            lines = trigger_lines(DEV / "tech-stack-triggers.md", stacks, args.step, args.type_)
+            lines = trigger_lines(DEV / "tech-stack-triggers.md", stacks, args.step, args.type_, args.ui)
             rows2 = index_lines(args.index, stacks, args.step)
         except (OSError, IndexError_) as e:
             print(f"detect-stack: {e}", file=sys.stderr)
             return 2
         named = ", ".join(stacks) or "none"
-        print(f"# tech-stack-triggers.md — step {args.step}, @type: {args.type_ or 'none'}, stacks: {named}")
+        print(f"# tech-stack-triggers.md — step {args.step}, @type: {args.type_ or 'none'}"
+              + (", builds UI" if args.ui else "") + f", stacks: {named}")
         print("\n".join(lines))
         print()
         print(f"# stack/INDEX.md section 2 — step {args.step}" + ("" if rows2 else ": no matching rows"))

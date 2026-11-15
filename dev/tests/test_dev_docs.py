@@ -188,7 +188,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("(the task creates or changes UI files, `gate.md`, whatever the phase `@type:`)", e)
         self.assertNotIn("Phase `@type:` `ui` or `landing` and", e)
         self.assertIn("The phase builds or changes UI (criteria or spec name a screen, page, view, dialog or "
-                      "component; any `@type:`) and `ux-ui-design` is available → invoke it in planning mode", s)
+                      "component; any `@type:`; then `--ui` in every step) and `ux-ui-design` is available → invoke it in planning mode", s)
         self.assertIn("Polish review", text("models.md"))
 
     def test_phase_file_holds_per_phase_state(self):

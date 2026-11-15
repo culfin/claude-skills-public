@@ -141,8 +141,8 @@ def source_lines():
     return set(TRIGGERS.read_text().splitlines()) | set(INDEX.read_text().splitlines())
 
 
-def trigger_output(test, root, step, type_=None):
-    args = ["--triggers", "--step", step] + (["--type", type_] if type_ else [])
+def trigger_output(test, root, step, type_=None, ui=False):
+    args = ["--triggers", "--step", step] + (["--type", type_] if type_ else []) + (["--ui"] if ui else [])
     rc, out, err = run(root, *args)
     test.assertEqual(rc, 0, err)
     return [l for l in out.splitlines() if l.strip() and not l.startswith("# ")]
@@ -218,6 +218,21 @@ class TriggerTests(unittest.TestCase):
             self.assertIn(line(text), out, text)
         self.assertNotIn(line("If phase `@type:` is `landing` →"), out)
         self.assertNotIn(line("Svelte tasks"), out)
+
+    def test_ui_work_of_any_type_gets_the_ui_lines(self):
+        # Review item 9 (15.11.2026), RED: a `feature` phase that builds a dialog got 0 of the 4 design
+        # lines (design/INDEX.md, /shadcn, density-critique) a `ui` phase gets; only ux-ui-design followed
+        # the work. `--ui` = the phase builds or changes UI, whatever its type; landing stays type-keyed.
+        root = Fixture(self).package(deps=["next"]).write("components.json").root
+        for step in ("4a", "4c"):
+            ui_phase = trigger_output(self, root, step, "ui")
+            self.assertEqual(trigger_output(self, root, step, "feature", ui=True), ui_phase, step)
+            self.assertEqual(trigger_output(self, root, step, ui=True), ui_phase, step)
+        out = trigger_output(self, root, "4a", "feature", ui=True)
+        self.assertNotIn(line("If phase `@type:` is `landing` →"), out)
+        self.assertNotIn(line("If phase `@type:` is `ui` →"), trigger_output(self, root, "4a", "feature"))
+        # A landing page keeps its own design source (taste); --ui adds nothing there.
+        self.assertEqual(trigger_output(self, root, "4a", "landing", ui=True), trigger_output(self, root, "4a", "landing"))
 
     def test_execution_step(self):
         root = Fixture(self).package(deps=["svelte"]).root
