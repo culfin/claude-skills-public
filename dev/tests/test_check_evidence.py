@@ -241,6 +241,27 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn("skipped: Design detector — engine not built", run.stdout)
         self.assertIn("1 skipped, not passed", run.stdout)
 
+    def test_ux_and_polish_review_can_be_skipped(self):
+        self.state(["- [x] UX review — skipped: skill not installed",
+                    "- [x] Polish review — skipped: skill not installed"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_skippable_list_matches_gate_md(self):
+        text = (HERE.parent / "gate.md").read_text()
+        rule = text.split("**Skipped is closed, never passed.** Only", 1)[1].split("may be closed as", 1)[0]
+        names = [n.strip().lower() for n in rule.replace(" and ", ", ").replace("items", "").split(",") if n.strip()]
+        self.assertIn("ux review", names)
+        for name in names:
+            self.assertIn(name, ce.SKIPPABLE, name)
+
+    def test_review_items_are_the_step_a_analyses(self):
+        text = (HERE.parent / "gate.md").read_text()
+        step_a = text.split("<!-- Step A, always -->", 1)[1].split("<!-- Steps B and C", 1)[0]
+        items = [line.split("]", 1)[1].split("<!--")[0].strip().lower()
+                 for line in step_a.splitlines() if line.startswith("- [ ]")]
+        items = ["tech-stack review" if i.startswith("tech-stack review") else i for i in items]
+        self.assertEqual(sorted(set(items)), sorted(ce.REVIEW_ITEMS))
+
     OLD = "0123456789ab"
 
     def test_review_items_valid_with_current_fix_review(self):
@@ -285,7 +306,6 @@ class EvidenceTests(unittest.TestCase):
         i = self.sid()
         self.state([f"- [x] Fix review — fix diff clean @{i}",
                     f"- [x] Second opinion: codex diff — 0 critical @{self.OLD}",
-                    f"- [x] Second opinion: codex security — 0 critical @{self.OLD}",
                     f"- [x] Second opinion: codex fix — 0 critical @{self.OLD}",
                     f"- [x] Second opinion: codex similar — none @{self.OLD}"])
         problems = self.run_check()
