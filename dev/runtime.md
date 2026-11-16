@@ -69,7 +69,8 @@ over the `[ ]` phases of the current milestone that no branch claims and that bu
 `[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
 named phase one child thread: with `t3-team`, its `hire developer` (slot, brief, `DONE`); without it
 `delegate_task` with `isolation: "worktree"`, `mode: "async"`, title `phase-<N>-<slug>`, task
-`/dev next <N>` plus "questions via AskUserQuestion; finish with `DONE from phase-<N>: <result>; PR
+`/dev next <N>` (ROADMAP.md not at the repo root: `cd <its directory>, then /dev next <N>` — a child
+starts at its worktree's root) plus "questions via AskUserQuestion; finish with `DONE from phase-<N>: <result>; PR
 <url|none>; open <items|none>`". Report each child as its thread link; this session counts the
 handed-off phases as claimed and coordinates. On `<main>` the run then ends; on a phase branch it goes
 on with its own phase. A child thread
