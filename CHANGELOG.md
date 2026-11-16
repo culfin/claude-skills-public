@@ -2,6 +2,24 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.12.2 — 2026-11-16
+
+**dev** — T3 follow-ups from a review of `/dev` beside the team skill, each with a failing scenario first.
+- **Lead in T3, session outside:** `SendMessage` reaches no T3 thread by name. The session writes the
+  question into `## Handoff`, pushes as `/dev pause` does, posts it as a PR comment if a PR exists, and
+  halts. Before, 2 of 2 runs either messaged the lead's name or asked the absent user.
+- **Context full in a child thread:** the `DONE` line names the branch (`context full on <branch>`), and
+  the parent removes the old worktree and starts `/dev next <N> on <branch>`, which switches to that
+  branch first. Before, the follow-up started from `<main>`, saw the phase claimed by another branch and
+  had none of the phase's commits.
+- **T3's temporary branch:** a worker on the host's `t3/<id>` branch creates `phase-<N>-<slug>` like a
+  session on `<main>` does. Before, it claimed the phase on `t3/<id>`.
+- **`/dev parallel <N>` on `<main>`** ends the run after the hand-off. Before, "go on with the next free
+  phase" handed off a second phase nobody asked for.
+- Leftover words of the previous orchestrator ("workspace card", "parallel workspace") and a dangling
+  "Session Start" trigger of the worktree overview are gone. Paid for in hot-path words by dropping two
+  "(Edit tool)" hints and shortening "stays coordinator".
+
 ## v4.12.1 — 2026-11-15
 
 **dev** — UI hints follow the work, not the phase type. `detect-stack.py --triggers` takes `--ui` when

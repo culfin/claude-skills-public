@@ -293,7 +293,6 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("pass\n  the task ID to `t3_background_wait` right after starting it", r)
         self.assertIn("`link_pull_request`", r)
         self.assertIn("\n### Child threads\n", r)
-        self.assertIn("context full; PR <url|none>;\nopen: next <step>", r)
         hint = text("SKILL.md").split("**Context hint.**", 1)[1].split("\n\n", 1)[0]
         self.assertIn('As a child thread: `runtime.md`, "Child threads" instead.', hint)
         for f in ("ci.md", "gate.md", "execution.md"):
@@ -302,6 +301,24 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`html_render`", text("companion.md"))
         for f in DEV.glob("*.md"):
             self.assertNotIn("orca", f.read_text().lower(), f.name)
+
+    def test_t3_followups(self):
+        # v4.12.2 RED (16.11.2026): an outside-T3 session with a T3 lead tried SendMessage or asked the
+        # absent user (2/2); a context-full follow-up child started from main without the old branch's
+        # 9 commits; a worker claimed on T3's temporary `t3/<id>` branch; `/dev parallel 3` on <main>
+        # also handed off Phase 4; Orca words survived outside runtime.md.
+        r = " ".join(text("runtime.md").split())
+        self.assertIn("unless the lead runs in T3", r)
+        self.assertIn("context full on <branch>; PR <url|none>; open next <step>, CI <sha|none>", r)
+        self.assertIn("`/dev next <N> on <branch>`", r)
+        self.assertIn("On `<main>` the run then ends", r)
+        self.assertNotIn("workspace card", r)
+        self.assertNotIn("(Status, Session Start)", r)
+        cm = " ".join(text("commands.md").split())
+        self.assertIn("`/dev next <N> on <branch>`", cm)
+        self.assertNotIn("workspace", cm)
+        step2 = " ".join(text("SKILL.md").split("2. **On `<main>`**", 1)[1].split("\n   Mark phase", 1)[0].split())
+        self.assertIn("on a host's `t3/…` branch", step2)
 
     def test_codex_tool_names(self):
         r = text("runtime.md")
@@ -431,7 +448,7 @@ class DevDocsTests(unittest.TestCase):
         # instead of handing the phase off; without Orca agents had to guess the way off <main>.
         pre = " ".join(text("SKILL.md").split("### 2–3. Pre-Phase", 1)[1].split("### 4.", 1)[0].split())
         for needle in ("**On `<main>`** (`git branch --show-current`) claim nothing there.",
-                       "T3 mode: hand Phase N off as `/dev parallel <N>` does", "this session stays coordinator",
+                       "T3 mode: hand Phase N off as `/dev parallel <N>` does", "end the run as coordinator",
                        "git switch -c phase-<N>-<slug> origin/<main>"):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
