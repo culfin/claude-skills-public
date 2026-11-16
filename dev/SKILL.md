@@ -63,7 +63,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
 4. **Parse YAML frontmatter.** Malformed: show the error, ask the user to fix it, stop.
 5. **Parse phases:** milestones (`##`), goals (`Goal:`), phases (checkbox items), annotations (`@type:`, `@spec:`, `@plan:`, `@gate:`, `@claim:<branch>@<YYYY-MM-DD>`).
    - States: `[ ]` not started, `[~]` in progress, `[!]` gate pending, `[x]` done, `[—]` skipped
-   - `@gate:` values other than `full` (the old `fast` and `ci-wait`) are ignored with a warning.
+   - `@gate:` values other than `full` are ignored with a warning.
    - A `@type:` that `gate.md` does not name and `defaults.phase-types` has no key for → report once per type: `unknown @type: <t> — planning uses no type hints; the gate still reads the diff`.
 6. **Find current position:** a `Milestone End pending:` line in STATE.md → Milestone End first (several: `commands.md`). Else the first milestone with an incomplete phase; all done: "Roadmap complete!", offer `/dev add` or `/dev review`.
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
@@ -86,9 +86,9 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
 
 ## Halt on Irreversible Actions
 
-Across all phase steps: **for anything beyond dev that `git revert` cannot undo, stop and ask** —
-even mid-run, even if the plan includes it. Dev deploys and dev-database migrations (shared or
-destructive too) are the session's own call; announce shared ones to the other sessions first.
+**For anything beyond dev that `git revert` cannot undo, stop and ask** — even mid-run, even if
+the plan includes it. Dev deploys and dev-database migrations (shared or destructive too) are the
+session's own call; announce shared ones to the other sessions first.
 
 Beyond dev, the user decides:
 
@@ -109,8 +109,7 @@ Only the thread the user reads asks the user; child threads ask their parent (`r
 
 ## The run
 
-A run works through the phases until the milestone ends or a halt applies. At its start, ask the
-bundled round (`befragung.md`). **The run halts only for:**
+At run start, ask the bundled round (`befragung.md`). **The run halts only for:**
 
 - clarification questions only the user can answer (`befragung.md`);
 - irreversible actions (section above);
@@ -148,7 +147,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    as coordinator. Otherwise, and on a host's `t3/…` branch, `git fetch -q && git switch -c phase-<N>-<slug>
    origin/<main>` (slug: `runtime.md`), then claim there.
    Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
-3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types (gate additions that never remove a check) and `@gate:`: `gate.md`.
+3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
 
 ### 4. Phase Cycle
@@ -163,7 +162,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 **4a. Clarification:** read the phase's `Decisions:` line in ROADMAP.md first; new answers extend it (`state.md`).
 1. **Classify:** architectural if the phase creates a project or subsystem, changes how components interact or interfaces others build on; `@type: migration` always; in doubt, architectural. `@type: docs`: no interview.
 2. **Small → write the draft straight into the phase file** as `Acceptance criteria:`
-   (format in `state.md`), closed by the line `Criteria complete.` — no approval round; the Spec checker and a resume read it there. Ask only
+   (format in `state.md`), closed by the line `Criteria complete.` — no approval round. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
    "(Recommended)"; look up facts yourself instead of asking.
 3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
@@ -201,7 +200,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 
 ### 7. Phase Completion (`[!]` → `[x]`)
 
-1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check` (reads the phase file) must exit 0. Any unchecked → STOP, return to it in step 5.
+1. **Verify Gate Checklist:** `python3 "$DEV_DIR/scripts/check-evidence.py" check` must exit 0. Any unchecked → STOP, return to it in step 5.
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`); `@spec:` and `@plan:` present (small phases have neither)
 3. **Gate record:** append the phase file's `## CI` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` (it holds the Gate summary); STATE.md stays untouched.
 4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
@@ -210,7 +209,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 
 ### 8. Next Action
 
-One status line, then the next phase — unless a halt from "The run" applies, the context hint included.
+One status line, then the next phase — unless a halt from "The run" applies.
 
 ---
 
