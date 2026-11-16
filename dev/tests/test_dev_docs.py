@@ -312,6 +312,9 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("context full on <branch>; PR <url|none>; open next <step>, CI <sha|none>", r)
         self.assertIn("`/dev next <N> on <branch>`", r)
         self.assertIn("On `<main>` the run then ends", r)
+        # v4.12.4 RED: a child thread starts at its worktree root; with ROADMAP.md in a subfolder
+        # `/dev next <N>` there stops with "No ROADMAP.md found".
+        self.assertIn("ROADMAP.md not at the repo root: `cd <its directory>, then /dev next <N>`", r)
         self.assertNotIn("workspace card", r)
         self.assertNotIn("(Status, Session Start)", r)
         cm = " ".join(text("commands.md").split())

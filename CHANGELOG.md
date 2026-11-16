@@ -2,6 +2,14 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.12.4 — 2026-11-16
+
+**dev** — `/dev parallel` in a monorepo: a child thread starts at its worktree's root, so with
+ROADMAP.md in a subfolder its `/dev next <N>` stopped with "No ROADMAP.md found" (RED: the child
+followed step 1 literally and stopped). The child's task now starts with `cd <its directory>` when
+ROADMAP.md is not at the repo root. GREEN: the parent wrote `cd <dir>, then /dev next <N>` into the
+task. Outside the hot path (runtime.md); no word-budget change.
+
 ## v4.12.3 — 2026-11-16
 
 **dev** — Headroom in the hot path, no behaviour change: 7648 → 7533 of 7650 words, so the next rule
