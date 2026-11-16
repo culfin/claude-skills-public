@@ -2,6 +2,17 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.12.3 — 2026-11-16
+
+**dev** — Headroom in the hot path, no behaviour change: 7648 → 7533 of 7650 words, so the next rule
+does not need a cut first. Removed only sentences another hot-path file already states at the point of
+use (e.g. the "no critical finding → no Step B" line, stated again in the checklist comment and in
+Step C; the workspace deletion at `[x]`, stated in step 7.4; the full security scope for
+`auth`/`security`/`data`, stated in the type table) and filler. Kept on purpose: the phase-order
+overview and "every checkmark needs evidence" at the gate step. All tests unchanged and green; a
+read-back of the touched rules (skip of Step B/C, refactor scan, completion clean-up, `@gate: fast`,
+auth security scope, unlisted triggers) answered 6 of 6 correctly.
+
 ## v4.12.2 — 2026-11-16
 
 **dev** — T3 follow-ups from a review of `/dev` beside the team skill, each with a failing scenario first.

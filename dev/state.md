@@ -4,7 +4,7 @@ A phase has exactly one branch at a time; its branch is
 `phase-<N>-<slug>`; consecutive phases of a run may share branch and worktree. **Its file
 `.dev/phase-<N>.md`** lies next to ROADMAP.md (`<N>` verbatim: 3, 6a, 4.1): created at the claim,
 committed with the phase (never git-ignored), deleted at completion, written only by the claiming
-branch. After `/clear` the position comes from here alone.
+branch.
 
 ## Phase file
 
@@ -42,8 +42,7 @@ Next: Step B fix dispatch with the build error, then Step D again
   `$(git rev-parse --git-common-dir)/dev-ci/<sha>` (`ci.md`).
 - **Handoff:** written at pause and interruption, at most 8 lines — where it stopped, Next, Open,
   Traps. Approvals are only those recorded in the phase file or ROADMAP.md.
-- **Minor (deferred):** minor and non-critical findings, parked twins, traps later phases need;
-  completion moves them to the gate record.
+- **Minor (deferred):** minor and non-critical findings, parked twins, traps later phases need.
 - **`## UI review — approved findings`:** `/dev ui` during the phase appends the approved IDs
   (`- UI-1`, details in `UI-REVIEW.md`). Each ID is fixed to its criterion
   in 4c, or before the gate goes on if the phase is `[!]` (a code change: touched gate checks
@@ -78,8 +77,7 @@ Milestone End pending: <milestone name>
 
 **Decisions** live in ROADMAP.md, one indented line under the phase line, for every session:
 `  - Decisions: <answers> (<YYYY-MM-DD>)` — written only under unclaimed phases and the own, never
-under another session's claim. 4a reads it, a later round extends it; it stays
-after the phase and moves with it.
+under another session's claim. It stays after the phase and moves with it.
 
 ## Old format (not migrated)
 

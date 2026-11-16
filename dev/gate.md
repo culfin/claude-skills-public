@@ -5,7 +5,7 @@ The gate cannot be skipped or configured away; it scales with risk (tier).
 ## Project Commands per Stack
 
 Step D runs the project's own commands for typecheck, lint, tests and build. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
-Take them in this order: the CI workflow, then `Makefile`/`justfile` targets, then package scripts
+Order: the CI workflow, then `Makefile`/`justfile` targets, then package scripts
 (`package.json`, `pyproject.toml`, `composer.json`), then the standard command of each tool the
 project configures or its stack always has (`cargo check`/`clippy`/`test`, `go vet`/`test`, `ruff check`,
 `mypy`, `pytest`, `swift test`, `dotnet test`; TypeScript without a typecheck script: `$PM tsc --noEmit`). `$PM` (once per session) from the lock file: `pnpm-lock.yaml` → `pnpm`,
@@ -50,7 +50,7 @@ The rollback check and the smoke test also apply whenever `gate-tier.py` names `
 
 ## Gate Checklist
 
-Appended to the phase file (`state.md`) at `[~]` → `[!]`, listing only items that will run.
+Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 
 ```markdown
 ## Quality Gate — Phase N: <Name>
@@ -119,7 +119,7 @@ dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows t
 |---|---|---|
 | Diff review | `analyzers/diff-review.md` | always |
 | Spec checker | the prompt below | always |
-| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`, or a gate addition by type; full scope for `auth`/`security`/`data` |
+| Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`, or a gate addition by type |
 | Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |
@@ -191,11 +191,9 @@ same analyzer file, or an equivalent tool the project uses), never the implement
 - A Fix review with a new critical finding starts the next round. Two analyses disagree → the
   requirement's wording decides; it does not → ask the user (once per run). **The limit counts attempts per
   finding, not rounds:** halt and report when the same critical finding — or a regression caused by
-  an earlier fix — is still open after 3 attempts (one of the run's halt points). New, different
-  findings neither reset nor use up a count; rounds that only implement a user decision, only change
-  test code, or only take along notes do not count. Backstop: halt after 6 rounds in total.
-
-No critical finding → no Step B, no Fix review, no Similar-bugs scan (except `refactor`, Step C).
+  an earlier fix — is still open after 3 attempts. New, different findings neither reset nor use up
+  a count; rounds that only implement a user decision, only change test code, or only take along
+  notes do not count. Backstop: halt after 6 rounds in total.
 
 ## Step C — Similar-bugs
 
