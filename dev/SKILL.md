@@ -144,10 +144,10 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 
 1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Of their `## Minor (deferred)`, read only the items whose files this phase touches, as traps for this phase.
 2. **On `<main>`** (`git branch --show-current`) claim nothing there. T3 mode: hand Phase N off as
-   `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the child thread and end the run —
-   this session stays coordinator. Otherwise `git fetch -q && git switch -c phase-<N>-<slug>
+   `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the child thread and end the run
+   as coordinator. Otherwise, and on a host's `t3/…` branch, `git fetch -q && git switch -c phase-<N>-<slug>
    origin/<main>` (slug: `runtime.md`), then claim there.
-   Mark phase `[~]` in ROADMAP.md (Edit tool) with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
+   Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types (gate additions that never remove a check) and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
 
@@ -183,7 +183,7 @@ execution — `/dev` does" (`sources.md` O15). Commit the plan, add `@plan:` to 
 **4c. Execution → read `execution.md`.** No separate verification step: gate Step D proves it.
 
 **4d. Gate Transition (`[~]` → `[!]`):**
-1. Mark phase `[!]` in ROADMAP.md (Edit tool)
+1. Mark phase `[!]` in ROADMAP.md
 2. Create the Quality Gate Checklist in the phase file — tier and format in `gate.md`, "Tier" and "Gate Checklist"
 3. `## Position`: "Gate starting — next: <first item>"
 

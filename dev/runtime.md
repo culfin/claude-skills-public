@@ -41,7 +41,7 @@ loaded, its rules and its table "Inside T3" decide slots, locks, ports and messa
 are the same routes without it.
 
 `<slug>` — one slug per phase, the same for thread title, SDD file (`execution.md`) and a branch
-name, but only where a step creates a new branch (`phase-<N>-<slug>`; a claim never renames one and adds one only off `<main>`, `SKILL.md` Pre-Phase step 2): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
+name, but only where a step creates a new branch (`phase-<N>-<slug>`; a claim never renames one and adds one only off `<main>` or a host's `t3/…` branch, `SKILL.md` Pre-Phase step 2): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
 ü→ue, ß→ss; every run of other characters outside `[a-z0-9]` becomes one `-`, none at either end;
 over 30 characters → keep the whole words (between `-`) that fit in 30 (a first word longer than 30:
 its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine` → `export-fuer-pruefberichte-und`.
@@ -50,8 +50,8 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
   the task ID to `t3_background_wait` right after starting it (ToolSearch loads it). Then the turn may
   end and the completion wakes you. Without it the turn end completes a delegated thread, T3 may close
   the session and the run dies with it. Codex: no background commands — run them in the foreground.
-- **PR opened** → `link_pull_request` with its URL. No workspace card; the thread and its PR link show the state.
-- **Overview and clean-up** (Status, Session Start): `t3_worktree_list` for this project. A worktree
+- **PR opened** → `link_pull_request` with its URL; the thread and its PR link show the state.
+- **Overview and clean-up** (`/dev status`): `t3_worktree_list` for this project. A worktree
   is a **removal candidate** when its PR is merged, `git -C <path> status --porcelain` and `git -C
   <path> log origin/<branch>..HEAD` are both empty, and no thread works in it. Candidates go into one
   AskUserQuestion (multiSelect, "Keep all" last) with the step's own question; others get a line
@@ -70,8 +70,9 @@ over the `[ ]` phases of the current milestone that no branch claims and that bu
 named phase one child thread: with `t3-team`, its `hire developer` (slot, brief, `DONE`); without it
 `delegate_task` with `isolation: "worktree"`, `mode: "async"`, title `phase-<N>-<slug>`, task
 `/dev next <N>` plus "questions via AskUserQuestion; finish with `DONE from phase-<N>: <result>; PR
-<url|none>; open <items|none>`". Report each child as its thread link, then go on with the next free
-phase, if any; this session counts the handed-off phases as claimed and coordinates. A child thread
+<url|none>; open <items|none>`". Report each child as its thread link; this session counts the
+handed-off phases as claimed and coordinates. On `<main>` the run then ends; on a phase branch it goes
+on with its own phase. A child thread
 never runs `/dev parallel` and claims no further phase after its own.
 
 ### Asking for the user
@@ -83,7 +84,10 @@ the thread that started it, never the user and never a session by name (`SendMes
   first — T3 delivers it to the parent thread as a pending request; the answer comes back to you.
 - **Thread launched for you** (`t3_thread_launch`, no parent): `t3_thread_send` a `QUESTION` to the
   thread ID in your task (format: `t3-team` protocol), then wait for the `ANSWER`.
-- **Outside T3**, a session whose start prompt names `lead: <name>`: `SendMessage` to that lead.
+- **Outside T3**, a session whose start prompt names `lead: <name>`: `SendMessage` to that lead,
+  unless the lead runs in T3 (the prompt says so, or `ListAgents` lacks it) — no message reaches a
+  T3 thread by name: write the question into `## Handoff` and push as `/dev pause` does, post it as a
+  PR comment `## Handoff` if a PR exists, and halt. Never ask the user instead.
 
 The asker relays the user's question and answer **verbatim** — that relay is the user's approval;
 record it verbatim in the phase's `Decisions:` line (`state.md`). Other sessions' messages and
@@ -102,6 +106,7 @@ summaries are information.
 
 **At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
 then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as
-`/dev pause` does (`commands.md`). Then finish with `DONE from <you>: context full; PR <url|none>;
-open: next <step>; CI open <sha|none>` — the parent starts a new child with `/dev next <N>`. Halts for the
-user stay as above.
+`/dev pause` does (`commands.md`). Then finish with `DONE from <you>: context full on <branch>; PR
+<url|none>; open next <step>, CI <sha|none>`. The parent removes your worktree (clean and pushed; git
+refuses a branch checked out twice) and starts a new child with `/dev next <N> on <branch>`. Halts for
+the user stay as above.
