@@ -2,6 +2,21 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.13.0 — 2026-11-17
+
+**dev** — Domain-model check for phases that change a project's core rules. A phase that changed a
+core domain rule was planned and built exactly from its roadmap line and passed the gate; only a
+later question showed that the owner's model of the rule differed from the code's, so the phase
+needed rework. RED (2 of 2): the agent classified the phase as architectural but asked solution
+questions (how to store a deletion) and settled on a design without stating how the rule works today
+or how the owner sees it. Now, when `AGENTS.md` lists `## Core rules` and the phase changes one, 4a
+writes `Domain model:` into the phase file — Current with `file:line`, Intended in the owner's words,
+including existing and manual data — and the interview's first question confirms or corrects it,
+with no option marked recommended (a recommendation invites a click-through). No spec or plan before
+it is confirmed; under t3-team the product team confirms. GREEN (2 of 2, plain and as a t3-team
+worker): model written before any question, rule question first, spec blocked until confirmed.
+Hot path 7533 → 7641 of 7650.
+
 ## v4.12.4 — 2026-11-16
 
 **dev** — `/dev parallel` in a monorepo: a child thread starts at its worktree's root, so with

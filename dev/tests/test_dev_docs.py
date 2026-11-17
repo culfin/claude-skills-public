@@ -552,6 +552,16 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`--triggers --step 4c`", text("execution.md"))
         self.assertIn("`--triggers --step gate`", text("gate.md"))
 
+    def test_core_rule_phase_gets_a_domain_model_check(self):
+        # v4.13.0 RED: a core-rule phase got solution questions, never the owner's model of the rule.
+        skill = text("SKILL.md")
+        self.assertIn("`## Core rules`", skill)
+        self.assertIn("`Domain model:`", skill)
+        self.assertIn("no spec or plan before it is confirmed", skill)
+        self.assertIn("Core-rule phase", text("befragung.md"))
+        self.assertIn('neither marked "(Recommended)"', text("befragung.md"))
+        self.assertIn("**Domain model:**", text("state.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):
