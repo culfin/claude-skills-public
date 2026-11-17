@@ -108,6 +108,19 @@ pnpm dlx npm-check-updates --workspaces --root 2>&1 # third scanner: the ONLY on
 ```
 Never cut the output (`| head`): a truncated scan looks exactly like a complete one with fewer updates.
 
+**Every root** (pattern 36): the block above covers the workspace only. List every package root and scan the ones the workspace globs do not cover — all three commands, in that folder, without `-r`/`--workspaces`:
+```bash
+git ls-files '*pnpm-lock.yaml' '*package-lock.json' '*yarn.lock' | xargs -n1 dirname | sort -u
+cd <root> && pnpm outdated 2>&1; npm outdated 2>&1; pnpm dlx npm-check-updates 2>&1
+```
+After any pnpm command in such a root, `git status --porcelain` there too (pattern 35).
+
+**Pins outside package.json** (pattern 37): each hit is a version to compare with the latest release and with the `packageManager` pin it mirrors:
+```bash
+git grep -n -E 'pnpm@[0-9]|corepack (prepare|use)|npm (i|install) -g [a-z]+@|^FROM node:|action-setup@|node-version:|^ *version: [0-9]' \
+  -- '*Dockerfile*' '.github/workflows/*' '.nvmrc' '.node-version' '.tool-versions' 2>&1
+```
+
 Build the work list as the **union** of both, per package:
 
 1. A package is outdated if **either** tool lists it (observed: `stripe` and `typescript-eslint` appeared only in `npm outdated`).
