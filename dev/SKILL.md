@@ -161,6 +161,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 
 **4a. Clarification:** read the phase's `Decisions:` line in ROADMAP.md first; new answers extend it (`state.md`).
 1. **Classify:** architectural if the phase creates a project or subsystem, changes how components interact or interfaces others build on; `@type: migration` always; in doubt, architectural. `@type: docs`: no interview.
+   **Core rule:** the repo's `AGENTS.md` has `## Core rules` and the phase changes how one of them behaves → architectural, and before any question write `Domain model:` into the phase file (`state.md`): *Current* — how the code implements the rule today, with `file:line`; *Intended* — the rule after the phase in the owner's words, including what happens to existing and manually entered data. The interview's first question confirms or corrects it (`befragung.md`); no spec or plan before it is confirmed.
 2. **Small → write the draft straight into the phase file** as `Acceptance criteria:`
    (format in `state.md`), closed by the line `Criteria complete.` — no approval round. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with

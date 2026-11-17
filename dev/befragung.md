@@ -17,6 +17,12 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
    and the text before the call ends with the companion URL (the dialog can cover earlier output); the
    options have the same names in the browser and in the terminal.
+   **Core-rule phase** (`SKILL.md` 4a): the first question shows the `Domain model:` — Current and
+   Intended side by side — and asks whether Intended is what the user means: "matches" or "differs"
+   with the difference in their words, neither marked "(Recommended)": Intended is your draft, a
+   recommendation invites a click-through. It asks about the rule, never about a solution such as a
+   table design. Record the answer as `Confirmed: <who>, <date>`. Under t3-team the question reaches your
+   team, which has the product team confirm it.
 4. **End:** when no decision is left open, or you can predict the answers to your next three questions. Summarize the decisions as a short list
    and have the user confirm it via `AskUserQuestion` ("Is this correct?"). If the user clicked
    through a round accepting only the recommendations and a later question depends on one of those
