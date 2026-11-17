@@ -174,3 +174,5 @@ Read `references/ecosystems.md` for project type detection, package manager iden
 | 33 | Intersect knip's unused-dependency list with the security alerts' importers — those alerts can be DELETED instead of pinned | js |
 | 34 | Run `ncu` as the THIRD scanner — it is the only one that sees the `packageManager` pin | js |
 | 35 | `pnpm add` SILENTLY WAIVES a `minimumReleaseAge` policy by writing its own exclude list — check `git status` on `pnpm-workspace.yaml` after every add | js |
+| 36 | A package root outside the workspace is invisible to every root scan — find all lockfiles and scan each root in its own directory | js |
+| 37 | Versions pinned outside `package.json` (Dockerfile, workflows, `.nvmrc`) are invisible to all three scanners — grep them | js + ci |

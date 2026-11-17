@@ -2,6 +2,18 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.13.1 — 2026-11-17
+
+**deps** — The outdated scan missed two kinds of versions (field report): packages of a package root
+outside the workspace (its own `package.json` and lockfile; `pnpm outdated -r` and `ncu --workspaces`
+follow the workspace globs only, three outdated packages surfaced only when `ncu` ran inside that
+folder), and versions pinned outside `package.json` (`corepack prepare pnpm@…`, `FROM node:…`,
+`pnpm/action-setup` `version:`, `.nvmrc`), which no scanner reads. RED (2 of 2): the agent left the
+Dockerfile and workflow pins to "check by hand" and reported no update for them. New patterns 36 and
+37 and two scan steps in `merge.md`: list every lockfile root and scan the uncovered ones in their own
+folder (their `minimumReleaseAge` policy separately), and `git grep` the pins. GREEN: all four pins and
+the uncovered root's missing policy reported. Guard test `tests/test_deps_docs.py`.
+
 ## v4.13.0 — 2026-11-17
 
 **dev** — Domain-model check for phases that change a project's core rules. A phase that changed a
