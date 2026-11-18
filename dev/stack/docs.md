@@ -2,10 +2,10 @@
 
 Read only the row you need. The order is fixed — take the first source that exists and stop:
 
-1. **Bundled** — docs or skills shipped inside the project's own packages (version-matched).
+1. **Bundled** — docs, skills and type definitions (`*.d.ts`, often split into `dist/chunks/`) shipped inside the project's own packages (version-matched).
 2. **Official access** — the vendor's docs MCP server, plugin or CLI, if the host has it.
-3. **`llms.txt`** — fetch the index, then single pages; never `llms-full.txt`.
-4. **Context7** — with the version the project resolves (lockfile), not "latest".
+3. **`llms.txt`** — fetch the index, then single pages; never `llms-full.txt`. It shows the latest release: say so when that is newer than the lockfile's version.
+4. **Context7** — with the version the project resolves (lockfile), not "latest": its HTTP API needs no key (`https://context7.com/api/v2/libs/search?libraryName=…&query=…`, then `/api/v2/context?libraryId=…&query=…&type=txt`). It often lacks the exact version; then the source repo's docs or `CHANGELOG.md` at that version's tag (`gh api "repos/<o>/<r>/contents/<path>?ref=<tag>"`).
 
 A framework or library decision quotes the doc it relies on (path or URL + line) or is marked `UNVERIFIED`.
 A subagent does the reading and returns findings or a ≤ 40-line digest. Nothing reachable →
