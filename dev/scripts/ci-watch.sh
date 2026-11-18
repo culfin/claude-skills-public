@@ -11,6 +11,8 @@
 set -uo pipefail
 sha="${1:?usage: ci-watch.sh <sha> [<status-file>]}"
 out="${2:-$(git rev-parse --git-common-dir)/dev-ci/$sha}"
+# gh run list --commit matches only the full SHA; a short one finds no runs and ends as "none".
+full=$(git rev-parse --verify --quiet "$sha^{commit}" 2>/dev/null) && sha=$full
 if ! command -v jq >/dev/null 2>&1; then
     echo "ci-watch: jq not found in PATH" >&2
     mkdir -p "$(dirname "$out")"

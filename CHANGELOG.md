@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.13.3 — 2026-11-19
+
+**dev** — Two script defects from a field report. `ci-watch.sh` called with a short SHA found no runs
+(`gh run list --commit` matches only full SHAs), waited 15 minutes and reported `none`; it now
+resolves the SHA with `git rev-parse` first. `state-check.py archive` run a second time on the same
+milestone replaced the stub with a count of only the newly archived phases ("1 phases (Phase 67)"
+instead of "2 phases (Phase 52, Phase 67)"); it now adds to the existing stub, keeps the old stub
+line out of the archive copy, and writes "1 phase" in the singular. Tests: `short_sha_resolved_to_full`,
+`test_second_archive_of_a_milestone_merges_the_stub` (both red before).
+
 ## v4.13.2 — 2026-11-18
 
 **dev** — Live-docs order works without a docs MCP server. On a host where the Context7 MCP server
