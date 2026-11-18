@@ -437,6 +437,9 @@ def slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:60] or "milestone"
 
 
+STUB = re.compile(r"^Done: (\d+) phases? \((.+)\) — details in `[^`]+`\s*$")
+
+
 def archive(root, name, dry_run=False, today=None):
     root = Path(root)
     roadmap, state = root / "ROADMAP.md", root / "STATE.md"
@@ -454,7 +457,9 @@ def archive(root, name, dry_run=False, today=None):
     rlines = rtext.splitlines()
     rel = f"docs/roadmap-archive/{slug(heading)}.md"
     target = root / rel
-    body = "\n".join(rlines[s:e]).rstrip()
+    # A milestone archived before keeps its stub line; a second archive adds to it instead of replacing it.
+    prior = [(i, m) for i in range(s + 1, e) if (m := STUB.match(rlines[i]))]
+    body = "\n".join(l for i, l in enumerate(rlines[s:e], s) if i not in {j for j, _ in prior}).rstrip()
     all_ids = [i for m in milestones(rtext) for i, _ in m[3]]
     unique = all(all_ids.count(i) == 1 for i in ids)
     moved, slines = [], []
@@ -482,7 +487,9 @@ def archive(root, name, dry_run=False, today=None):
     target.write_text((old + "\n" if old else "") + part, encoding="utf-8")
     first, last = ids[0], ids[-1]
     span = f"Phase {first}" if first == last else f"Phase {first} – Phase {last}"
-    stub = [rlines[s], "", f"Done: {len(ids)} phases ({span}) — details in `{rel}`", ""]
+    count = len(ids) + sum(int(m.group(1)) for _, m in prior)
+    span = ", ".join([m.group(2) for _, m in prior] + [span])
+    stub = [rlines[s], "", f"Done: {count} phase{'s' if count != 1 else ''} ({span}) — details in `{rel}`", ""]
     roadmap.write_text("\n".join(rlines[:s] + stub + rlines[e:]).rstrip() + "\n", encoding="utf-8")
     if moved:
         keep = [l for i, l in enumerate(slines) if not any(a <= i < b for a, b in moved)]

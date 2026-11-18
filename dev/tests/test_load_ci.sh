@@ -74,6 +74,12 @@ echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
 echo "[$(run "$C" 789 success),$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
 [[ "$(follow)" == "red ci=cancelled" ]] && ok "non_descendant_newer_run_is_ignored" \
   || bad "non_descendant_newer_run_is_ignored: $(cat "$tmp/status2")"
+# a short SHA is resolved to the full one: gh run list --commit matches only full SHAs
+echo "[$(run "$B" 456 success)]" > "$tmp/stub2/commit-$B"
+( cd "$repo" && PATH="$tmp/bin2:$PATH" STUB_DIR="$tmp/stub2" DEV_CI_BRANCH=main DEV_CI_INTERVAL=0 \
+    DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "${B:0:8}" "$tmp/status3" )
+[[ "$(cat "$tmp/status3")" == "green 456" ]] && ok "short_sha_resolved_to_full" \
+  || bad "short_sha_resolved_to_full: $(cat "$tmp/status3")"
 touch "$tmp/stub2/fail-branch"
 [[ "$(follow)" == "timeout" ]] && ok "gh_failure_while_looking_for_successor_is_timeout_not_red" \
   || bad "gh_failure_while_looking_for_successor_is_timeout_not_red: $(cat "$tmp/status2")"

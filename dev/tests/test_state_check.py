@@ -286,6 +286,21 @@ class StateCheckTests(unittest.TestCase):
         self.assertIn("### Gate summary — Phase 3: Login", state)
         self.assertIn("## Blockers & Risks", state)
 
+    def test_second_archive_of_a_milestone_merges_the_stub(self):
+        self.assertEqual(sc.archive(self.root, "Milestone 1", today=TODAY), 0)
+        road = (self.root / "ROADMAP.md").read_text()
+        road = road.replace("details in `docs/roadmap-archive/milestone-1-base.md`\n",
+                            "details in `docs/roadmap-archive/milestone-1-base.md`\n- [x] Phase 7 — Late fix @type:backend\n")
+        (self.root / "ROADMAP.md").write_text(road)
+        self.assertEqual(sc.archive(self.root, "Milestone 1", today=TODAY), 0)
+        road = (self.root / "ROADMAP.md").read_text()
+        self.assertIn("## Milestone 1: Base\n\nDone: 3 phases (Phase 1 – Phase 2, Phase 7) — details in "
+                      "`docs/roadmap-archive/milestone-1-base.md`", road)
+        self.assertEqual(road.count("Done: "), 1)
+        arch = (self.root / "docs/roadmap-archive/milestone-1-base.md").read_text()
+        self.assertIn("- [x] Phase 7 — Late fix", arch)
+        self.assertNotIn("Done: 2 phases", arch.split("# Milestone 1: Base", 2)[-1].split("- [x] Phase 7")[0])
+
     def test_archive_refuses_a_milestone_with_open_phases(self):
         before = (self.root / "ROADMAP.md").read_text()
         self.assertEqual(sc.archive(self.root, "Milestone 2", today=TODAY), 2)
