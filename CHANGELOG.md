@@ -2,6 +2,16 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.13.2 — 2026-11-18
+
+**dev** — Live-docs order works without a docs MCP server. On a host where the Context7 MCP server
+is not authorized (or removed), step 4 of `stack/docs.md` had no route and reads ended as `skipped`.
+Context7's HTTP API answers without a key, so step 4 now names it, and the source repo's docs at the
+version tag when Context7 lacks the exact version (field measurement: Context7 offered only a
+neighbouring version for 5 of 8 libraries of a Next.js 16 stack). Step 1 now names type definitions,
+where renamed options and `@deprecated` notes of the installed version live; step 3 notes that
+`llms.txt` documents the latest release.
+
 ## v4.13.1 — 2026-11-17
 
 **deps** — The outdated scan missed two kinds of versions (field report): packages of a package root
