@@ -33,8 +33,8 @@ Next: Step B fix dispatch with the build error, then Step D again
 ```
 
 - **Branch:** line 1, the only line a takeover replaces.
-- **Position:** one line — step, next action, date; every step overwrites it. Progress is counted
-  from ROADMAP.md, never stored.
+- **Position:** one line — step, next action, date; written only at a halt, pause or hand-off (between
+  them commits, ledger and Gate Checklist carry it). Progress is counted from ROADMAP.md, never stored.
 - **Phase base:** `git rev-parse HEAD` at the claim, kept on a takeover; the gate diffs against it. A `[!]` claimed after its merge: base and `Phase head:` per `commands.md`.
 - **Domain model:** core-rule phases only (`SKILL.md` 4a): `Current:` with `file:line`, `Intended:` in the owner's words, `Confirmed: <who>, <date>`; the spec quotes it, the Spec checker reads it.
 - **Acceptance criteria:** the draft of a small phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks it finished (`SKILL.md`, Resume logic).
@@ -82,15 +82,6 @@ under another session's claim. It stays after the phase and moves with it.
 
 ## Old format (not migrated)
 
-Migrated ⇔ the empty marker `<prefix>.dev/.gitkeep` is on `origin/<main>` (`git cat-file -e
-origin/<main>:<prefix>.dev/.gitkeep`, `<prefix>`: ROADMAP.md's directory; without `origin`, the local
-`<main>` stands for `origin/<main>` everywhere). Until the user agrees to `state-check.py migrate`
-(`commands.md`, "State findings"), **all** phases keep the old format; the migrating session uses the
-new one from its `migrate` commit on. Every write a step makes to `.dev/phase-<N>.md` goes to the
-same-named place in STATE.md, reads too (`### Phase N` under `## Phases`, `## Quality Gate — Phase N`,
-`## Handoff — <branch>`, position first); CI lines `- <sha> — Phase N <name>`, without status, under `## CI in background`, read there by
-Milestone End step 0 and the repair checklist. Gate summary (`### Gate summary — Phase N`) and minors
-(Blockers & Risks) stay in STATE.md; completion removes the phase's Quality Gate, `### Phase N` and
-Handoff from it. A takeover replaces the `## Handoff — <branch>` heading instead of `Branch:`.
+No marker `<prefix>.dev/.gitkeep` on `origin/<main>` → read `state-old-format.md`.
 
 **Not for either file:** plan details, code-level decisions, debug state, velocity metrics.

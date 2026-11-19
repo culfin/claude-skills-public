@@ -5,7 +5,7 @@
 | Role | Tier |
 |---|---|
 | Implementer | **cheap** when the plan carries the code (transcription), **standard** when the task needs judgement |
-| Task review (per task, during implementation) | **standard** |
+| Task review (per task, planned phases only) | **standard** |
 | Diff review (gate Step A) | **standard** |
 | Spec checker | **standard** |
 | Security review (phase or full scope) | **capable** |

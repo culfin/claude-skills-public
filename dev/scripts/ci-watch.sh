@@ -4,8 +4,9 @@
 # Why: /dev closes a phase after the local gate and goes on; CI of that exact commit is checked
 # here instead of blocking. Only runs of this SHA count, skipped/cancelled is not a pass, and a
 # failing gh call is never read as "no runs" — it only ever ends as timeout.
-# Superseded runs: pushing a bookkeeping commit after the gate commit cancels the gate commit's run
-# (cancel-in-progress). When every non-success of this SHA is `cancelled`, the newest run on the
+# Superseded runs: /dev pushes the gate commit together with the completion commit, so CI runs only
+# for the head and the gate SHA has no run; a bookkeeping commit pushed later cancels the gate run
+# (cancel-in-progress). With no run of this SHA, or every non-success `cancelled`, the newest run on the
 # branch (DEV_CI_BRANCH, else the current branch) whose commit descends from this SHA is followed
 # instead, in the same loop and time limits; the status line then ends in ` via <short sha>`.
 set -uo pipefail
@@ -25,22 +26,27 @@ put(){ printf '%s\n' "$1" > "$out.tmp" && mv "$out.tmp" "$out"; }
 put pending
 start=$SECONDS
 branch="${DEV_CI_BRANCH:-$(git branch --show-current 2>/dev/null)}"; via=""
+# successor: newest run on the branch whose commit descends from $sha -> $next ("" if none); 1 = gh failed
+successor(){
+    local runs h; next=""
+    runs=$(gh run list --branch "$branch" --json headSha,databaseId,status,conclusion,name --limit 20 2>/dev/null) || return 1
+    while read -r h; do
+        [[ -n "$h" && "$h" != "$sha" ]] && git merge-base --is-ancestor "$sha" "$h" 2>/dev/null && { next=$h; break; }
+    done < <(jq -r '.[].headSha' <<< "$runs")
+    return 0
+}
 while :; do
     if json=$(gh run list --commit "$sha" --json databaseId,status,conclusion,name 2>/dev/null); then
         n=$(jq 'length' <<< "$json")
         if [[ "$n" -eq 0 ]]; then
+            if [[ -n "$branch" ]] && successor && [[ -n "$next" ]]; then sha=$next; via=${next:0:7}; continue; fi
             (( SECONDS - start >= none_after )) && { put none; exit 0; }
         elif [[ $(jq '[.[] | select(.status != "completed")] | length' <<< "$json") -eq 0 ]]; then
             bad=$(jq -r '[.[] | select(.conclusion != "success") | "\(.name)=\(.conclusion)"] | join(" ")' <<< "$json")
             [[ -z "$bad" ]] && { put "green $(jq -r '[.[].databaseId] | join(" ")' <<< "$json")${via:+ via $via}"; exit 0; }
             other=$(jq '[.[] | select(.conclusion != "success" and .conclusion != "cancelled")] | length' <<< "$json")
             if [[ "$other" -ne 0 || -z "$branch" ]]; then put "red $bad${via:+ via $via}"; exit 0; fi
-            if runs=$(gh run list --branch "$branch" --json headSha,databaseId,status,conclusion,name --limit 20 2>/dev/null); then
-                next=""
-                while read -r h; do
-                    [[ -n "$h" && "$h" != "$sha" ]] && git merge-base --is-ancestor "$sha" "$h" 2>/dev/null \
-                        && { next=$h; break; }
-                done < <(jq -r '.[].headSha' <<< "$runs")
+            if successor; then
                 [[ -z "$next" ]] && { put "red $bad${via:+ via $via}"; exit 0; }
                 sha=$next; via=${next:0:7}; continue
             fi

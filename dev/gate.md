@@ -75,7 +75,6 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 - [ ] Fix review
 - [ ] Similar-bugs scan
 - [ ] Second opinion: codex fix
-- [ ] Second opinion: codex similar
 <!-- Step D and closing, always; Build and E2E: not for `@type: docs` with a `*.md`-only diff (Phase Types) -->
 - [ ] Typecheck + lint + tests
 - [ ] Production Build
@@ -142,10 +141,10 @@ finding without file:line, quoted line and failing input is an open question, no
 checker and Second opinion too.
 
 **Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, on every host, each run
-of Diff review, Fix review or Similar-bugs scan gets its Second opinion item (role `diff`, `fix`,
-`similar`), run in the background:
+of Diff review or Fix review gets its Second opinion item (role `diff`, `fix`; Similar-bugs scan gets
+none), run in the background:
 `bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
-`--prompt`: the Claude item's prompt; `--input`: its diff file (Similar-bugs: the fix list) plus
+`--prompt`: the Claude item's prompt; `--input`: its diff file plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
 or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host a Claude subagent gives it (same prompt, input); none: `skipped: host is codex`.
@@ -241,7 +240,7 @@ value by hand. It checks consistency, not truth — reading the evidence stays y
 - First `git branch --show-current` and `git status --porcelain`. Wrong branch → stop and ask.
 - Stage the phase's paths explicitly, `.dev/phase-<N>.md` and `docs/gates/phase-<N>.md` included,
   never `git add -A` or `git add .`. Changes to files the phase did not touch (a parallel session, tools rewriting files) stay out; unclear → ask.
-- Then `ci-watch.sh` on the gate commit (`ci.md`).
+- Push and `ci-watch.sh` (`ci.md`): a phase's gate commit goes out with its completion commit.
 
 ---
 
