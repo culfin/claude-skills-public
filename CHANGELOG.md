@@ -11,19 +11,34 @@ load `lean.md` in 4c and nothing said how Codex builds, so 4c ran the Claude imp
 router loads `lean.md` in 4c, whose `## Builder: Codex` calls `codex-build.sh` and falls back to the
 Claude implementer on the same worktree on exit 3.
 
-- **New `scripts/codex-build.sh`** (`--brief --head --out [--timeout-min 60] [--keep-partial]`): runs
-  `codex exec --sandbox workspace-write -C <worktree>` with no network for Codex's commands, no
-  approvals, no user config or execpolicy rules, /tmp and `$TMPDIR` not writable (a private scratch
-  dir instead). Refuses (exit 2) without `defaults.builder: codex` in the worktree's ROADMAP.md, on a
-  dirty worktree, a worktree not at `--head` or `--out` inside it. Exit 0 leaves the changes
-  uncommitted and writes `files:` plus Codex's summary. Exit 3 (`fallback: <reason>`) on quota
-  (marker shared with `codex-review.sh`), timeout, crash, no changes, a Codex commit or ref change,
-  a changed `.env*` entry or a symlink leading outside the repository; `--out` then lists what Codex
-  left. The worktree is reset to `--head` unless `--keep-partial`; a Codex commit is undone either way.
+- **New `scripts/codex-build.sh`** (`--brief --head --out [--timeout-min 60] [--keep-partial]`).
+  Codex runs under a permission profile, never `--sandbox` (the legacy sandbox reads the whole disk
+  and drops the profile): denies first (`:slash_tmp`, the main checkout's tree, credential folders),
+  write only the worktree and a private scratch dir, read the git dirs, the `.env*` symlink targets
+  (owner-approved for the pilot), tool and toolchain dirs; network off, no approvals, no user config
+  or execpolicy rules; a `.codex/` project config is refused. A permission check per binary and
+  version (cached by `RULE_REV`) probes a denied read and writes outside the worktree and to /tmp;
+  any that succeeds = `fallback: permission profile not enforced`, never the legacy sandbox.
+- Refuses (exit 2) without `defaults.builder: codex` in the worktree's ROADMAP.md, on a dirty
+  worktree, a worktree not at `--head` or `--out` inside it. Exit 0 leaves the changes uncommitted
+  and writes `files:`, `ignored-new:`, other workers' moved refs and Codex's summary.
+- Exit 3 (`fallback: <reason>`) on quota (marker shared with `codex-review.sh`), timeout, crash, no
+  changes, a change to this worktree's refs (HEAD, its branch, stash, `refs/worktree/*`, tags; other
+  refs are only a note, since parallel workers share them), a changed `.git` or git config (hooks,
+  fsmonitor, filters, includes: then no git command runs), a changed `.env*` entry, a symlink leading
+  outside the repository (tracked, untracked or ignored) or processes that survive the kill. `--out`
+  names what Codex left and every changed ref. Without `--keep-partial` the worktree is reset to
+  `--head` and new ignored paths are removed (existing ones, `.env*` links included, stay); a Codex
+  commit is undone either way.
+- After the run git uses only the recorded git dir and work tree, no system or global config,
+  `core.hooksPath=/dev/null` and no fsmonitor, so nothing Codex wrote runs. Leftover processes
+  (scratch dir in environment or arguments, or new with cwd in the worktree) get TERM, then KILL.
   `.env*` files are never copied, read or printed; only their metadata is compared.
+- **`lean.md`:** `Builder: codex` goes into the phase file only when Codex's diff is the bulk of the
+  phase, so a phase the Claude implementer largely finished still gets the `codex diff` review.
 - **`gate.md`:** a phase file with `Builder: codex` gets no `codex diff` item; the Claude Diff review
   runs as always. Offset by tighter wording in `gate.md`; hot path unchanged at 7621 words.
-- Tests: `test_codex_build.py` (stub Codex on PATH, 16 tests), `test_codex_builder_in_lean`.
+- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 31 tests), `test_codex_builder_in_lean`.
 
 ## v4.15.0 — 2026-11-19
 

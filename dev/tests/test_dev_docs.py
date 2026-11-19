@@ -618,7 +618,9 @@ class DevDocsTests(unittest.TestCase):
         for s in ('bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>',
                   "`t3_background_wait`", "**Exit 0:**", "uncommitted", "`Builder: codex`",
                   "**Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree",
-                  "`--keep-partial`", "the `--out` file", "**Exit 2:**", "no push"):
+                  "`--keep-partial`", "the `--out` file", "**Exit 2:**", "no push", "`ignored-new:`",
+                  "only if Codex's diff is the bulk of the phase",
+                  "the Claude implementer wrote a task or more than a few lines → no line"):
             self.assertIn(s, sec)
         gate = " ".join(text("gate.md").split())
         self.assertIn("Phase file `Builder: codex` → no `codex diff` item.", gate)

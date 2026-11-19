@@ -71,10 +71,12 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
    at the phase HEAD.
 2. Run in the background (T3: its task ID to `t3_background_wait`), `--out` under `$TMPDIR`:
    `bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>`
-3. **Exit 0:** Codex's changes are uncommitted in the worktree; `--out` holds `files:` and its
-   summary with `open:`. Read the diff and run the tests. Open items or red tests → the Claude
-   implementer finishes them in the same worktree. Commit the phase's paths explicitly, add the line
-   `Builder: codex` under `Phase base:` in the phase file, then the gate.
+3. **Exit 0:** Codex's changes are uncommitted in the worktree; `--out` holds `files:`,
+   `ignored-new:` (check them) and its summary with `open:`. Read the diff and run the tests. Open
+   items or red tests → the Claude implementer finishes them in the same worktree. Commit the
+   phase's paths explicitly. Add `Builder: codex` under `Phase base:` in the phase file only if
+   Codex's diff is the bulk of the phase; the Claude implementer wrote a task or more than a few
+   lines → no line, so `codex diff` still runs. Then the gate.
 4. **Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree.
    The script has reset it to `--head` and undone any Codex commit. With `--keep-partial` Codex's
    partial changes stay uncommitted: then hand the implementer the `--out` file, which lists them.
@@ -82,5 +84,5 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
 5. **Exit 2:** fix the call (dirty worktree, wrong `--head`); missing `defaults.builder: codex` →
    the Claude implementer.
 
-The script gives Codex write access to the worktree only, no network for its commands and no push;
+The script runs Codex under a permission profile: writes only in the worktree, no network, no push;
 `.env` files stay the worktree's symlinks, never copied or printed.
