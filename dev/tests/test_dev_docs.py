@@ -1,5 +1,6 @@
 # dev/tests/test_dev_docs.py
 """Cross-file consistency of the /dev skill text that no other test covers."""
+import os
 import re
 import unittest
 from pathlib import Path
@@ -346,7 +347,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("unknown @type: <t> — planning uses no type hints; the gate still reads the diff",
                       text("SKILL.md"))
         self.assertIn("The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.", g)
-        lines = text("gate.md").split("**Gate additions by type (they only add, never remove):**", 1)
+        lines = text("gate.md").split("**Gate additions by type:**", 1)
         self.assertEqual(len(lines), 2, "table 'Gate additions by type' missing")
         rows = lines[1].split("\n\n")[1].splitlines()
         mig = next(r for r in rows if r.startswith("| `migration` |"))
@@ -606,6 +607,22 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`defaults.flow: lean`", text("commands.md"))
         # The pilot must not cost the hot path: 7621 words before v4.15.0.
         self.assertLessEqual(sum(len(text(f).split()) for f in hot), 7621)
+
+    def test_codex_builder_in_lean(self):
+        # v4.16.0 RED: lean.md was not read in 4c and named no way for Codex to build, so a lean
+        # project with `defaults.builder: codex` still got the Claude implementer.
+        router = next(l for l in text("SKILL.md").splitlines() if "lean.md" in l)
+        self.assertIn("4a; 4c; step 7", router)
+        lean = " ".join(text("lean.md").split())
+        sec = lean.split("## Builder: Codex", 1)[1]
+        for s in ('bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>',
+                  "`t3_background_wait`", "**Exit 0:**", "uncommitted", "`Builder: codex`",
+                  "**Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree",
+                  "`--keep-partial`", "the `--out` file", "**Exit 2:**", "no push"):
+            self.assertIn(s, sec)
+        gate = " ".join(text("gate.md").split())
+        self.assertIn("Phase file `Builder: codex` → no `codex diff` item.", gate)
+        self.assertTrue(os.access(DEV / "scripts" / "codex-build.sh", os.X_OK))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

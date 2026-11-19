@@ -2,6 +2,29 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.0 — 2026-11-19
+
+**dev** — Codex builds a phase in lean pilot projects (`defaults.builder: codex`). Building is the
+largest cost item; Codex builds on its own quota and Claude, another model family, reviews it in the
+gate. RED (read-through): with `defaults.flow: lean` and `defaults.builder: codex`, `SKILL.md` did not
+load `lean.md` in 4c and nothing said how Codex builds, so 4c ran the Claude implementer. GREEN: the
+router loads `lean.md` in 4c, whose `## Builder: Codex` calls `codex-build.sh` and falls back to the
+Claude implementer on the same worktree on exit 3.
+
+- **New `scripts/codex-build.sh`** (`--brief --head --out [--timeout-min 60] [--keep-partial]`): runs
+  `codex exec --sandbox workspace-write -C <worktree>` with no network for Codex's commands, no
+  approvals, no user config or execpolicy rules, /tmp and `$TMPDIR` not writable (a private scratch
+  dir instead). Refuses (exit 2) without `defaults.builder: codex` in the worktree's ROADMAP.md, on a
+  dirty worktree, a worktree not at `--head` or `--out` inside it. Exit 0 leaves the changes
+  uncommitted and writes `files:` plus Codex's summary. Exit 3 (`fallback: <reason>`) on quota
+  (marker shared with `codex-review.sh`), timeout, crash, no changes, a Codex commit or ref change,
+  a changed `.env*` entry or a symlink leading outside the repository; `--out` then lists what Codex
+  left. The worktree is reset to `--head` unless `--keep-partial`; a Codex commit is undone either way.
+  `.env*` files are never copied, read or printed; only their metadata is compared.
+- **`gate.md`:** a phase file with `Builder: codex` gets no `codex diff` item; the Claude Diff review
+  runs as always. Offset by tighter wording in `gate.md`; hot path unchanged at 7621 words.
+- Tests: `test_codex_build.py` (stub Codex on PATH, 16 tests), `test_codex_builder_in_lean`.
+
 ## v4.15.0 — 2026-11-19
 
 **dev** — Lean flow pilot, opt-in per project. Large phases took half a day and long sessions

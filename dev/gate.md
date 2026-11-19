@@ -4,7 +4,7 @@ The gate cannot be skipped or configured away; it scales with risk (tier).
 
 ## Project Commands per Stack
 
-Step D runs the project's own commands for typecheck, lint, tests and build. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
+Step D runs the project's commands for typecheck, lint, tests and build. **Run only what the project configures** — a missing linter or type checker is "not configured", not a failure; everything that runs must be green.
 Order: the CI workflow, then `Makefile`/`justfile` targets, then package scripts
 (`package.json`, `pyproject.toml`, `composer.json`), then the standard command of each tool the
 project configures or its stack always has (`cargo check`/`clippy`/`test`, `go vet`/`test`, `ruff check`,
@@ -33,7 +33,7 @@ header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate
 **The diff decides the gate; a type can only add reviewers or raise the tier, never remove one.**
 In planning a type only steers 4a.
 
-**Gate additions by type (they only add, never remove):**
+**Gate additions by type:**
 
 | `@type:` | Adds |
 |---|---|
@@ -110,7 +110,7 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 
 ## Step A — Review wave
 
-Dispatch every Step A item of the checklist **in one message** as parallel Agent subagents ("Analyzer
+Dispatch every Step A item **in one message** as parallel Agent subagents ("Analyzer
 dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows tagged `5c` (`--triggers --step gate`,
 `design/INDEX.md`) belong to this wave, `5g` to E2E.
 
@@ -148,7 +148,7 @@ none), run in the background:
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
 or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host a Claude subagent gives it (same prompt, input); none: `skipped: host is codex`.
-Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless.
+Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers
@@ -170,7 +170,7 @@ existing test: name that test, break the guarding line in its worktree (comment 
 value), run only that test, restore. Still green → critical, the test cannot fail; no named red
 test → invalid, not passed.
 
-**Timeouts.** A subagent still running after 15 minutes is cancelled and started once more, if
+**Timeouts.** A subagent still running after 15 minutes is cancelled and restarted once, if
 useful with the scope split in two. Still no report → its item stays open with "timeout", the phase
 stays `[!]`; Step D may go on. Only an independent substitute counts (another subagent with the
 same analyzer file, or an equivalent tool the project uses), never the implementer on its own change.
