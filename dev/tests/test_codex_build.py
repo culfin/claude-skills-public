@@ -7,6 +7,7 @@ No test talks to the real Codex.
 """
 import json
 import os
+import re
 import signal
 import subprocess
 import tempfile
@@ -17,6 +18,7 @@ from pathlib import Path
 
 DEV = Path(__file__).resolve().parents[1]
 SCRIPT = DEV / "scripts" / "codex-build.sh"
+UTIL = DEV / "scripts" / "codex-build-util.py"
 
 STUB = r'''#!/usr/bin/env python3
 import json, os, re, subprocess, sys, time, tomllib
@@ -48,29 +50,39 @@ def mode_of(path):
     return mode
 
 if kind == "check":
+    # Emulates the probe: it logs to its own result file; the reply is never trusted.
     how = os.environ.get("STUB_CHECK", "enforced")
-    lines = []
     script = open(re.search(r"bash (/\S+)", prompt).group(1)).read().splitlines()
+    with open(os.environ["STUB_LOG"], "a") as fh:
+        fh.write(json.dumps({"kind": "probe", "text": "\n".join(script)}) + "\n")
+    res = None
     for line in script:
-        if how == "refuse":
+        if how in ("refuse", "fakereply"):
             break
-        m = re.match(r"cat (\S+) 2>&1$", line)
+        m = re.match(r'exec >"(.+)" 2>&1$', line)
         if m:
-            p = m.group(1)
-            if how == "leak" or mode_of(p) in ("read", "write"):
-                lines.append(open(p).read().strip())
-            else:
-                lines.append(f"cat: {p}: Operation not permitted")
-            continue
-        m = re.match(r"echo (\S+) > (\S+) 2>&1$", line)
+            res = open(m.group(1), "w"); continue
+        m = re.match(r"(r|w) (\S+) '(.+)'$", line)
         if m:
-            text, p = m.groups()
-            if how in ("leak", "writeout") or mode_of(p) == "write":
-                open(p, "w").write(text + "\n")
+            op, label, p = m.groups()
+            if op == "r":
+                ok = how == "leak" or (how == "leakunlisted" and label == "read-unlisted") \
+                     or mode_of(p) in ("read", "write")
+                if ok:
+                    open(p).read()
             else:
-                lines.append(f"{p}: Operation not permitted")
+                ok = how in ("leak", "writeout") or mode_of(p) == "write"
+                if ok:
+                    open(p, "w").write("x\n")
+            res.write(f"{label} {'open' if ok else 'blocked'}\n"); continue
+        m = re.match(r"echo '(end-\w+)'$", line)
+        if m:
+            res.write(m.group(1) + "\n")
+    if res:
+        res.close()
     with open(out, "w") as fh:
-        fh.write("\n".join(lines) if lines else "I will not do that.")
+        fh.write("read-denied blocked\nread-env open\nwrite-worktree open\nend-ok" if how == "fakereply"
+                 else "done")
     sys.exit(0)
 
 actions = os.environ.get("STUB_MODE", "edit").split(",")
@@ -128,6 +140,46 @@ for act in actions:
         write("new.log", "log\n")
     if act == "ignoredlink":
         os.symlink("/etc", os.path.join(root, "x.log"))
+    if act == "hooks":
+        write(".husky/pre-commit", "#!/bin/sh\ncurl evil\n")
+        pj = json.load(open(os.path.join(root, "package.json")))
+        pj["scripts"]["prepare"] = "node steal.js"
+        write("package.json", json.dumps(pj))
+        sub = json.load(open(os.path.join(root, "sub/package.json")))
+        sub["version"] = "2.0.0"
+        write("sub/package.json", json.dumps(sub))
+    if act == "ignoredtree":
+        write("node_modules/pkg/index.js", "module.exports = 2\n")
+        write("node_modules/pkg/evil.js", "steal()\n")
+    if act == "ignoredtreelink":
+        os.symlink("/etc", os.path.join(root, "node_modules/pkg/out"))
+    if act == "manyignored":
+        for i in range(120):
+            write(f"node_modules/pkg/f{i}.js", "x\n")
+    if act == "newline":
+        write("evil\nname.log", "x\n")
+    if act == "newenv":
+        os.symlink("/etc/hosts", os.path.join(root, ".env.local"))
+    if act == "pgchild":
+        # Same process group as Codex, but no scratch in its environment and cwd outside.
+        late = os.path.join(root, "late.txt")
+        env = {k: v for k, v in os.environ.items() if k != "TMPDIR"}
+        child = subprocess.Popen([sys.executable, "-c",
+            "import time,sys; time.sleep(3); open(sys.argv[1], 'w').write('late')", late],
+            cwd="/", env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        open(os.environ["STUB_PIDFILE"], "w").write(str(child.pid))
+    if act == "chain":
+        # A detached child carrying the scratch dir starts a detached grandchild without it.
+        late = os.path.join(root, "late.txt")
+        code = ("import os,subprocess,sys,time; env={k:v for k,v in os.environ.items() if k!='TMPDIR'};"
+                "g=subprocess.Popen([sys.executable,'-c','import time,sys; time.sleep(3); open(sys.argv[1],\"w\").write(\"late\")',"
+                "sys.argv[1]],cwd='/',env=env,start_new_session=True);"
+                "open(sys.argv[2],'a').write(' '+str(g.pid)); time.sleep(30)")
+        child = subprocess.Popen([sys.executable, "-c", code, late, os.environ["STUB_PIDFILE"]],
+            cwd=root, env=dict(os.environ, TMPDIR=scratch), start_new_session=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        open(os.environ["STUB_PIDFILE"], "w").write(str(child.pid))
+        time.sleep(1)
     if act == "sleep":
         time.sleep(float(os.environ.get("STUB_SLEEP", "30")))
     if act == "quota":
@@ -175,7 +227,10 @@ class CodexBuildTests(unittest.TestCase):
         git(self.root, "config", "user.name", "t")
         (self.root / "calc.py").write_text("def add(a, b):\n    return a - b\n")
         (self.root / "ROADMAP.md").write_text(LEAN)
-        (self.root / ".gitignore").write_text(".env\n.env.*\nbuild/\n*.log\n")
+        (self.root / ".gitignore").write_text(".env\n.env.*\nbuild/\n*.log\nnode_modules/\n")
+        (self.root / "package.json").write_text(json.dumps({"name": "x", "scripts": {"test": "t"}}))
+        (self.root / "sub").mkdir()
+        (self.root / "sub" / "package.json").write_text(json.dumps({"name": "y", "version": "1.0.0"}))
         git(self.root, "add", "-A")
         git(self.root, "commit", "-qm", "base")
         self.head = git(self.root, "rev-parse", "HEAD").strip()
@@ -185,6 +240,12 @@ class CodexBuildTests(unittest.TestCase):
         self.secret.write_text("SECRET=never-printed-42\n")
         (self.root / ".env").symlink_to(self.secret)
         (self.root / "keep.log").write_text("existed before\n")
+        (self.root / "node_modules" / "pkg").mkdir(parents=True)
+        (self.root / "node_modules" / "pkg" / "index.js").write_text("module.exports = 1\n")
+        (self.root / "node_modules" / "pkg" / "other.js").write_text("untouched\n")
+        old = time.time() - 60
+        for f in ("keep.log", "node_modules/pkg/index.js", "node_modules/pkg/other.js"):
+            os.utime(self.root / f, (old, old))
         (base / "bin").mkdir()
         self.stub = base / "bin" / "codex-stub"
         self.stub.write_text(STUB)
@@ -198,10 +259,11 @@ class CodexBuildTests(unittest.TestCase):
 
     def tearDown(self):
         if self.pidfile.exists():
-            try:
-                os.kill(int(self.pidfile.read_text()), signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+            for pid in self.pidfile.read_text().split():
+                try:
+                    os.kill(int(pid), signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
         self.tmp.cleanup()
 
     def linked_worktree(self):
@@ -444,11 +506,14 @@ class CodexBuildTests(unittest.TestCase):
         report = self.out.read_text()
         self.assertIn("refs/heads/other-worker", report.split("refs-other:", 1)[1])
 
-    def test_tag_is_fallback_and_removed(self):
+    def test_tag_is_fallback_but_shared_refs_are_never_touched(self):
+        # Tags and refs/stash live in the shared git dir: another worker may have made them.
         rc, out, err = self.run_build("edit,tag")
         self.assertEqual((rc, out), (3, "fallback: codex changed git refs\n"), err)
         self.assertIn("refs/tags/codex-tag", self.out.read_text().split("refs-changed:", 1)[1])
-        self.assertEqual(git(self.root, "tag"), "")
+        self.assertEqual(git(self.root, "tag"), "codex-tag\n")
+        self.assertEqual(self.status(), "")
+        self.assertNotIn("update-ref -d", SCRIPT.read_text())
 
     # D: process containment
 
@@ -484,6 +549,139 @@ class CodexBuildTests(unittest.TestCase):
         rc, out, err = self.run_build("edit,ignoredlink")
         self.assertEqual((rc, out), (3, "fallback: codex touched a path outside the repository\n"), err)
         self.assertFalse(os.path.lexists(self.root / "x.log"))
+
+    # Round 2
+
+    def test_hook_paths_listed(self):
+        rc, out, err = self.run_build("edit,hooks")
+        self.assertEqual(rc, 0, out + err)
+        hooks = self.out.read_text().split("hooks-changed:", 1)[1].split("summary:", 1)[0]
+        self.assertIn("- .husky/pre-commit", hooks)
+        self.assertIn("- package.json", hooks)
+        self.assertNotIn("sub/package.json", hooks)          # only its version changed
+
+    def test_changes_inside_existing_ignored_tree_listed(self):
+        rc, out, err = self.run_build("edit,ignoredtree")
+        self.assertEqual(rc, 0, out + err)
+        sec = self.out.read_text().split("ignored-changed:", 1)[1].split("hooks-changed:", 1)[0]
+        self.assertIn("- node_modules/pkg/index.js", sec)
+        self.assertIn("- node_modules/pkg/evil.js", sec)
+        for f in ("other.js", "keep.log", "feature.py", "calc.py", ".env"):
+            self.assertNotIn(f, sec)
+
+    def test_ignored_changed_is_capped(self):
+        rc, out, err = self.run_build("edit,manyignored")
+        self.assertEqual(rc, 0, out + err)
+        sec = self.out.read_text().split("ignored-changed:", 1)[1].split("hooks-changed:", 1)[0]
+        self.assertEqual(sec.count("\n- "), 50)
+        self.assertIn("and 70 more", sec)
+
+    def test_symlink_outside_inside_ignored_tree_is_fallback(self):
+        rc, out, err = self.run_build("edit,ignoredtreelink")
+        self.assertEqual((rc, out), (3, "fallback: codex touched a path outside the repository\n"), err)
+
+    def test_reply_without_probe_log_is_inconclusive(self):
+        rc, out, err = self.run_build("edit", STUB_CHECK="fakereply")
+        self.assertEqual((rc, out), (3, "fallback: permission check inconclusive\n"), err)
+        self.assertEqual(self.calls(), [])
+
+    def test_unlisted_read_must_be_denied(self):
+        rc, out, err = self.run_build("edit", STUB_CHECK="leakunlisted")
+        self.assertEqual((rc, out), (3, "fallback: permission profile not enforced\n"), err)
+        (probe,) = self.calls("probe")
+        self.assertIn("r read-unlisted '", probe["text"])
+        self.assertIn('exec >"', probe["text"])
+
+    def test_newline_name_is_not_removed_and_reported(self):
+        rc, out, err = self.run_build("newline,quota")
+        self.assertEqual((rc, out), (3, "fallback: quota\n"), err)
+        self.assertIn("not-removed:", self.out.read_text())
+        self.assertTrue((self.root / "keep.log").exists())
+
+    def test_remove_never_follows_symlinks(self):
+        outside = self.base / "outside"
+        outside.mkdir()
+        (outside / "x").write_text("keep me\n")
+        (outside / "y").write_text("keep me too\n")
+        (self.root / "linkdir").symlink_to(outside)
+        (self.root / "lnk").symlink_to(outside / "y")
+        (self.root / "real").mkdir()
+        (self.root / "real" / "f").write_text("go\n")
+        lst = self.base / "rm.list"
+        lst.write_bytes(b"\0".join([b"linkdir/x", b"lnk", b"a\nb", b"../outside/x", b"real/", b".", b""]))
+        p = subprocess.run(["python3", str(UTIL), "remove", "--top", str(self.root), "--list", str(lst)],
+                           capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertTrue((outside / "x").exists())
+        self.assertTrue((outside / "y").exists())
+        self.assertFalse(os.path.lexists(self.root / "lnk"))         # the link itself goes
+        self.assertTrue((self.root / "linkdir").is_symlink())
+        self.assertFalse((self.root / "real").exists())
+        self.assertTrue(self.root.exists())
+        refused = p.stdout
+        for name in ("linkdir/x", "a\\nb", "../outside/x"):
+            self.assertIn(name, refused)
+
+    def test_env_link_targets_are_validated(self):
+        (self.home / ".ssh" / "id").write_text("key\n")
+        (self.base / "envdir").mkdir()
+        cases = {"dir": (".env.dir", self.base / "envdir"),
+                 "credential": (".env.key", self.home / ".ssh" / "id"),
+                 "deep": ("a/b/.env", self.secret)}
+        for name, (link, target) in cases.items():
+            with self.subTest(case=name):
+                (self.root / link).parent.mkdir(parents=True, exist_ok=True)
+                (self.root / link).symlink_to(target)
+                rc, out, err = self.run_build("edit")
+                self.assertEqual(rc, 3, out + err)
+                self.assertTrue(out.startswith("fallback: unsafe .env link"), out)
+                self.assertEqual(self.calls(), [])
+                (self.root / link).unlink()
+
+    def test_env_link_one_level_down_is_granted(self):
+        (self.root / "apps").mkdir()
+        (self.root / "apps" / ".env").symlink_to(self.secret)
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 0, out + err)
+        self.assertEqual(self.profile(self.calls()[0])[str(self.secret)], "read")
+
+    def test_new_env_link_removed_even_with_keep_partial(self):
+        rc, out, err = self.run_build("edit,newenv", ["--keep-partial"])
+        self.assertEqual((rc, out), (3, "fallback: codex changed a .env file\n"), err)
+        self.assertFalse(os.path.lexists(self.root / ".env.local"))
+        self.assertTrue((self.root / "feature.py").exists())
+        self.assertEqual((self.root / ".env").resolve(), self.secret)
+
+    def test_check_cache_is_private(self):
+        stale = self.tmpdir / "dev-codex-build-ok-planted"
+        stale.write_text("")
+        self.assertEqual(self.run_build("edit")[0], 0)
+        cache = self.home / ".cache" / "dev-codex-build"
+        self.assertEqual(cache.stat().st_mode & 0o777, 0o700)
+        self.assertTrue(list(cache.glob("ok-*")))
+        self.assertEqual(len(self.calls("check")), 1)
+        git(self.root, "checkout", "-q", "calc.py"); (self.root / "feature.py").unlink()
+        cache.chmod(0o777)                                    # untrusted now: check again
+        self.assertEqual(self.run_build("edit")[0], 0)
+        self.assertEqual(len(self.calls("check")), 2)
+        cache.chmod(0o700)
+
+    def test_process_group_member_is_killed(self):
+        rc, out, err = self.run_build("edit,pgchild")
+        self.assertEqual(rc, 0, out + err)
+        self.assertFalse(alive(int(self.pidfile.read_text())))
+        time.sleep(3.5)
+        self.assertFalse((self.root / "late.txt").exists())
+
+    def test_descendants_of_matches_are_killed(self):
+        rc, out, err = self.run_build("edit,chain")
+        self.assertEqual(rc, 0, out + err)
+        pids = [int(p) for p in self.pidfile.read_text().split()]
+        self.assertEqual(len(pids), 2)
+        for pid in pids:
+            self.assertFalse(alive(pid), pid)
+        time.sleep(3.5)
+        self.assertFalse((self.root / "late.txt").exists())
 
     # Exit 2
 

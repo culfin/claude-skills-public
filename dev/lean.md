@@ -71,10 +71,12 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
    at the phase HEAD.
 2. Run in the background (T3: its task ID to `t3_background_wait`), `--out` under `$TMPDIR`:
    `bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>`
+   Start no other processes in the worktree while it runs: its sweep kills them.
 3. **Exit 0:** Codex's changes are uncommitted in the worktree; `--out` holds `files:`,
-   `ignored-new:` (check them) and its summary with `open:`. Read the diff and run the tests. Open
-   items or red tests → the Claude implementer finishes them in the same worktree. Commit the
-   phase's paths explicitly. Add `Builder: codex` under `Phase base:` in the phase file only if
+   `ignored-new:`, `ignored-changed:`, `hooks-changed:` and its summary with `open:`. Read the diff;
+   look at `ignored-new:` and `ignored-changed:` before running the tests. Open
+   items or red tests → the Claude implementer finishes them in the same worktree. Inspect
+   `hooks-changed:` before committing; commit the phase's paths explicitly. Add `Builder: codex` under `Phase base:` in the phase file only if
    Codex's diff is the bulk of the phase; the Claude implementer wrote a task or more than a few
    lines → no line, so `codex diff` still runs. Then the gate.
 4. **Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree.

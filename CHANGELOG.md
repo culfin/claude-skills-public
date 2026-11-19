@@ -34,11 +34,27 @@ Claude implementer on the same worktree on exit 3.
   `core.hooksPath=/dev/null` and no fsmonitor, so nothing Codex wrote runs. Leftover processes
   (scratch dir in environment or arguments, or new with cwd in the worktree) get TERM, then KILL.
   `.env*` files are never copied, read or printed; only their metadata is compared.
+- Second review round: tags and `refs/stash` live in the shared git dir, so a change there is
+  reported and falls back but is never reset (only HEAD and the worktree's branch are).
+  `hooks-changed:` lists changed `.husky/`, `.githooks/`, lefthook, pre-commit config and
+  `package.json` scripts. `ignored-changed:` lists files changed inside ignored trees that existed
+  (`node_modules/`, `.venv/`, `target/`), found by mtime against a stamp, capped at 50 and checked
+  for symlinks leading outside. The permission probe logs to its own result file with an end
+  marker, and the model's reply is never read. A read of a path that no grant covers must be
+  denied too. Deletions run through the new `scripts/codex-build-util.py`: NUL-separated, no
+  newline, tab or `..`, strictly inside the worktree, never through a symlinked parent, and a
+  link is removed rather than its target. A `.env*` link gets a read grant only at depth 0–1 and
+  only to a regular file outside credential folders, not `/` or `$HOME`; otherwise the build falls
+  back. A new `.env*` link is removed even with `--keep-partial`. The check cache moved to
+  `${XDG_CACHE_HOME:-~/.cache}/dev-codex-build` (0700, trusted only when owned by the user and not
+  group- or world-writable). The process sweep now makes up to 3 passes, also covers Codex's
+  process group, its session (when not ours) and descendants, and documents its limit (no cgroups
+  or namespaces on macOS).
 - **`lean.md`:** `Builder: codex` goes into the phase file only when Codex's diff is the bulk of the
   phase, so a phase the Claude implementer largely finished still gets the `codex diff` review.
 - **`gate.md`:** a phase file with `Builder: codex` gets no `codex diff` item; the Claude Diff review
   runs as always. Offset by tighter wording in `gate.md`; hot path unchanged at 7621 words.
-- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 31 tests), `test_codex_builder_in_lean`.
+- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 45 tests), `test_codex_builder_in_lean`.
 
 ## v4.15.0 — 2026-11-19
 

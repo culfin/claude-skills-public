@@ -620,7 +620,9 @@ class DevDocsTests(unittest.TestCase):
                   "**Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree",
                   "`--keep-partial`", "the `--out` file", "**Exit 2:**", "no push", "`ignored-new:`",
                   "only if Codex's diff is the bulk of the phase",
-                  "the Claude implementer wrote a task or more than a few lines → no line"):
+                  "the Claude implementer wrote a task or more than a few lines → no line",
+                  "`ignored-changed:` before running the tests", "`hooks-changed:` before committing",
+                  "Start no other processes in the worktree while it runs"):
             self.assertIn(s, sec)
         gate = " ".join(text("gate.md").split())
         self.assertIn("Phase file `Builder: codex` → no `codex diff` item.", gate)
