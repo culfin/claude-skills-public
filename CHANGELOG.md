@@ -4,11 +4,12 @@ Why things changed, not just what. Rules in the skills stay free of history; it 
 
 ## v4.15.0 — 2026-11-19
 
-**dev** — Lean flow pilot, opt-in per project. Measurements showed phases with a median of ~4,000
-changed lines and long sessions as the main cost; small, separately mergeable phases with clear
-criteria are cheaper to build and review. RED: asked to `/dev add` a ~4,000-line feature, the current
-flow produced one phase and no Given/When/Then criteria; with `defaults.flow: lean` (GREEN) it
-proposed six phases of at most ~500 lines, each with 2–6 criteria.
+**dev** — Lean flow pilot, opt-in per project. Large phases took half a day and long sessions
+cost the most; small, separately mergeable phases with clear criteria should be cheaper to build and
+review. RED: a subagent planning a ~4,000-line feature with v4.14.0 produced 5 horizontal phases of
+~600–1,000 lines each and no acceptance criteria; with `defaults.flow: lean` (GREEN) it read
+`SKILL.md`, `commands.md` and `lean.md` and produced 7 vertical phases, each with 4–6
+Given/When/Then criteria.
 
 - **New `lean.md`**, read only when ROADMAP frontmatter sets `defaults.flow: lean`: `## Cut`
   (phases over ~500 expected changed lines proposed as vertical, separately mergeable phases; only
@@ -16,6 +17,8 @@ proposed six phases of at most ~500 lines, each with 2–6 criteria.
   phase in ROADMAP.md, carried into the phase file; the Spec checker already flags each criterion
   without a test) and `## One phase, one worker` (no hand-off inside a phase; the run ends after
   each phase, the next one starts in a fresh context).
+- A cut keeps the `Decisions:` line on its first phase; `/dev add` inserts behind a phase's
+  `Criteria:` block too.
 - **`defaults.builder: codex|claude`** defined (default `claude`); only `claude` has behaviour so far.
 - Projects without the key see no change: one router line in `SKILL.md` and conditional sentences
   in `commands.md` and `roadmap-creation.md`; hot path unchanged at 7621 words (the router line is

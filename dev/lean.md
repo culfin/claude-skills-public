@@ -31,7 +31,9 @@ it as one phase. A hint, never a ban: the user's choice stands; record it on the
 
 ## Acceptance criteria
 
-Every new or cut phase gets 2–6 criteria when it is planned, written under its `Decisions:` line:
+Every new or cut phase gets 2–6 criteria when it is planned, written under its `Decisions:` line,
+or straight under the phase line if it has none. A cut keeps the original `Decisions:` line on its
+first phase; the others get `  - Decisions: see Phase N.1`. Example:
 
 ```markdown
 - [ ] Phase 4.2 — Column mapping @type:ui

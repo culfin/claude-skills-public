@@ -79,7 +79,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    CI: <SHAs not green, Pre-Phase step 1, if any>
    Updates: N skill updates waiting — /dev updates   (only if pending/ has files; count only)
    ```
-   Show `@gate: full` when set, `$TECH_STACKS` only on first session start or if changed.
+   Show `@gate: full` when set, `$TECH_STACKS` only on first start or if changed.
 8. **Start the run — no menu.** `/dev` and `/dev next` go straight on: `[!]` and `[~]` phases resume
    per "Resume logic" (4), otherwise the next phase starts. Looking without starting is `/dev status`.
 
@@ -152,7 +152,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    origin/<main>` (slug: `runtime.md`), then claim there; push it only as `git push -u origin HEAD:refs/heads/<branch>`.
    Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it (refspec above) if the repo has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types and `@gate:`: `gate.md`.
-4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
+4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output paths and reads only relevant findings.
 
 ### 4. Phase Cycle
 
@@ -208,7 +208,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`); `@spec:` and `@plan:` present (small phases have neither)
 3. **Gate record:** append the phase file's `## CI` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` (it holds the Gate summary); STATE.md stays untouched.
 4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
-5. Commit it all: `roadmap: complete Phase N — <name>`; then push gate and completion commit together (`ci.md`)
+5. Commit it all in one commit: `roadmap: complete Phase N — <name>`; then push gate and completion commit together (`ci.md`)
 6. `git fetch`, then read `git show origin/<main>:<prefix>ROADMAP.md`: every phase of the milestone `[x]`/`[—]` there, this one counted as done → append `Milestone End pending: <milestone name>` below any such lines in STATE.md (a merge keeps all), then Milestone End (`commands.md`)
 
 ### 8. Next Action
