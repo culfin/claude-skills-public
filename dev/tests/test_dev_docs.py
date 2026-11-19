@@ -586,6 +586,27 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("250k", s)
         self.assertNotIn("Old format (not migrated)\n\nMigrated", text("state.md"))
 
+    def test_lean_is_opt_in_and_out_of_hot_path(self):
+        # v4.15.0 pilot, RED before: /dev add planned a ~4,000-line feature as one phase without
+        # Given/When/Then criteria. lean.md fixes that, but only behind `defaults.flow: lean`.
+        lean = text("lean.md")
+        for sec in ("## Cut", "## Acceptance criteria", "## One phase, one worker"):
+            self.assertIn(sec, lean)
+        for s in ("~500", "`[ ]`", "Given", "When", "Then", "2–6", "Spec checker",
+                  "`defaults.builder: codex|claude`"):
+            self.assertIn(s, lean)
+        hot = ("SKILL.md", "gate.md", "execution.md", "state.md", "models.md")
+        for f in [p for p in DEV.rglob("*.md") if "tests" not in p.parts]:
+            for line in f.read_text().splitlines():
+                if "lean.md" in line:
+                    self.assertIn("`defaults.flow: lean`", line, str(f.relative_to(DEV)))
+        refs = [f for f in hot if "lean.md" in text(f)]
+        self.assertEqual(refs, ["SKILL.md"])
+        self.assertEqual(text("SKILL.md").count("lean.md"), 1)
+        self.assertIn("`defaults.flow: lean`", text("commands.md"))
+        # The pilot must not cost the hot path: 7621 words before v4.15.0.
+        self.assertLessEqual(sum(len(text(f).split()) for f in hot), 7621)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

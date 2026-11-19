@@ -29,6 +29,8 @@ The gate's checks (`gate.md`) and the mandatory milestone-end and pre-release an
 - Post-phase UI (web): `playwright-cli` (for interactive browser testing beyond E2E)
 - Post-phase UI (native): `writing-clearly-and-concisely`
 
+Frontmatter has `defaults.flow: lean` (only if the user asks for it): plan the phases per `lean.md` "Cut" and "Acceptance criteria" before the preview.
+
 **6. Preview and confirm** — Write and commit (Recommended), Edit first, Start over.
 
 Write ROADMAP.md to project root.
