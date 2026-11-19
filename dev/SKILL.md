@@ -30,7 +30,7 @@ step needs.
 | `/dev check` | `dev-check.md` → `gate.md` | Standalone Quality Gate |
 | `/dev ui [scope]` | `ui-review.md` | UI review and rework |
 | `/dev updates` | skill `dev-updates` (separate); not available → "`/dev updates` needs the `dev-updates` skill — N updates waiting in `pending/`, nothing applied" | On the command |
-| Frontmatter `defaults.flow: lean` (else never) | `lean.md` | `/dev init`, `add`, `reorder`, bundled round; 4a; step 7 |
+| Frontmatter `defaults.flow: lean` (else never) | `lean.md` | `/dev init`, `add`, `reorder`, bundled round; 4a; 4c; step 7 |
 | A new use of a foreign skill | `sources.md` | On the change |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |

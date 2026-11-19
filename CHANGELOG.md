@@ -2,6 +2,67 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.0 — 2026-11-19
+
+**dev** — Codex builds a phase in lean pilot projects (`defaults.builder: codex`). Building is the
+largest cost item; Codex builds on its own quota and Claude, another model family, reviews it in the
+gate. RED (read-through): with `defaults.flow: lean` and `defaults.builder: codex`, `SKILL.md` did not
+load `lean.md` in 4c and nothing said how Codex builds, so 4c ran the Claude implementer. GREEN: the
+router loads `lean.md` in 4c, whose `## Builder: Codex` calls `codex-build.sh` and falls back to the
+Claude implementer on the same worktree on exit 3.
+
+- **New `scripts/codex-build.sh`** (`--brief --head --out [--timeout-min 60] [--keep-partial]`).
+  Codex runs under a permission profile, never `--sandbox` (the legacy sandbox reads the whole disk
+  and drops the profile): denies first (`:slash_tmp`, the main checkout's tree, credential folders),
+  write only the worktree and a private scratch dir, read the git dirs, the `.env*` symlink targets
+  (owner-approved for the pilot), tool and toolchain dirs; network off, no approvals, no user config
+  or execpolicy rules; a `.codex/` project config is refused. A permission check per binary and
+  version (cached by `RULE_REV`) probes a denied read and writes outside the worktree and to /tmp;
+  any that succeeds = `fallback: permission profile not enforced`, never the legacy sandbox.
+- Refuses (exit 2) without `defaults.builder: codex` in the worktree's ROADMAP.md, on a dirty
+  worktree, a worktree not at `--head` or `--out` inside it. Exit 0 leaves the changes uncommitted
+  and writes `files:`, `ignored-new:`, other workers' moved refs and Codex's summary.
+- Exit 3 (`fallback: <reason>`) on quota (marker shared with `codex-review.sh`), timeout, crash, no
+  changes, a change to this worktree's refs (HEAD, its branch, stash, `refs/worktree/*`, tags; other
+  refs are only a note, since parallel workers share them), a changed `.git` or git config (hooks,
+  fsmonitor, filters, includes: then no git command runs), a changed `.env*` entry, a symlink leading
+  outside the repository (tracked, untracked or ignored) or processes that survive the kill. `--out`
+  names what Codex left and every changed ref. Without `--keep-partial` the worktree is reset to
+  `--head` and new ignored paths are removed (existing ones, `.env*` links included, stay); a Codex
+  commit is undone either way.
+- After the run git uses only the recorded git dir and work tree, no system or global config,
+  `core.hooksPath=/dev/null` and no fsmonitor, so nothing Codex wrote runs. Leftover processes
+  (scratch dir in environment or arguments, or new with cwd in the worktree) get TERM, then KILL.
+  `.env*` files are never copied, read or printed; only their metadata is compared.
+- Second review round: tags and `refs/stash` live in the shared git dir, so a change there is
+  reported and falls back but is never reset (only HEAD and the worktree's branch are).
+  `hooks-changed:` lists changed `.husky/`, `.githooks/`, lefthook, pre-commit config and
+  `package.json` scripts. `ignored-changed:` lists files changed inside ignored trees that existed
+  (`node_modules/`, `.venv/`, `target/`), found by mtime against a stamp, capped at 50 and checked
+  for symlinks leading outside. The permission probe logs to its own result file with an end
+  marker, and the model's reply is never read. A read of a path that no grant covers must be
+  denied too. Deletions run through the new `scripts/codex-build-util.py`: NUL-separated, no
+  newline, tab or `..`, strictly inside the worktree, never through a symlinked parent, and a
+  link is removed rather than its target. A `.env*` link gets a read grant only at depth 0–1 and
+  only to a regular file outside credential folders, not `/` or `$HOME`; otherwise the build falls
+  back. A new `.env*` link is removed even with `--keep-partial`. The check cache moved to
+  `${XDG_CACHE_HOME:-~/.cache}/dev-codex-build` (0700, trusted only when owned by the user and not
+  group- or world-writable). The process sweep now makes up to 3 passes, also covers Codex's
+  process group, its session (when not ours) and descendants, and documents its limit (no cgroups
+  or namespaces on macOS).
+- Third review round: a `.env*` link gets a read grant only when it is untracked and points to a
+  regular file inside the main checkout. Folder checks compare device and inode, because APFS is
+  case-insensitive (`~/.SSH` is `~/.ssh`); the credential-folder deny stays as a second check.
+  Surviving processes now leave the worktree untouched, as a changed `.git` does. Change
+  detection uses ctime as well as mtime, since userspace can set mtime back but not ctime, and
+  `.env*` signatures include the inode. New ignored dirs are walked in full for symlinks leading
+  outside the repository.
+- **`lean.md`:** `Builder: codex` goes into the phase file only when Codex's diff is the bulk of the
+  phase, so a phase the Claude implementer largely finished still gets the `codex diff` review.
+- **`gate.md`:** a phase file with `Builder: codex` gets no `codex diff` item; the Claude Diff review
+  runs as always. Offset by tighter wording in `gate.md`; hot path unchanged at 7621 words.
+- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 49 tests), `test_codex_builder_in_lean`.
+
 ## v4.15.0 — 2026-11-19
 
 **dev** — Lean flow pilot, opt-in per project. Large phases took half a day and long sessions

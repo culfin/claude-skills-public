@@ -60,3 +60,31 @@ for any phase (`gate.md`). The builder writes a test per criterion first, named 
   report done to the parent, `runtime.md`). The next phase starts in a fresh context with the phase
   file, its criteria and `Decisions:` line, not in this session's history.
 - `/dev parallel` and the T3 coordinator start one child thread per phase, as before.
+
+## Builder: Codex
+
+With `defaults.builder: codex`, Codex replaces the Claude implementer in 4c; this session keeps
+planning and the gate, so Claude reviews Codex. Pilot projects only.
+
+1. Write the brief as for the implementer (`execution.md`: the small phase's
+   `.superpowers/sdd/phase-…` file, or the plan) and add the test command. The worktree must be clean
+   at the phase HEAD.
+2. Run in the background (T3: its task ID to `t3_background_wait`), `--out` under `$TMPDIR`:
+   `bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>`
+   Start no other processes in the worktree while it runs: its sweep kills them.
+3. **Exit 0:** Codex's changes are uncommitted in the worktree; `--out` holds `files:`,
+   `ignored-new:`, `ignored-changed:`, `hooks-changed:` and its summary with `open:`. Read the diff;
+   look at `ignored-new:` and `ignored-changed:` before running the tests. Open
+   items or red tests → the Claude implementer finishes them in the same worktree. Inspect
+   `hooks-changed:` before committing; commit the phase's paths explicitly. Add `Builder: codex` under `Phase base:` in the phase file only if
+   Codex's diff is the bulk of the phase; the Claude implementer wrote a task or more than a few
+   lines → no line, so `codex diff` still runs. Then the gate.
+4. **Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree.
+   The script has reset it to `--head` and undone any Codex commit. With `--keep-partial` Codex's
+   partial changes stay uncommitted: then hand the implementer the `--out` file, which lists them.
+   No `Builder:` line.
+5. **Exit 2:** fix the call (dirty worktree, wrong `--head`); missing `defaults.builder: codex` →
+   the Claude implementer.
+
+The script runs Codex under a permission profile: writes only in the worktree, no network, no push;
+`.env` files stay the worktree's symlinks, never copied or printed.
