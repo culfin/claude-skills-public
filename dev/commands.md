@@ -140,6 +140,8 @@ AskUserQuestion: Add phase (Recommended) or Add milestone.
 **Phase:** Which milestone → name → type → position (end or after specific phase — behind that phase's `  - Decisions:` line) → extra skills → Edit ROADMAP.md → commit.
 **Milestone:** Name/goal → phases → append to ROADMAP.md → commit.
 
+With `defaults.flow: lean` in the frontmatter: before the edit, apply `lean.md` "Cut" and "Acceptance criteria" — a phase over ~500 expected changed lines is proposed as several phases, each with 2–6 Given/When/Then criteria.
+
 After the commit: show the updated roadmap in the terminal, the new phase/milestone marked "new".
 
 Warn if adding to a completed milestone.
@@ -150,7 +152,7 @@ Warn if adding to a completed milestone.
 
 **Triggered by:** `/dev reorder`
 
-Only `[ ]` phases can move, each with its indented `  - Decisions:` line. `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
+Only `[ ]` phases can move, each with its indented `  - Decisions:` line (and `  - Criteria:` block, `defaults.flow: lean`). `[x]`, `[!]`, `[~]`, `[—]` stay. If <2 movable: "Nothing to reorder." AskUserQuestion: which phase → which position → Edit → commit.
 
 After the commit: show the updated roadmap in the terminal, the moved phase marked "moved".
 

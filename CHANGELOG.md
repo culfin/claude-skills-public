@@ -2,6 +2,25 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.15.0 — 2026-11-19
+
+**dev** — Lean flow pilot, opt-in per project. Measurements showed phases with a median of ~4,000
+changed lines and long sessions as the main cost; small, separately mergeable phases with clear
+criteria are cheaper to build and review. RED: asked to `/dev add` a ~4,000-line feature, the current
+flow produced one phase and no Given/When/Then criteria; with `defaults.flow: lean` (GREEN) it
+proposed six phases of at most ~500 lines, each with 2–6 criteria.
+
+- **New `lean.md`**, read only when ROADMAP frontmatter sets `defaults.flow: lean`: `## Cut`
+  (phases over ~500 expected changed lines proposed as vertical, separately mergeable phases; only
+  `[ ]` phases; a hint, not a ban), `## Acceptance criteria` (2–6 Given/When/Then lines under the
+  phase in ROADMAP.md, carried into the phase file; the Spec checker already flags each criterion
+  without a test) and `## One phase, one worker` (no hand-off inside a phase; the run ends after
+  each phase, the next one starts in a fresh context).
+- **`defaults.builder: codex|claude`** defined (default `claude`); only `claude` has behaviour so far.
+- Projects without the key see no change: one router line in `SKILL.md` and conditional sentences
+  in `commands.md` and `roadmap-creation.md`; hot path unchanged at 7621 words (the router line is
+  offset by tightened sentences in `SKILL.md`). Test `test_lean_is_opt_in_and_out_of_hot_path`.
+
 ## v4.14.0 — 2026-11-19
 
 **dev** — Cost cuts from a structural review (owner decision). RED: a worker dry run of a small
