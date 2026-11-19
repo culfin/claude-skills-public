@@ -131,7 +131,8 @@ for act in actions:
     if act == "detach":
         late = os.path.join(root, "late.txt")
         child = subprocess.Popen([sys.executable, "-c",
-            "import time,sys; time.sleep(3); open(sys.argv[1], 'w').write('late')", late],
+            "import time,sys; time.sleep(float(sys.argv[2])); open(sys.argv[1], 'w').write('late')", late,
+            os.environ.get("STUB_CHILD_SLEEP", "3")],
             cwd=root, env=dict(os.environ, TMPDIR=scratch), start_new_session=True,
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         open(os.environ["STUB_PIDFILE"], "w").write(str(child.pid))
@@ -180,6 +181,20 @@ for act in actions:
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         open(os.environ["STUB_PIDFILE"], "w").write(str(child.pid))
         time.sleep(1)
+    if act == "ignoredback":
+        p = os.path.join(root, "node_modules/pkg/other.js")
+        st = os.stat(p)
+        open(p, "w").write("changed!!\n")
+        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))         # mtime set back; ctime cannot be
+    if act == "envback":
+        p = os.path.realpath(os.path.join(root, ".env"))
+        st = os.stat(p)
+        open(p, "w").write("SECRET=never-printed-43\n")
+        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+        write("feature.py", "x = 1\n")
+    if act == "buildlink":
+        write("build/sub/keep.txt", "x\n")
+        os.symlink("/etc", os.path.join(root, "build/sub/link"))
     if act == "sleep":
         time.sleep(float(os.environ.get("STUB_SLEEP", "30")))
     if act == "quota":
@@ -236,7 +251,7 @@ class CodexBuildTests(unittest.TestCase):
         self.head = git(self.root, "rev-parse", "HEAD").strip()
         self.main = self.root
         # The worktree's .env is a symlink to the main checkout's file, as worktree setups make it.
-        self.secret = base / "main.env"
+        self.secret = self.root / ".env.real"         # main checkout's file, ignored
         self.secret.write_text("SECRET=never-printed-42\n")
         (self.root / ".env").symlink_to(self.secret)
         (self.root / "keep.log").write_text("existed before\n")
@@ -625,8 +640,12 @@ class CodexBuildTests(unittest.TestCase):
     def test_env_link_targets_are_validated(self):
         (self.home / ".ssh" / "id").write_text("key\n")
         (self.base / "envdir").mkdir()
-        cases = {"dir": (".env.dir", self.base / "envdir"),
+        (self.base / "other.env").write_text("X=1\n")
+        mixed = self.home / ".SSH" / "id"              # case-insensitive APFS: same file as .ssh/id
+        cases = {"dir": (".env.dir", self.root / "sub"),
                  "credential": (".env.key", self.home / ".ssh" / "id"),
+                 "credential-mixed-case": (".env.key", mixed),
+                 "outside-main": (".env.other", self.base / "other.env"),
                  "deep": ("a/b/.env", self.secret)}
         for name, (link, target) in cases.items():
             with self.subTest(case=name):
@@ -635,8 +654,42 @@ class CodexBuildTests(unittest.TestCase):
                 rc, out, err = self.run_build("edit")
                 self.assertEqual(rc, 3, out + err)
                 self.assertTrue(out.startswith("fallback: unsafe .env link"), out)
+                if name.startswith("credential") and mixed.exists():
+                    self.assertIn("denied folder", out)
                 self.assertEqual(self.calls(), [])
                 (self.root / link).unlink()
+
+    def test_tracked_env_link_is_refused(self):
+        (self.root / "apps").mkdir()
+        (self.root / "apps" / ".env").symlink_to(self.secret)
+        git(self.root, "add", "-f", "apps/.env")
+        git(self.root, "commit", "-qm", "tracked link")
+        self.head = git(self.root, "rev-parse", "HEAD").strip()
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 3, out + err)
+        self.assertIn("tracked", out)
+        self.assertEqual(self.calls(), [])
+
+    def test_survivors_leave_the_worktree_untouched(self):
+        rc, out, err = self.run_build("edit,detach", DEV_CODEX_SWEEP_DRYRUN="1", STUB_CHILD_SLEEP="30")
+        self.assertEqual((rc, out), (3, "fallback: codex left processes running\n"), err)
+        self.assertIn("partial: not touched", self.out.read_text())
+        self.assertTrue((self.root / "feature.py").exists())
+
+    def test_ctime_catches_mtime_set_back(self):
+        rc, out, err = self.run_build("edit,ignoredback")
+        self.assertEqual(rc, 0, out + err)
+        sec = self.out.read_text().split("ignored-changed:", 1)[1].split("hooks-changed:", 1)[0]
+        self.assertIn("- node_modules/pkg/other.js", sec)
+        git(self.root, "checkout", "-q", "calc.py")
+        (self.root / "feature.py").unlink()
+        rc, out, err = self.run_build("envback")
+        self.assertEqual((rc, out), (3, "fallback: codex changed a .env file\n"), err)
+
+    def test_symlink_deep_in_new_ignored_dir_is_fallback(self):
+        rc, out, err = self.run_build("edit,buildlink")
+        self.assertEqual((rc, out), (3, "fallback: codex touched a path outside the repository\n"), err)
+        self.assertFalse((self.root / "build").exists())
 
     def test_env_link_one_level_down_is_granted(self):
         (self.root / "apps").mkdir()

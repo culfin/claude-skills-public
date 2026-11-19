@@ -50,11 +50,18 @@ Claude implementer on the same worktree on exit 3.
   group- or world-writable). The process sweep now makes up to 3 passes, also covers Codex's
   process group, its session (when not ours) and descendants, and documents its limit (no cgroups
   or namespaces on macOS).
+- Third review round: a `.env*` link gets a read grant only when it is untracked and points to a
+  regular file inside the main checkout. Folder checks compare device and inode, because APFS is
+  case-insensitive (`~/.SSH` is `~/.ssh`); the credential-folder deny stays as a second check.
+  Surviving processes now leave the worktree untouched, as a changed `.git` does. Change
+  detection uses ctime as well as mtime, since userspace can set mtime back but not ctime, and
+  `.env*` signatures include the inode. New ignored dirs are walked in full for symlinks leading
+  outside the repository.
 - **`lean.md`:** `Builder: codex` goes into the phase file only when Codex's diff is the bulk of the
   phase, so a phase the Claude implementer largely finished still gets the `codex diff` review.
 - **`gate.md`:** a phase file with `Builder: codex` gets no `codex diff` item; the Claude Diff review
   runs as always. Offset by tighter wording in `gate.md`; hot path unchanged at 7621 words.
-- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 45 tests), `test_codex_builder_in_lean`.
+- Tests: `test_codex_build.py` (stub Codex on PATH that emulates the profile, 49 tests), `test_codex_builder_in_lean`.
 
 ## v4.15.0 — 2026-11-19
 

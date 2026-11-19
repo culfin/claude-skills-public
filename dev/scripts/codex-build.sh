@@ -20,7 +20,7 @@
 #          worktree is reset to --head (reset --hard, clean, new ignored paths removed; ignored
 #          paths that existed stay); with it the changes stay, uncommitted, on --head. A Codex
 #          commit is undone and a new `.env*` link removed either way. After a changed `.git` or
-#          git config no git command runs: the worktree is left as it is.
+#          git config, or with surviving processes, nothing runs in the worktree: left as it is.
 # Exit 2 = usage error: bad arguments, not a git worktree, worktree dirty or not at --head,
 #          --out inside the worktree, or ROADMAP.md frontmatter without `defaults.builder: codex`.
 #
@@ -32,8 +32,9 @@
 #   working tree (when the worktree is a linked one) and credential folders in $HOME; write the
 #   worktree and a private scratch dir (its TMPDIR); read `:minimal`, the git dirs, the Codex
 #   binary's dirs, Homebrew tool dirs, toolchain dirs that exist (cargo, rustup, pnpm store) and
-#   the targets of the worktree's `.env*` symlinks (owner-approved in the pilot) — only links at
-#   the top level or one below, to a regular file outside credential folders and not / or $HOME.
+#   the targets of the worktree's `.env*` symlinks (owner-approved in the pilot) — only untracked
+#   links at the top level or one below, to a regular file inside the main checkout and outside
+#   credential folders (compared by device and inode: APFS is case-insensitive); else exit 3.
 #   Network off, no approvals (nothing escalates), no user config or execpolicy rules; a `.codex/`
 #   project config in the worktree is refused. So Codex cannot push; a linked worktree's git dir
 #   is read-only.
@@ -61,7 +62,8 @@
 # - macOS has no `timeout`: Codex runs in its own process group under a watchdog; the trap kills it
 #   and removes the temp dir on every catchable exit path.
 # DEV_CODEX_BIN selects the Codex binary (default `codex`); DEV_CODEX_TIMEOUT_SEC overrides
-# --timeout-min and DEV_CODEX_PREFIXES the Homebrew prefixes (tests). DEV_CODEX_EFFORT
+# --timeout-min, DEV_CODEX_PREFIXES the Homebrew prefixes and DEV_CODEX_SWEEP_DRYRUN=1 makes the
+# sweep kill nothing (tests: an unkillable process). DEV_CODEX_EFFORT
 # (minimal|low|medium|high|xhigh) sets the reasoning effort.
 set -uo pipefail
 RULE_REV=2      # bump when the profile or the check changes: invalidates cached checks
@@ -168,7 +170,7 @@ trap 'exit 143' TERM
 fallback() {
     local partial=none refused=
     if [[ -n "$git_unsafe" ]]; then
-        partial="not touched (git state changed by Codex; check the worktree by hand)"
+        partial="not touched (${git_unsafe/#1/git state changed by Codex}; inspect the worktree by hand)"
     elif [[ -n "$analyzed" ]]; then
         if [[ "$(g rev-parse HEAD)" != "$commit" || "$(g symbolic-ref -q HEAD)" != "$orig_sym" ]]; then
             if [[ -n "$orig_sym" ]]; then g symbolic-ref HEAD "$orig_sym"
@@ -218,7 +220,7 @@ for d in "${bindirs[@]}"; do      # these dirs become readable: never $HOME, abo
     done
 done
 envtargets=()
-targets=$(python3 "$util" env-targets --top "$top" --home "$home" "${creds[@]/#/--deny=}") \
+targets=$(utilg env-targets --main "${main:-$top}" --home "$home" "${creds[@]/#/--deny=}") \
     || fallback "unsafe .env link: $targets"
 while IFS= read -r t; do [[ -n "$t" ]] && envtargets+=("$t"); done <<<"$targets"
 
@@ -365,8 +367,11 @@ tokens=$(awk 'f { print; exit } /^tokens used$/ { f = 1 }' "$work/codex.log" 2>/
 [[ -n "$tokens" ]] && echo "tokens used: $tokens" >&2
 
 read -r nkilled survivors <<<"$(python3 "$util" sweep --top "$top" --scratch "$scratch" \
-    --before "$work/pids.before" --pgid "$codex_pgid" --sid "${codex_sid:-}")"
+    --before "$work/pids.before" --pgid "$codex_pgid" --sid "${codex_sid:-}" \
+    ${DEV_CODEX_SWEEP_DRYRUN:+--dry-run})"
 [[ "${nkilled:-0}" != 0 ]] && killed="$nkilled leftover process(es)"
+# A live process could swap paths under a reset or delete: touch nothing, like a changed .git.
+[[ -n "${survivors:-}" ]] && { git_unsafe="processes still running"; fallback "codex left processes running"; }
 
 # After the sweep: integrity first; these hold even when Codex also ran out of time or quota.
 quota=; quota_in "$work/codex.log" && { quota=1; touch "$marker"; }
@@ -379,7 +384,6 @@ envs_changed=0 outside=0
 for kv in $flags; do case "$kv" in files=*) nfiles=${kv#files=} ;; envs_changed=*) envs_changed=${kv#*=} ;;
     outside=*) outside=${kv#*=} ;; esac; done
 analyzed=1
-[[ -n "${survivors:-}" ]] && fallback "codex left processes running"
 refs | sort >"$work/refs.after"
 refdiff=$(python3 "$util" refdiff "$work/refs.before" "$work/refs.after" "$orig_sym")
 refs_own=$(grep -E '^(own|shared) ' <<<"$refdiff" | cut -d' ' -f2-)

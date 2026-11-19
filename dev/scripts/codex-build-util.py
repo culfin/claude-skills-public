@@ -47,6 +47,30 @@ def inside(path, top):
     return path.startswith(top.rstrip("/") + "/")
 
 
+def ident(path):
+    try:
+        st = os.stat(path)
+    except OSError:
+        return None
+    return (st.st_dev, st.st_ino)
+
+
+def under(path, anc):
+    """True when path or one of its ancestors is the same directory as anc, by (st_dev, st_ino):
+    string compares miss case variants on case-insensitive file systems (~/.SSH is ~/.ssh)."""
+    want = ident(anc)
+    if want is None:
+        return False
+    p = path
+    while True:
+        if ident(p) == want:
+            return True
+        parent = os.path.dirname(p)
+        if parent == p:
+            return False
+        p = parent
+
+
 def is_env(name):
     return name == ".env" or name.startswith(".env.")
 
@@ -61,33 +85,41 @@ def walk_envs(top):
 
 def env_sig(top, rel):
     p = os.path.join(top, rel)
-    st = os.lstat(p)
-    return "link " + os.readlink(p) if os.path.islink(p) else f"file {st.st_size} {st.st_mtime_ns}"
+    st = os.lstat(p)        # ctime too: userspace can set mtime back, not ctime
+    sig = f"{st.st_ino} {st.st_size} {st.st_mtime_ns} {st.st_ctime_ns}"
+    return ("link " + os.readlink(p) + " " if os.path.islink(p) else "file ") + sig
 
 
 def cmd_env_targets(a):
+    """Read grants only for the worktree's .env* links that follow the convention: untracked, at
+    most one level down, to a regular file inside the main checkout, and not in a denied folder."""
     home = os.path.realpath(a.home)
+    tracked = set(nul(git(a, "ls-files", "-z")))
     out = []
     for rel in walk_envs(a.top):
         p = os.path.join(a.top, rel)
         if not os.path.islink(p):
             continue
-        reason = None
         target = os.path.realpath(p)
         if rel.count("/") > 1:
             reason = "deeper than one level"
+        elif rel in tracked:
+            reason = "tracked by git"
         elif any(c in target for c in "\n\t"):
             reason = "odd target name"
-        elif target == "/" or target == home or inside(home, target):
+        elif target == "/" or ident(target) == ident(home) or under(home, target):
             reason = "target is / or $HOME or above it"
+        elif any(under(target, d) for d in a.deny):
+            reason = "target in a denied folder"
         elif not os.path.isfile(target):
             reason = "target is not a regular file"
-        elif any(target == d or inside(target, d) for d in map(os.path.realpath, a.deny)):
-            reason = "target in a denied folder"
-        if reason:
-            print(f"{show(rel)} ({reason})")
-            return 3
-        out.append(target)
+        elif not under(target, a.main):
+            reason = "target not in the main checkout"
+        else:
+            out.append(target)
+            continue
+        print(f"{show(rel)} ({reason})")
+        return 3
     sys.stdout.write("".join(t + "\n" for t in out))
     return 0
 
@@ -129,7 +161,7 @@ def cmd_analyze(a):
     touched = sorted(p for p in ai if bi.get(p) != ai[p])
     # Changes inside ignored trees that existed (node_modules/, .venv/, target/): the listing
     # above only names their top; mtime against the stamp finds the files.
-    stamp = os.stat(a.stamp).st_mtime_ns
+    sst = os.stat(a.stamp)
     prefixes = tuple(p if p.endswith("/") else p + "/" for p in new_ignored)
     seen = set(changed) | set(new_ignored)
     newer = []
@@ -143,7 +175,8 @@ def cmd_analyze(a):
             if rel in seen or rel.startswith(prefixes):
                 continue
             try:
-                if os.lstat(full).st_mtime_ns > stamp:
+                st = os.lstat(full)
+                if st.st_mtime_ns > sst.st_mtime_ns or st.st_ctime_ns > sst.st_ctime_ns:
                     newer.append(rel)
             except OSError:
                 continue
@@ -161,8 +194,14 @@ def cmd_analyze(a):
                 new = None
             if scripts_of(old.decode("utf-8", "replace") if old is not None else "{}") != scripts_of(new):
                 hooks.append(p)
+    deep = []                 # everything inside new ignored dirs, links included, not followed
+    for p in new_ignored:
+        root = os.path.join(a.top, p.rstrip("/"))
+        if os.path.isdir(root) and not os.path.islink(root):
+            for d, dirs, files in os.walk(root):
+                deep += [os.path.relpath(os.path.join(d, x), a.top) for x in files + dirs]
     outside = []
-    for p in changed + touched + newer:
+    for p in changed + touched + newer + deep:
         full = os.path.join(a.top, p.rstrip("/"))
         if os.path.islink(full):
             r = os.path.realpath(full)
@@ -204,10 +243,10 @@ def cmd_remove(a):
             continue
         full = os.path.join(top, rel)
         parent = os.path.dirname(full)
-        if os.path.realpath(parent) != parent or not (parent == top or inside(parent, top)):
+        if os.path.realpath(parent) != parent or not under(parent, top):
             print(f"{show(p)} (reached through a symlink)")
             continue
-        if not inside(full, top):
+        if not inside(full, top) or ident(full) == ident(top):
             print(f"{show(p)} (outside the worktree)")
             continue
         try:
@@ -318,7 +357,7 @@ def cmd_sweep(a):
             break
         killed |= hits
         for sig, wait in ((signal.SIGTERM, 1.0), (signal.SIGKILL, 0.3)):
-            for p in hits:
+            for p in hits if not a.dry_run else ():
                 try:
                     os.kill(int(p), sig)
                 except OSError:
@@ -333,6 +372,7 @@ def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("env-targets"); s.add_argument("--top", required=True)
+    s.add_argument("--gitdir", required=True); s.add_argument("--main", required=True)
     s.add_argument("--home", required=True); s.add_argument("--deny", action="append", default=[])
     for name in ("snapshot", "analyze"):
         s = sub.add_parser(name)
@@ -348,6 +388,7 @@ def main():
     for k in ("--top", "--scratch", "--before"):
         s.add_argument(k, required=True)
     s.add_argument("--pgid", default=""); s.add_argument("--sid", default="")
+    s.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     return {"env-targets": cmd_env_targets, "snapshot": cmd_snapshot, "analyze": cmd_analyze,
             "remove": cmd_remove, "refdiff": cmd_refdiff, "sweep": cmd_sweep}[a.cmd](a)
