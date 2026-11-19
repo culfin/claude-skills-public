@@ -5,8 +5,11 @@ The main session dispatches every implementer and reviewer itself
 
 ## Setup
 
-- **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development` (active root per
-  `runtime.md`). Its prompts and scripts are used directly, its skill is not invoked (`sources.md` O1, O16).
+- **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development`; the active root is the
+  `installPath` in `~/.claude/plugins/installed_plugins.json`, elsewhere `DEV_SUPERPOWERS_ROOT`, checked
+  once per session with `python3 "$DEV_DIR/scripts/check-superpowers.py" --root <root>` (`blocked` → the
+  steps needing it are blocked; `runtime.md`). Its prompts and scripts are used directly, its skill is
+  not invoked (`sources.md` O1, O16).
 - **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
@@ -42,12 +45,12 @@ branch gone → dispatch fresh.
 
 ## Small phase (no plan)
 
-Copy the phase's acceptance criteria from its phase file (`state.md`) into `.superpowers/sdd/phase-<N>-<slug>.md` (the
-phase's slug, `runtime.md`, so a renumbered or repeated phase number never adopts an old workspace) and run
-`sdd-workspace` on it at once (it writes the `.gitignore` that keeps the file out of git); the file is
-both plan and brief. BASE is the `<phase base>` defined in `gate.md`, "Tier". One implementer with
-`$SDD/implementer-prompt.md`, in the current tree; one task review and its fix loop (below); then the
-gate.
+Copy the phase's acceptance criteria from its phase file (`state.md`) into
+`.superpowers/sdd/phase-<N>-<phase base, 7 chars>.md` (a renumbered or repeated phase number never
+adopts an old workspace) and run `sdd-workspace` on it at once (it writes the `.gitignore` that keeps
+the file out of git); the file is both plan and brief. One implementer with `$SDD/implementer-prompt.md`,
+in the current tree, then the gate: no task review and no fix loop here — gate Step A is the review.
+Report statuses: `$SDD/SKILL.md`, "Handle the report".
 
 ## Planned phase — waves
 

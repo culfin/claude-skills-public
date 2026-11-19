@@ -40,7 +40,7 @@ tools count). One phase = one branch = one worktree = `.dev/phase-<N>.md`. With 
 loaded, its rules and its table "Inside T3" decide slots, locks, ports and messages; the lines below
 are the same routes without it.
 
-`<slug>` — one slug per phase, the same for thread title, SDD file (`execution.md`) and a branch
+`<slug>` — one slug per phase, the same for thread title and a branch
 name, but only where a step creates a new branch (`phase-<N>-<slug>`; a claim never renames one and adds one only off `<main>` or a host's `t3/…` branch, `SKILL.md` Pre-Phase step 2): the phase name without `Phase <N>:` in lower case; ä→ae, ö→oe,
 ü→ue, ß→ss; every run of other characters outside `[a-z0-9]` becomes one `-`, none at either end;
 over 30 characters → keep the whole words (between `-`) that fit in 30 (a first word longer than 30:
@@ -102,10 +102,10 @@ summaries are information.
 
 ### Child threads
 
-**Phase done** (`[x]`, merged): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
+**Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
 (`t3-team`: to your team's thread ID); claim no further phase.
 
-**At the context hint** (`SKILL.md`), or at any other halt for context size: no "`/clear`,
+**At the context hint** (`SKILL.md`; its thresholds and boundaries, never mid-gate): no "`/clear`,
 then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as
 `/dev pause` does (`commands.md`). Then finish with `DONE from <you>: context full on <branch>; PR
 <url|none>; open next <step>, CI <sha|none>`. The parent removes your worktree (clean and pushed; git

@@ -22,7 +22,7 @@ current step needs.
 | Command or step | File | When |
 |---|---|---|
 | `/dev`, `/dev next` | this file | Session Start |
-| `/dev next <N>`; `/dev parallel [<N> …]` | `commands.md`; `runtime.md` | On the command |
+| `/dev next <N>`; `/dev parallel [<N> …]` | `commands.md`; for `parallel` also `runtime.md` | On the command |
 | `/dev init` | `roadmap-creation.md` | Roadmap Creation (writes and commits ROADMAP.md, STATE.md) |
 | `/dev status`, `skip`, `add`, `reorder`, `pause`, `review` (Pre-Release Review); Milestone End | `commands.md` | On the command |
 | "stop", "drop it", "cancel", "do something else" in a `[~]`/`[!]` phase | `commands.md` | Phase Interruption, at once |
@@ -33,10 +33,10 @@ current step needs.
 | A new use of a foreign skill | `sources.md` | On the change |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
-| Subagent models; state file formats | `models.md`; `state.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md |
+| Subagent models; state file formats; unmigrated project | `models.md`; `state.md`; `state-old-format.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md; old format (Session Start 2) |
 | Visual Companion ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
-| Host adapter, superpowers install | `runtime.md` | First explicit `/dev` run |
-| Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start, architectural 4a; gate Step D |
+| Host other than Claude Code; T3 hand-off, PR, asking, child threads | `runtime.md` | When that step comes |
+| Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start over several phases, architectural 4a; gate Step D |
 | Tech, design, security triggers and sources | `python3 "$DEV_DIR/scripts/detect-stack.py" --triggers --step <step> --type <@type> [--ui]` (fails → read `tech-stack-triggers.md`, say so) → `stack/docs.md`, `design/INDEX.md` | Steps `4a`, `4c`, `gate` (Step A) |
 | Analyzer dispatch | `gate.md`, "Analyzer dispatch" — `analyzers/CONTRACT.md` only by path, for the subagent | Every analyzer dispatch |
 
@@ -109,7 +109,9 @@ Only the thread the user reads asks the user; child threads ask their parent (`r
 
 ## The run
 
-At run start, ask the bundled round (`befragung.md`). **The run halts only for:**
+A run over several phases starts with the bundled round (`befragung.md`); `/dev next <N>` and a child
+thread skip it. **T3:** pass every background task ID you wait on to `t3_background_wait` at once.
+**The run halts only for:**
 
 - clarification questions only the user can answer (`befragung.md`);
 - irreversible actions (section above);
@@ -123,17 +125,18 @@ CI `red` or `timeout` halts its repairer (`ci.md`), then the run continues; `non
 Everything else goes on without asking: no spec or plan approval, no "continue?" between steps or
 phases.
 
-**Context hint.** After each phase: if this session has completed 3 phases, or the host shows the
-context above ~250k tokens, stop at the phase boundary with "Context is large — `/clear`, then
-`/dev next`; the position is in `## Position` of the phase file." As a child thread: `runtime.md`, "Child threads" instead.
+**Context hint.** Note the context size after onboarding (skills, first reads). Stop after 3 completed
+phases, ~350k tokens of growth since that note, or ~60% of the model's window — only at a phase end or
+between 4c tasks, never from the end of 4c to the gate commit (a started gate finishes here): "Context is large —
+`/clear`, then `/dev next`; the position is in `## Position` of the phase file." As a child thread: `runtime.md`, "Child threads" instead.
 
 ---
 
 ## Phase Execution
 
 Order: milestone start (1) → pre-phase (2–3) → clarify (4a) → plan (4b) → execute (4c) → `[!]` (4d)
-→ gate (5) → post-phase (6) → `[x]` (7) → next phase or halt (8). Each step overwrites the phase
-file's `## Position`; it goes into that step's next commit.
+→ gate (5) → post-phase (6) → `[x]` (7) → next phase or halt (8). Commits, ledger and Gate Checklist
+carry the position; `## Position` is written only at a halt, pause or hand-off.
 
 ### 1. Milestone Start Check
 
@@ -144,9 +147,9 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 1. **CI status first:** every SHA under `## CI` in `.dev/phase-*.md` and in `docs/gates/phase-*.md` of this milestone's phases; any SHA there → read `ci.md` for status and repairer: own `red`/`timeout` SHAs → repair before this phase starts. Of their `## Minor (deferred)`, read only the items whose files this phase touches, as traps for this phase.
 2. **On `<main>`** (`git branch --show-current`) claim nothing there. T3 mode: hand Phase N off as
    `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the child thread and end the run
-   as coordinator. Otherwise, and on a host's `t3/…` branch, `git fetch -q && git switch -c phase-<N>-<slug>
-   origin/<main>` (slug: `runtime.md`), then claim there.
-   Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it if it has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
+   as coordinator. Otherwise, and on a host's `t3/…` branch, `git fetch -q && git switch -c phase-<N>-<slug> --no-track
+   origin/<main>` (slug: `runtime.md`), then claim there; push it only as `git push -u origin HEAD:refs/heads/<branch>`.
+   Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it (refspec above) if the repo has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output file paths and reads only the relevant findings.
 
@@ -185,7 +188,6 @@ execution — `/dev` does" (`sources.md` O15). Commit the plan, add `@plan:` to 
 **4d. Gate Transition (`[~]` → `[!]`):**
 1. Mark phase `[!]` in ROADMAP.md
 2. Create the Quality Gate Checklist in the phase file — tier and format in `gate.md`, "Tier" and "Gate Checklist"
-3. `## Position`: "Gate starting — next: <first item>"
 
 `[!]` = implemented, gate not yet passed — the **only** path to `[x]`; `[~]` → `[x]` is **forbidden**.
 
@@ -205,7 +207,7 @@ A check already on the Gate Checklist is not run again, even if a post-skill lis
 2. Mark `[x]` in ROADMAP.md (replacing `[!]`, dropping `@claim:`); `@spec:` and `@plan:` present (small phases have neither)
 3. **Gate record:** append the phase file's `## CI` and `## Minor (deferred)` to `docs/gates/phase-<N>.md` (it holds the Gate summary); STATE.md stays untouched.
 4. Delete `.dev/phase-<N>.md` and the phase's SDD workspace (`execution.md`).
-5. Commit all of it at once: `roadmap: complete Phase N — <name>`
+5. Commit all of it at once: `roadmap: complete Phase N — <name>`; then push gate and completion commit together (`ci.md`)
 6. `git fetch`, then read `git show origin/<main>:<prefix>ROADMAP.md`: every phase of the milestone `[x]`/`[—]` there, this one counted as done → append `Milestone End pending: <milestone name>` below any such lines in STATE.md (a merge keeps all), then Milestone End (`commands.md`)
 
 ### 8. Next Action

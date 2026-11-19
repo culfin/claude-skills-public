@@ -74,6 +74,15 @@ echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
 echo "[$(run "$C" 789 success),$(run "$A" 123 cancelled)]" > "$tmp/stub2/branch"
 [[ "$(follow)" == "red ci=cancelled" ]] && ok "non_descendant_newer_run_is_ignored" \
   || bad "non_descendant_newer_run_is_ignored: $(cat "$tmp/status2")"
+# gate and completion commit pushed together: the gate SHA has no run, the head (descendant) has
+rm -f "$tmp/stub2/commit-$A"
+echo "[$(run "$B" 456 success)]" > "$tmp/stub2/branch"
+[[ "$(follow)" == "green 456 via ${B:0:7}" ]] && ok "no_run_followed_to_descendant_head" \
+  || bad "no_run_followed_to_descendant_head: $(cat "$tmp/status2")"
+echo "[$(run "$C" 789 success)]" > "$tmp/stub2/branch"
+[[ "$(follow)" == "none" ]] && ok "no_run_and_no_descendant_stays_none" \
+  || bad "no_run_and_no_descendant_stays_none: $(cat "$tmp/status2")"
+echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/commit-$A"
 # a short SHA is resolved to the full one: gh run list --commit matches only full SHAs
 echo "[$(run "$B" 456 success)]" > "$tmp/stub2/commit-$B"
 ( cd "$repo" && PATH="$tmp/bin2:$PATH" STUB_DIR="$tmp/stub2" DEV_CI_BRANCH=main DEV_CI_INTERVAL=0 \

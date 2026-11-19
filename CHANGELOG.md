@@ -2,6 +2,36 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.14.0 — 2026-11-19
+
+**dev** — Cost cuts from a structural review (owner decision). RED: a worker dry run of a small
+single-task phase reported a task review plus fix loop before the gate, `runtime.md` and
+`befragung.md` read unconditionally, a Codex `similar` call, 8–12 `## Position` rewrites, an unsettled
+second CI run and a branch created with upstream `<main>`; after the change (GREEN) none of these.
+
+- **Small phases** drop the per-task review and its fix loop: gate Step A (Diff review, Spec checker,
+  Codex diff) already reviews the same diff. Planned multi-task phases keep task reviews.
+- **On-demand loading:** `runtime.md` only for `/dev parallel`, non-Claude hosts and T3 steps;
+  the superpowers root moved into `execution.md`; the small-phase workspace is named after the phase
+  base, not the slug. `befragung.md` only for multi-phase runs and architectural 4a. One sentence on
+  `t3_background_wait` stays in `SKILL.md` (v4.12.0 stall fix).
+- **Codex `similar` removed:** a pilot found no defect it alone raised, at about 213k tokens per
+  run. Codex `diff` and `fix` stay.
+- **`## Position`** is written only at a halt, pause or hand-off; commits, ledger and Gate Checklist
+  carry the position otherwise. Resume never read it.
+- **Old format** moved from `state.md` to `state-old-format.md` (read only in unmigrated projects).
+- **One CI run per phase:** gate and completion commit are pushed together; `ci-watch.sh` follows a
+  descendant's run also when the gate SHA has none (test `no_run_followed_to_descendant_head`).
+- **Context hint:** the fixed ~250k limit caused needless hand-offs — workers reach 134–248k after
+  onboarding alone, while sessions ran fine to 966k; hand-offs at 256k, 380k and 532k, the costliest a
+  gate takeover whose successor needed 106 minutes before its first change. Now: ~350k growth since
+  onboarding or ~60% of the window, only at a phase end or between 4c tasks, never inside the gate.
+- **Gaps:** `runtime.md` no longer says "merged" for a finished child (`/dev` never merges); the
+  phase branch is created with `--no-track` and pushed with an explicit refspec, so a plain push
+  cannot reach `<main>`.
+
+Hot path (`SKILL.md`, `gate.md`, `execution.md`, `state.md`, `models.md`): 7641 → 7621 words.
+
 ## v4.13.3 — 2026-11-19
 
 **dev** — Two script defects from a field report. `ci-watch.sh` called with a short SHA found no runs

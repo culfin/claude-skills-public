@@ -33,8 +33,10 @@ class DevDocsTests(unittest.TestCase):
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
                      "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
                      "UX review", "Polish review", "Second opinion: codex diff",
-                     "Second opinion: codex fix", "Second opinion: codex similar"):
+                     "Second opinion: codex fix"):
             self.assertIn(f"- [ ] {name}", g)
+        # v4.14.0: Codex similar dropped (0 unique defects in the pilot); Codex diff and fix stay.
+        self.assertNotIn("codex similar", g)
         for old in ("- [ ] /simplify", "- [ ] Change review", "- [ ] Bug hunt", "- [ ] CI status check",
                     "- [ ] Second opinion: codex security"):
             self.assertNotIn(old, g)
@@ -208,7 +210,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("## Decisions", st)
         self.assertIn("  - Decisions: <answers> (<YYYY-MM-DD>)", st)
         self.assertIn("## Old format (not migrated)", st)
-        self.assertIn("`- <sha> — Phase N <name>`, without status", st)
+        self.assertIn("`- <sha> — Phase N <name>`, without status", text("state-old-format.md"))
         ci = block.split("## CI", 1)[1].split("##", 1)[0]
         self.assertRegex(ci, r"\n- [0-9a-f]{7,40}\n", ci)  # SHA only, never a status
         self.assertIn('"Old format"', text("SKILL.md"))
@@ -238,7 +240,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("Milestone End (it runs once)", cj)
         self.assertNotIn("phase file `Branch:` = current", cj)
         self.assertNotIn("closed phase", " ".join(st.split()))
-        self.assertIn("the migrating session uses the new one from its `migrate` commit on", " ".join(st.split()))
+        self.assertIn("the migrating session uses the new one from its `migrate` commit on", " ".join(text("state-old-format.md").split()))
         sk = text("SKILL.md")
         # v4: the handling of each state-check finding lives in commands.md, "State findings".
         cm = text("commands.md")
@@ -249,7 +251,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("No marker `<prefix>.dev/.gitkeep` on `origin/<main>`", sk)
         self.assertIn("STATE.md conflict → take `origin/<main>`'s, rerun `migrate` for the own parts", cm)
         self.assertIn("save (unless already there) and delete as the finding says", cm)
-        self.assertIn("state-check.py migrate", st)
+        self.assertIn("state-check.py migrate", text("state-old-format.md"))
         for p in DEV.rglob("*.md"):
             if "tests" in p.relative_to(DEV).parts:
                 continue
@@ -263,7 +265,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("roadmap: pause Phase N`", text("commands.md"))
         self.assertIn("docs/gates/check-<YYYY-MM-DD>-<branch slug>.md", text("dev-check.md"))
         self.assertNotIn("never collide", text("dev-check.md"))
-        self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(st.split()))
+        self.assertIn("Every write a step makes to `.dev/phase-<N>.md` goes to the same-named place", " ".join(text("state-old-format.md").split()))
         self.assertIn("never\nunder another session's claim", st)
         self.assertIn("bring it to `<main>` at once", cm)
         self.assertNotIn("by owner (`gate.md`", s)
@@ -369,8 +371,8 @@ class DevDocsTests(unittest.TestCase):
             self.assertIn(marker, j(rel), rel)
             self.assertNotIn("No `.dev/` on", j(rel), rel)
             self.assertNotIn("ls-tree -d", j(rel), rel)
-        self.assertIn("`git cat-file -e origin/<main>:<prefix>.dev/.gitkeep`", j("state.md"))
-        self.assertIn("without `origin`, the local `<main>` stands for `origin/<main>`", j("state.md"))
+        self.assertIn("`git cat-file -e origin/<main>:<prefix>.dev/.gitkeep`", j("state-old-format.md"))
+        self.assertIn("without `origin`, the local `<main>` stands for `origin/<main>`", j("state-old-format.md"))
         self.assertIn(".dev/.gitkeep", j("roadmap-creation.md"))
         completion = text("SKILL.md").split("### 7. Phase Completion", 1)[1].split("### 8.", 1)[0]
         self.assertNotIn("git rebase", completion)
@@ -443,7 +445,7 @@ class DevDocsTests(unittest.TestCase):
 
     def test_child_threads_finish_with_done(self):
         workers = " ".join(text("runtime.md").split("### Child threads", 1)[1].split())
-        self.assertIn("**Phase done** (`[x]`, merged): finish with `DONE from <you>: phase <N> done", workers)
+        self.assertIn("**Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done", workers)
         self.assertIn("claim no further phase", workers)
 
     def test_claim_never_on_main(self):
@@ -452,7 +454,8 @@ class DevDocsTests(unittest.TestCase):
         pre = " ".join(text("SKILL.md").split("### 2–3. Pre-Phase", 1)[1].split("### 4.", 1)[0].split())
         for needle in ("**On `<main>`** (`git branch --show-current`) claim nothing there.",
                        "T3 mode: hand Phase N off as `/dev parallel <N>` does", "end the run as coordinator",
-                       "git switch -c phase-<N>-<slug> origin/<main>"):
+                       "git switch -c phase-<N>-<slug> --no-track origin/<main>",
+                       "git push -u origin HEAD:refs/heads/<branch>"):
             self.assertIn(needle, pre)
         self.assertIn("adds one only off `<main>`", text("runtime.md"))
 
@@ -493,8 +496,8 @@ class DevDocsTests(unittest.TestCase):
         gate = " ".join(text("gate.md").split())
         codex = gate.split("**Codex** —", 1)[1].split("**Spec checker**", 1)[0]
         for needle in ("`defaults.second-opinion: codex`", "on every host",
-                       "Diff review, Fix review or Similar-bugs scan",
-                       "(role `diff`, `fix`, `similar`)", "run in the background",
+                       "Diff review or Fix review",
+                       "(role `diff`, `fix`; Similar-bugs scan gets none)", "run in the background",
                        'bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> '
                        "--head <HEAD sha> --out <file>",
                        "`--prompt`: the Claude item's prompt", "plus untracked files the prompt names",
@@ -561,6 +564,27 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("Core-rule phase", text("befragung.md"))
         self.assertIn('neither marked "(Recommended)"', text("befragung.md"))
         self.assertIn("**Domain model:**", text("state.md"))
+
+    def test_v4_14_lean_run(self):
+        # v4.14.0 (owner 19.11.2026), RED before: a worker reported a task review + fix loop in a small
+        # phase, runtime.md and befragung.md read unconditionally, Codex similar, 8-12 Position writes,
+        # an unsettled second push, an upstream to <main>, and context hand-offs at 250k mid-phase.
+        s, e = " ".join(text("SKILL.md").split()), " ".join(text("execution.md").split())
+        small = e.split("## Small phase (no plan)", 1)[1].split("## Planned phase", 1)[0]
+        self.assertIn("no task review and no fix loop here — gate Step A is the review", small)
+        self.assertNotIn("runtime.md", small)
+        self.assertIn("`installPath` in `~/.claude/plugins/installed_plugins.json`", e)
+        self.assertNotIn("First explicit `/dev` run", s)
+        self.assertIn("`/dev next <N>` and a child thread skip it", s)
+        self.assertIn("pass every background task ID you wait on to `t3_background_wait` at once", s)
+        self.assertIn("`## Position` is written only at a halt, pause or hand-off", s)
+        self.assertNotIn("Each step overwrites", s)
+        self.assertIn("push gate and completion commit together", s)
+        self.assertIn("One push, one CI run per phase", " ".join(text("ci.md").split()))
+        self.assertIn("~350k tokens of growth since that note", s)
+        self.assertIn("never from the end of 4c to the gate commit", s)
+        self.assertNotIn("250k", s)
+        self.assertNotIn("Old format (not migrated)\n\nMigrated", text("state.md"))
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

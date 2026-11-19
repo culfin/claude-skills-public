@@ -13,16 +13,19 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    CI runs only on `pull_request` (the workflows' `on:`) and the project takes PRs → the route is a
    PR from the phase branch to `<main>` (`gh pr create`), opened once, never merged here; the push of
    each later commit updates it. T3: `runtime.md`, "PR opened".
-   Never push to a protected or production branch for this.
-2. Start `bash "$DEV_DIR/scripts/ci-watch.sh" <sha>` with `run_in_background` (T3: its task ID to
-   `t3_background_wait` at once, `runtime.md`) and add the SHA to the phase file:
+   Never push to a protected or production branch for this. **One push, one CI run per phase:** a
+   phase's gate commit goes out together with its completion commit (`SKILL.md` 7.5), which carries
+   the gate SHA's `## CI` line into `docs/gates/`; other gate commits (CI repair, `/dev check`) at once.
+2. After the push, start `bash "$DEV_DIR/scripts/ci-watch.sh" <gate sha>` with `run_in_background` (T3: its task ID to
+   `t3_background_wait` at once, `runtime.md`); the gate SHA goes into the phase file right after the gate commit:
    ```markdown
    ## CI
    - <sha>
    ```
    The watcher accepts only runs of exactly this SHA and treats `skipped`/`cancelled` as not green.
-   One exception: a run cancelled by a later push (cancel-in-progress) is followed to the run of the
-   descendant commit; the status line then ends in `via <sha>` and counts for the gate SHA.
+   Exception: no run of this SHA yet (pushed with a later commit), or one cancelled by a later push
+   → it follows the run of a descendant commit on the branch; the status line then ends in `via <sha>`
+   and counts for the gate SHA.
    It writes the status to `$(git rev-parse --git-common-dir)/dev-ci/<sha>`, shared by all
    worktrees; a status never goes into a tracked file.
 3. **Read the status** of every listed SHA there when the watcher reports, before each next phase
