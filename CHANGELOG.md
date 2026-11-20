@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.3 — 2026-11-20
+
+**dev** — `detect-stack.py` crashed with `ValueError: Unacceptable pattern` when a repo's pnpm-workspace.yaml lists the root as a package (`"."`); `"."`, leading `./` and negated `!` patterns are now handled like pnpm does.
+
 ## v4.16.2 — 2026-11-20
 
 **dev** — `befragung.md` no longer mentions a "product team"; the core-rule confirmation goes to the product role (in t3-team: via the project lead).

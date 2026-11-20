@@ -79,6 +79,13 @@ class DetectionTests(unittest.TestCase):
              .package("services/api/package.json", deps=["fastify"]))
         self.assertEqual(detected(f.root)["stacks"], ["fastify"])
 
+    def test_pnpm_workspace_root_and_dot_slash_and_negated(self):
+        yml = 'packages:\n  - "."\n  - ./tools/*\n  - "!tools/skip"\n  - tools/migrate-runtime\n'
+        f = (Fixture(self).write("pnpm-workspace.yaml", yml).package(deps=["next"])
+             .package("tools/migrate-runtime/package.json", deps=["fastify"])
+             .package("tools/skip/package.json", deps=["svelte"]))
+        self.assertEqual(detected(f.root)["stacks"], ["nextjs", "fastify"])
+
     def test_content_indicators(self):
         f = (Fixture(self).write(".env", "DATABASE_URL=postgres://x\n").write("app.json", '{"expo": {}}')
              .write("App/App.csproj", "<UseWinUI>true</UseWinUI>"))

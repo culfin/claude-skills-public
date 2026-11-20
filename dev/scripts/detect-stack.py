@@ -148,13 +148,26 @@ def workspace_dirs(root):
                 globs.append(re.sub(r"^\s*-\s*", "", line).strip().strip("'\""))
             elif inside and line.strip() and not line.startswith((" ", "\t")):
                 inside = False
-    dirs = [root]
+    dirs, excluded = [root], set()
     for g in globs:
-        if not isinstance(g, str) or g.startswith("!"):
+        if not isinstance(g, str):
             continue
-        for d in sorted(root.glob(g.rstrip("/"))):
+        neg = g.startswith("!")
+        g = g[1:] if neg else g
+        g = re.sub(r"^(\./)+", "", g.strip()).rstrip("/")
+        if g in ("", "."):  # the root itself, already listed
+            continue
+        try:
+            matches = sorted(root.glob(g))
+        except (ValueError, NotImplementedError):
+            continue
+        if neg:
+            excluded.update(matches)
+            continue
+        for d in matches:
             if d.is_dir() and d not in dirs and not SKIP_DIRS & set(d.relative_to(root).parts):
                 dirs.append(d)
+    dirs = [d for d in dirs if d not in excluded]
     return dirs
 
 
