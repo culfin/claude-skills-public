@@ -82,7 +82,9 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
 4. **Exit 3** (`fallback: <reason>`) → the usual 4c with the Claude implementer on the same worktree.
    The script has reset it to `--head` and undone any Codex commit. With `--keep-partial` Codex's
    partial changes stay uncommitted: then hand the implementer the `--out` file, which lists them.
-   No `Builder:` line.
+   No `Builder:` line. `partial: not touched` (changed `.git` or git config, `codex left processes
+   running`, or a failed analysis, e.g. an unreadable directory): nobody builds in that worktree until you have inspected it and those processes are
+   gone (`ps`, `lsof +D <worktree>`).
 5. **Exit 2:** fix the call (dirty worktree, wrong `--head`); missing `defaults.builder: codex` →
    the Claude implementer.
 

@@ -16,11 +16,13 @@
 #          HEAD, this worktree's branch or refs/worktree/*, a changed tag or refs/stash (reported
 #          only: the shared git dir belongs to every worker), a changed `.git` or git config
 #          (hooks, fsmonitor, filters, includes), a changed `.env*` entry, a symlink leading
-#          outside the repository, processes that survive the kill. Without --keep-partial the
+#          outside the repository, processes that survive the kill, a worktree check that could
+#          not finish (unreadable directory, failed git listing). Without --keep-partial the
 #          worktree is reset to --head (reset --hard, clean, new ignored paths removed; ignored
 #          paths that existed stay); with it the changes stay, uncommitted, on --head. A Codex
 #          commit is undone and a new `.env*` link removed either way. After a changed `.git` or
-#          git config, or with surviving processes, nothing runs in the worktree: left as it is.
+#          git config, or with surviving processes, nothing runs in the worktree: left as it is
+#          (the quota marker and the refs report still happen).
 # Exit 2 = usage error: bad arguments, not a git worktree, worktree dirty or not at --head,
 #          --out inside the worktree, or ROADMAP.md frontmatter without `defaults.builder: codex`.
 #
@@ -33,18 +35,20 @@
 #   worktree and a private scratch dir (its TMPDIR); read `:minimal`, the git dirs, the Codex
 #   binary's dirs, Homebrew tool dirs, toolchain dirs that exist (cargo, rustup, pnpm store) and
 #   the targets of the worktree's `.env*` symlinks (owner-approved in the pilot) — only untracked
-#   links at the top level or one below, to a regular file inside the main checkout and outside
-#   credential folders (compared by device and inode: APFS is case-insensitive); else exit 3.
+#   links at the top level or one below, to a regular file with no other hard link, inside the
+#   main checkout and outside credential folders (compared by device and inode: APFS is
+#   case-insensitive); else exit 3.
 #   Network off, no approvals (nothing escalates), no user config or execpolicy rules; a `.codex/`
 #   project config in the worktree is refused. So Codex cannot push; a linked worktree's git dir
 #   is read-only.
 # - The profile is only as good as the Codex build that reads it. Before the first build with a
 #   binary and version, a permission check runs probe.sh in a layout like the real one (worktree
 #   inside a denied checkout, a readable `.env` target in it). The probe logs one line per probe
-#   and an end marker to its own result file; the model's reply is never read. A denied read, an
-#   unlisted read, a write outside the worktree or to /tmp = exit 3 `permission profile not
-#   enforced`; no end marker or a blocked allowed probe = `permission check inconclusive`. Never a
-#   fallback to the legacy sandbox. A pass is cached in ${XDG_CACHE_HOME:-~/.cache}/dev-codex-build
+#   and an end marker to its own result file; the model's reply is never read. A denied read (also
+#   through a case variant of a denied `.ssh` inside a grant), an unlisted read, a write outside
+#   the worktree or to /tmp = exit 3 `permission profile not enforced`; no end marker or a
+#   blocked allowed probe = `permission check inconclusive`. Never a fallback to the legacy
+#   sandbox. A pass is cached in ${XDG_CACHE_HOME:-~/.cache}/dev-codex-build
 #   (0700); a marker counts only in a dir owned by the user and not group- or world-writable.
 # - After the run every git command uses the recorded git dir and work tree, no system or global
 #   config, `core.hooksPath=/dev/null` and an empty `core.fsmonitor`: nothing Codex wrote runs.
@@ -66,7 +70,7 @@
 # sweep kill nothing (tests: an unkillable process). DEV_CODEX_EFFORT
 # (minimal|low|medium|high|xhigh) sets the reasoning effort.
 set -uo pipefail
-RULE_REV=2      # bump when the profile or the check changes: invalidates cached checks
+RULE_REV=3      # bump when the profile or the check changes: invalidates cached checks
 
 usage() { echo "usage: codex-build.sh --brief <file> --head <sha> --out <file> [--timeout-min N] [--keep-partial]${1:+ ($1)}" >&2; exit 2; }
 q() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }     # TOML string
@@ -220,8 +224,9 @@ for d in "${bindirs[@]}"; do      # these dirs become readable: never $HOME, abo
     done
 done
 envtargets=()
-targets=$(utilg env-targets --main "${main:-$top}" --home "$home" "${creds[@]/#/--deny=}") \
-    || fallback "unsafe .env link: $targets"
+targets=$(utilg env-targets --main "${main:-$top}" --home "$home" "${creds[@]/#/--deny=}"); trc=$?
+(( trc == 3 )) && fallback "unsafe .env link: $targets"
+(( trc != 0 )) && fallback "worktree check failed: ${targets:-util exit $trc}"
 while IFS= read -r t; do [[ -n "$t" ]] && envtargets+=("$t"); done <<<"$targets"
 
 work=$(mktemp -d "$base/dev-codex-build-XXXXXX") || fallback "no temporary directory"
@@ -236,7 +241,7 @@ profile() {
     grant() { [[ "$seen" == *" $(q "$1") "* ]] && return; seen+="$(q "$1") "; fs+=", $(q "$1")=\"$2\""; }
     # Denies first: on a duplicate path the first entry wins, and a deny must never be lost.
     [[ -n "$deny" && "$deny" != "$wt" ]] && grant "$deny" deny
-    for d in "${creds[@]}"; do grant "$d" deny; done
+    for d in "${creds[@]}" ${probe_deny:+"$probe_deny"}; do grant "$d" deny; done
     grant "$wt" write
     grant "$tmp" write
     for p in "$@"; do grant "$p" read; done
@@ -300,8 +305,9 @@ if ! { cache_ok && [[ -f "$ok" && ! -L "$ok" && -O "$ok" ]]; }; then
     nonce=$(printf '%s' "$RANDOM$RANDOM$$$(date +%s)" | git hash-object --stdin | cut -c1-16)
     cm="$secret/main" cw="$secret/main/wt" ct="$secret/scratch" co="$secret/outside"
     cu="$cache/probe-$nonce"                   # under $HOME, covered by no grant
-    mkdir -p "$cw" "$ct" "$co" "$cu"
+    mkdir -p "$cw/.ssh" "$ct" "$co" "$cu"
     printf 'denied-%s\n' "$nonce" >"$cm/denied.txt"
+    printf 'case-%s\n' "$nonce" >"$cw/.ssh/id"
     printf 'unlisted-%s\n' "$nonce" >"$cu/unlisted.txt"
     printf 'envok-%s\n' "$nonce" >"$cm/env-target.txt"
     slash="/tmp/dev-codex-build-probe-$nonce"
@@ -313,18 +319,19 @@ if ! { cache_ok && [[ -f "$ok" && ! -L "$ok" && -O "$ok" ]]; }; then
         echo 'w() { if ( echo x >"$2" ) 2>/dev/null; then echo "$1 open"; else echo "$1 blocked"; fi; }'
         echo "r read-denied '$cm/denied.txt'"
         echo "r read-unlisted '$cu/unlisted.txt'"
+        echo "r read-denied-case '$cw/.SSH/id'"     # a .ssh deny inside a grant, by another case
         echo "r read-env '$cm/env-target.txt'"
         echo "w write-worktree '$cw/written.txt'"
         echo "w write-outside '$co/written.txt'"
         echo "w write-tmp '$slash'"
         echo "echo 'end-$nonce'"
     } >"$cw/probe.sh"
-    profile "$cw" "$ct" "$cm" "$cm/env-target.txt"
+    probe_deny="$cw/.ssh" profile "$cw" "$ct" "$cm" "$cm/env-target.txt"
     run_codex "$cw" "$ct" "$work/check.log" "$work/check.out" \
         "permission-check: run exactly this one shell command and nothing else: bash $cw/probe.sh
 Then reply with done. It is a sandbox configuration check."
     res="$cw/result.txt" leaked=
-    for p in read-denied read-unlisted write-outside write-tmp; do
+    for p in read-denied read-unlisted read-denied-case write-outside write-tmp; do
         grep -qx "$p open" "$res" 2>/dev/null && leaked=1
     done
     [[ -e "$co/written.txt" ]] && leaked=1
@@ -334,8 +341,8 @@ Then reply with done. It is a sandbox configuration check."
     [[ -n "$timed_out" ]] && fallback "permission check timeout after $limit s"
     if (( rc != 0 )); then quota_in "$work/check.log" && { touch "$marker"; fallback quota; }
         fallback "permission check failed (codex exit $rc)"; fi
-    for p in "read-denied blocked" "read-unlisted blocked" "read-env open" "write-worktree open" \
-             "write-outside blocked" "write-tmp blocked" "end-$nonce"; do
+    for p in "read-denied blocked" "read-unlisted blocked" "read-denied-case blocked" "read-env open" \
+             "write-worktree open" "write-outside blocked" "write-tmp blocked" "end-$nonce"; do
         grep -qx "$p" "$res" 2>/dev/null || fallback "permission check inconclusive"
     done
     cache_ok && touch "$ok"
@@ -370,13 +377,23 @@ read -r nkilled survivors <<<"$(python3 "$util" sweep --top "$top" --scratch "$s
     --before "$work/pids.before" --pgid "$codex_pgid" --sid "${codex_sid:-}" \
     ${DEV_CODEX_SWEEP_DRYRUN:+--dry-run})"
 [[ "${nkilled:-0}" != 0 ]] && killed="$nkilled leftover process(es)"
+# Quota marker and refs report hold on every path, survivors included; refs are read only while
+# `.git` and git config are as before (reading refs changes nothing).
+quota=; quota_in "$work/codex.log" && { quota=1; touch "$marker"; }
+gitbad=
+[[ "$(dotgit)" != "$(cat "$work/dotgit.before")" ]] && gitbad="codex changed .git"
+[[ -z "$gitbad" && "$(gitcfg)" != "$(cat "$work/cfg.before")" ]] && gitbad="codex changed git config"
+if [[ -z "$gitbad" ]]; then
+    refs | sort >"$work/refs.after"
+    refdiff=$(python3 "$util" refdiff "$work/refs.before" "$work/refs.after" "$orig_sym")
+    refs_own=$(grep -E '^(own|shared) ' <<<"$refdiff" | cut -d' ' -f2-)
+    refs_other=$(grep '^other ' <<<"$refdiff" | cut -d' ' -f2-)
+fi
 # A live process could swap paths under a reset or delete: touch nothing, like a changed .git.
 [[ -n "${survivors:-}" ]] && { git_unsafe="processes still running"; fallback "codex left processes running"; }
 
 # After the sweep: integrity first; these hold even when Codex also ran out of time or quota.
-quota=; quota_in "$work/codex.log" && { quota=1; touch "$marker"; }
-[[ "$(dotgit)" != "$(cat "$work/dotgit.before")" ]] && { git_unsafe=1; fallback "codex changed .git"; }
-[[ "$(gitcfg)" != "$(cat "$work/cfg.before")" ]] && { git_unsafe=1; fallback "codex changed git config"; }
+[[ -n "$gitbad" ]] && { git_unsafe=1; fallback "$gitbad"; }
 flags=$(utilg analyze --commit "$commit" --before "$work/snap.before" --stamp "$work/stamp" \
     --report "$work/report" --rm-list "$work/ignored.rm" --env-rm "$work/env.rm") \
     || { git_unsafe=1; fallback "analysis failed"; }
@@ -384,10 +401,6 @@ envs_changed=0 outside=0
 for kv in $flags; do case "$kv" in files=*) nfiles=${kv#files=} ;; envs_changed=*) envs_changed=${kv#*=} ;;
     outside=*) outside=${kv#*=} ;; esac; done
 analyzed=1
-refs | sort >"$work/refs.after"
-refdiff=$(python3 "$util" refdiff "$work/refs.before" "$work/refs.after" "$orig_sym")
-refs_own=$(grep -E '^(own|shared) ' <<<"$refdiff" | cut -d' ' -f2-)
-refs_other=$(grep '^other ' <<<"$refdiff" | cut -d' ' -f2-)
 if [[ -n "$refs_own" ]]; then
     [[ "$(g rev-parse HEAD)" != "$commit" ]] && fallback "codex committed"
     fallback "codex changed git refs"

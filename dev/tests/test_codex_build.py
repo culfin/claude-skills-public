@@ -3,7 +3,7 @@
 A stub stands in for Codex (`DEV_CODEX_BIN`): it records argv and cwd, then runs the actions in
 STUB_MODE (comma-separated: edit, commit, quota, ...). For the permission check it emulates the
 sandbox from the profile on its command line (most specific path wins), or leaks per STUB_CHECK.
-No test talks to the real Codex.
+No test talks to the real Codex unless DEV_CODEX_SMOKE=1 (CodexBuildSmoke).
 """
 import json
 import os
@@ -19,6 +19,7 @@ from pathlib import Path
 DEV = Path(__file__).resolve().parents[1]
 SCRIPT = DEV / "scripts" / "codex-build.sh"
 UTIL = DEV / "scripts" / "codex-build-util.py"
+SMOKE = DEV / "scripts" / "codex-build-smoke.sh"
 
 STUB = r'''#!/usr/bin/env python3
 import json, os, re, subprocess, sys, time, tomllib
@@ -36,7 +37,16 @@ fs = next(a.split("=", 1)[1] for a in args if a.startswith("permissions.dev-buil
 profile = tomllib.loads("p = " + fs)["p"]
 scratch = re.search(r'TMPDIR="([^"]+)"', " ".join(args)).group(1)
 
-def mode_of(path):
+def ident(p):
+    try:
+        st = os.stat(p)
+    except OSError:
+        return None
+    return (st.st_dev, st.st_ino)
+
+def mode_of(path, by_string=False):
+    # A real enforcer matches the file the path resolves to, so on a case-insensitive file system
+    # ~/.SSH/id is under the ~/.ssh deny; by_string emulates one that compares path strings.
     path = os.path.realpath(path)
     best, mode = "", None
     for k, v in profile.items():
@@ -45,7 +55,18 @@ def mode_of(path):
         p = os.path.realpath("/tmp") if k == ":slash_tmp" else k
         if p.startswith(":"):
             continue
-        if (path == p or path.startswith(p.rstrip("/") + "/")) and len(p) > len(best):
+        if by_string:
+            hit = path == p or path.startswith(p.rstrip("/") + "/")
+        else:
+            want, q, hit = ident(p), path, False
+            while want is not None:
+                if ident(q) == want:
+                    hit = True
+                    break
+                if os.path.dirname(q) == q:
+                    break
+                q = os.path.dirname(q)
+        if hit and len(p) > len(best):
             best, mode = p, v
     return mode
 
@@ -67,7 +88,7 @@ if kind == "check":
             op, label, p = m.groups()
             if op == "r":
                 ok = how == "leak" or (how == "leakunlisted" and label == "read-unlisted") \
-                     or mode_of(p) in ("read", "write")
+                     or mode_of(p, by_string=how == "leakcase") in ("read", "write")
                 if ok:
                     open(p).read()
             else:
@@ -195,6 +216,9 @@ for act in actions:
     if act == "buildlink":
         write("build/sub/keep.txt", "x\n")
         os.symlink("/etc", os.path.join(root, "build/sub/link"))
+    if act == "lockdir":
+        write("build/locked/x.txt", "x\n")
+        os.chmod(os.path.join(root, "build/locked"), 0)
     if act == "sleep":
         time.sleep(float(os.environ.get("STUB_SLEEP", "30")))
     if act == "quota":
@@ -273,6 +297,11 @@ class CodexBuildTests(unittest.TestCase):
         self.out = base / "build.md"
 
     def tearDown(self):
+        for d, dirs, _ in os.walk(self.base):
+            for x in dirs:
+                p = os.path.join(d, x)
+                if not os.path.islink(p) and not os.access(p, os.R_OK | os.X_OK):
+                    os.chmod(p, 0o755)
         if self.pidfile.exists():
             for pid in self.pidfile.read_text().split():
                 try:
@@ -736,6 +765,64 @@ class CodexBuildTests(unittest.TestCase):
         time.sleep(3.5)
         self.assertFalse((self.root / "late.txt").exists())
 
+    # Task 3b: deferred minors
+
+    def test_ls_files_failure_fails_closed(self):
+        # A failing `git ls-files` gave an empty tracked set: a tracked .env link passed as untracked.
+        p = subprocess.run(["python3", str(UTIL), "env-targets", "--top", str(self.root),
+                            "--gitdir", str(self.base / "no-such-gitdir"), "--main", str(self.main),
+                            "--home", str(self.home)], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0, p.stdout)
+        self.assertIn("git ls-files failed", p.stdout)
+        self.assertNotIn(str(self.secret), p.stdout)
+
+    def test_survivors_still_set_quota_marker_and_report_refs(self):
+        rc, out, err = self.run_build("edit,tag,detach,quota", DEV_CODEX_SWEEP_DRYRUN="1",
+                                      STUB_CHILD_SLEEP="30")
+        self.assertEqual((rc, out), (3, "fallback: codex left processes running\n"), err)
+        self.assertTrue(list(self.tmpdir.glob("dev-codex-*.off")))
+        report = self.out.read_text()
+        self.assertIn("refs/tags/codex-tag", report.split("refs-changed:", 1)[1])
+        self.assertIn("partial: not touched", report)
+
+    def test_unreadable_dir_before_run_fails_closed(self):
+        locked = self.root / "build" / "locked"
+        locked.mkdir(parents=True)
+        (locked / ".env").symlink_to("/etc/hosts")
+        locked.chmod(0)
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 3, out + err)
+        self.assertTrue(out.startswith("fallback: worktree check failed: unreadable"), out)
+        self.assertEqual(self.calls(), [])
+
+    def test_unreadable_dir_after_run_fails_closed(self):
+        rc, out, err = self.run_build("edit,lockdir")
+        self.assertEqual((rc, out), (3, "fallback: analysis failed\n"), err)
+        self.assertIn("partial: not touched", self.out.read_text())
+
+    def test_case_variant_of_denied_folder_is_probed(self):
+        # APFS is case-insensitive: an enforcer that compares path strings lets .SSH past a .ssh deny.
+        rc, out, err = self.run_build("edit", STUB_CHECK="leakcase")
+        self.assertEqual((rc, out), (3, "fallback: permission profile not enforced\n"), err)
+        (probe,) = self.calls("probe")
+        self.assertIn("r read-denied-case '", probe["text"])
+        self.assertEqual(self.calls(), [])
+
+    def test_case_variant_probe_passes_with_enforcing_codex(self):
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 0, out + err)
+        check = self.calls("check")[0]
+        deny = [k for k, v in self.profile(check).items() if v == "deny" and k.endswith("/.ssh")]
+        self.assertTrue(any("dev-codex-build-check-" in k for k in deny), deny)
+
+    def test_hard_linked_env_target_is_refused(self):
+        os.link(self.secret, self.base / "outside-link")       # the file also lives outside main
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 3, out + err)
+        self.assertTrue(out.startswith("fallback: unsafe .env link"), out)
+        self.assertIn("hard link", out)
+        self.assertEqual(self.calls(), [])
+
     # Exit 2
 
     def test_refuses_outside_lean_project(self):
@@ -773,6 +860,22 @@ class CodexBuildTests(unittest.TestCase):
 
     def test_script_is_executable(self):
         self.assertTrue(os.access(SCRIPT, os.X_OK))
+        self.assertTrue(os.access(SMOKE, os.X_OK))
+
+
+class CodexBuildSmoke(unittest.TestCase):
+    """The real Codex in a throwaway layout; costs quota, so only with DEV_CODEX_SMOKE=1."""
+
+    def test_smoke_usage_error_runs_no_codex(self):
+        p = subprocess.run(["bash", str(SMOKE), "--only", "bogus"], capture_output=True, text=True,
+                           env=dict(os.environ, DEV_CODEX_BIN="/nonexistent/codex"), timeout=30)
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+
+    @unittest.skipUnless(os.environ.get("DEV_CODEX_SMOKE") == "1", "real Codex: set DEV_CODEX_SMOKE=1")
+    def test_real_codex_smoke(self):
+        p = subprocess.run(["bash", str(SMOKE)], capture_output=True, text=True, timeout=1500)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn("smoke: PASS", p.stdout)
 
 
 if __name__ == "__main__":
