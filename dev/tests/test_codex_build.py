@@ -882,6 +882,40 @@ class CodexBuildTests(unittest.TestCase):
         self.assertEqual(rc, 2, out + err)
         self.assertEqual(self.calls(), [])
 
+    def test_roadmap_option_untracked_or_ignored_file_refuses(self):
+        self.monorepo("---\ndefaults:\n  builder: claude\n---\n")
+        (self.root / "apps" / "x").mkdir()
+        (self.root / "apps" / "x" / "ROADMAP.md").write_text(LEAN)
+        (self.root / ".git" / "info" / "exclude").write_text("apps/x/\n")
+        rc, out, err = self.run_build("edit", ("--roadmap", "apps/x/ROADMAP.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
+    def test_roadmap_option_other_basename_refuses(self):
+        self.monorepo()
+        (self.root / "apps" / "web" / "PLAN.md").write_text(LEAN)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "plan")
+        self.head = git(self.root, "rev-parse", "HEAD").strip()
+        rc, out, err = self.run_build("edit", ("--roadmap", "apps/web/PLAN.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
+    def test_roadmap_option_reads_head_not_working_tree(self):
+        self.monorepo("---\ndefaults:\n  builder: claude\n---\n")
+        (self.root / "apps" / "web" / "ROADMAP.md").write_text(LEAN)
+        # a dirty tree is refused anyway; mark the edit as assume-unchanged so only the HEAD read can catch it
+        git(self.root, "update-index", "--assume-unchanged", "apps/web/ROADMAP.md")
+        rc, out, err = self.run_build("edit", ("--roadmap", "apps/web/ROADMAP.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
+    def test_roadmap_option_under_dot_git_refuses(self):
+        self.monorepo()
+        rc, out, err = self.run_build("edit", ("--roadmap", ".git/ROADMAP.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
     def test_refuses_dirty_worktree_and_wrong_head(self):
         (self.root / "calc.py").write_text("user work in progress\n")
         rc, _, err = self.run_build("edit")

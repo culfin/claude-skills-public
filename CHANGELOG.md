@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.5 — 2026-11-20
+
+**dev** — `codex-build.sh --roadmap` could point at an untracked or ignored file saying `builder: codex` and so grant Codex write rights without an opt-in; the basename must now be `ROADMAP.md`, and the opt-in is read from the file as committed at `--head` (via `git show`), never from the working tree; paths under `.git` are refused.
+
 ## v4.16.4 — 2026-11-20
 
 **dev** — `codex-build.sh` read `defaults.builder` only from `ROADMAP.md` at the worktree root, so in monorepos (roadmap in a sub-directory) Codex never built and every phase fell back to Claude; new `--roadmap <path>` (default `ROADMAP.md`, no `..`, inside the worktree) and `lean.md` passes the phase's roadmap.
