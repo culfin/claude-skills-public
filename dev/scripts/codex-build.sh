@@ -2,9 +2,11 @@
 # codex-build.sh — lets Codex build one phase in the phase worktree (lean flow, builder codex).
 #
 #   codex-build.sh --brief <file> --head <sha> --out <file> [--timeout-min 60] [--keep-partial]
+#                  [--roadmap <path>]
 #
 # Run from inside the phase worktree, clean and at --head. --brief is the phase brief (spec,
-# acceptance criteria, files); --out a file outside the worktree.
+# acceptance criteria, files); --out a file outside the worktree. --roadmap is the phase's
+# ROADMAP.md relative to the worktree root (default ROADMAP.md; monorepos: e.g. apps/web/ROADMAP.md).
 # Exit 0 = Codex finished: its changes are left uncommitted in the worktree. --out holds
 #          `builder: codex`, `files:`, `ignored-new:` (new ignored paths), `ignored-changed:` (files
 #          changed inside ignored trees that existed, e.g. node_modules/), `hooks-changed:` (tracked
@@ -24,11 +26,12 @@
 #          git config, or with surviving processes, nothing runs in the worktree: left as it is
 #          (the quota marker and the refs report still happen).
 # Exit 2 = usage error: bad arguments, not a git worktree, worktree dirty or not at --head,
-#          --out inside the worktree, or ROADMAP.md frontmatter without `defaults.builder: codex`.
+#          --out inside the worktree, a --roadmap path that is absolute, has `..` or leaves the worktree,
+#          or the roadmap's frontmatter without `defaults.builder: codex`.
 #
 # Guards:
-# - Only where the project opted in: `defaults.builder: codex` in the worktree's ROADMAP.md
-#   frontmatter. Codex write rights exist only in a pilot project; elsewhere Codex only reviews.
+# - Only where the project opted in: `defaults.builder: codex` in the phase's ROADMAP.md
+#   (--roadmap) frontmatter. Codex write rights exist only in a pilot project; elsewhere Codex only reviews.
 # - Codex runs under a permission profile, never `--sandbox` (that switches to the legacy sandbox,
 #   which reads the whole disk, and drops the profile): deny first `:slash_tmp`, the main checkout's
 #   working tree (when the worktree is a linked one) and credential folders in $HOME; write the
@@ -72,19 +75,19 @@
 set -uo pipefail
 RULE_REV=3      # bump when the profile or the check changes: invalidates cached checks
 
-usage() { echo "usage: codex-build.sh --brief <file> --head <sha> --out <file> [--timeout-min N] [--keep-partial]${1:+ ($1)}" >&2; exit 2; }
+usage() { echo "usage: codex-build.sh --brief <file> --head <sha> --out <file> [--timeout-min N] [--keep-partial] [--roadmap <path>]${1:+ ($1)}" >&2; exit 2; }
 q() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }     # TOML string
 real() { python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
 
-brief= head= out= timeout_min=60 keep=
+brief= head= out= timeout_min=60 keep= roadmap=ROADMAP.md
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --keep-partial) keep=1; shift; continue ;;
-        --brief|--head|--out|--timeout-min) [[ $# -ge 2 ]] || usage ;;
+        --brief|--head|--out|--timeout-min|--roadmap) [[ $# -ge 2 ]] || usage ;;
         *) usage ;;
     esac
     case "$1" in
-        --brief) brief=$2 ;; --head) head=$2 ;; --out) out=$2 ;; --timeout-min) timeout_min=$2 ;;
+        --brief) brief=$2 ;; --head) head=$2 ;; --out) out=$2 ;; --timeout-min) timeout_min=$2 ;; --roadmap) roadmap=$2 ;;
     esac
     shift 2
 done
@@ -109,7 +112,11 @@ commit=$(git -C "$top" rev-parse --verify --quiet "$head^{commit}") || usage "un
 brief=$(cd "$(dirname "$brief")" && pwd -P)/$(basename "$brief")
 out=$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")
 [[ "$out" == "$top"/* ]] && usage "--out inside the worktree"
-python3 - "$top/ROADMAP.md" <<'PY' || usage "ROADMAP.md frontmatter lacks defaults.builder: codex"
+case "/$roadmap/" in /../*|*/../*|*/./*|//*|*//*) usage "--roadmap must be a relative path without .. inside the worktree" ;; esac
+[[ "$roadmap" == /* || -z "$roadmap" ]] && usage "--roadmap must be a relative path without .. inside the worktree"
+roadmap_file=$(real "$top/$roadmap")
+[[ "$roadmap_file" == "$top"/* ]] || usage "--roadmap leaves the worktree"
+python3 - "$roadmap_file" <<'PY' || usage "$roadmap frontmatter lacks defaults.builder: codex"
 import re, sys
 try:
     text = open(sys.argv[1], encoding="utf-8").read()

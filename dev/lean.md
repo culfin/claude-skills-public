@@ -70,7 +70,9 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
    `.superpowers/sdd/phase-…` file, or the plan) and add the test command. The worktree must be clean
    at the phase HEAD.
 2. Run in the background (T3: its task ID to `t3_background_wait`), `--out` under `$TMPDIR`:
-   `bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file>`
+   `bash "$DEV_DIR/scripts/codex-build.sh" --brief <file> --head <HEAD sha> --out <file> --roadmap <path>`
+   `--roadmap` is the phase's own ROADMAP.md relative to the worktree root, the same file `/dev` reads
+   for the phase (`<prefix>ROADMAP.md`; monorepo: `apps/web/ROADMAP.md`); omitted = `ROADMAP.md` at the root.
    Start no other processes in the worktree while it runs: its sweep kills them.
 3. **Exit 0:** Codex's changes are uncommitted in the worktree; `--out` holds `files:`,
    `ignored-new:`, `ignored-changed:`, `hooks-changed:` and its summary with `open:`. Read the diff;
@@ -85,8 +87,8 @@ planning and the gate, so Claude reviews Codex. Pilot projects only.
    No `Builder:` line. `partial: not touched` (changed `.git` or git config, `codex left processes
    running`, or a failed analysis, e.g. an unreadable directory): nobody builds in that worktree until you have inspected it and those processes are
    gone (`ps`, `lsof +D <worktree>`).
-5. **Exit 2:** fix the call (dirty worktree, wrong `--head`); missing `defaults.builder: codex` →
-   the Claude implementer.
+5. **Exit 2:** fix the call (dirty worktree, wrong `--head`); missing `defaults.builder: codex` in that
+   roadmap or a `--roadmap` outside the worktree → the Claude implementer (fix the path first).
 
 The script runs Codex under a permission profile: writes only in the worktree, no network, no push;
 `.env` files stay the worktree's symlinks, never copied or printed.
