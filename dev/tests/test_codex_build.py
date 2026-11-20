@@ -841,6 +841,47 @@ class CodexBuildTests(unittest.TestCase):
         self.assertEqual(self.calls(), [])
         self.assertEqual(self.calls("check"), [])
 
+    def monorepo(self, content=LEAN):
+        git(self.root, "rm", "-q", "ROADMAP.md")
+        (self.root / "apps" / "web").mkdir(parents=True)
+        (self.root / "apps" / "web" / "ROADMAP.md").write_text(content)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "monorepo")
+        self.head = git(self.root, "rev-parse", "HEAD").strip()
+
+    def test_roadmap_option_finds_subdirectory_roadmap(self):
+        self.monorepo()
+        rc, out, err = self.run_build("edit", ("--roadmap", "apps/web/ROADMAP.md"))
+        self.assertEqual(rc, 0, out + err)
+
+    def test_monorepo_without_roadmap_option_refuses(self):
+        self.monorepo()
+        rc, out, err = self.run_build("edit")
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
+    def test_roadmap_option_refuses_paths_outside_worktree(self):
+        self.monorepo()
+        outside = self.base / "x"
+        outside.write_text(LEAN)
+        for path in ("../x", "apps/../ROADMAP.md", str(outside), "apps/web/../../../x"):
+            with self.subTest(path=path):
+                rc, out, err = self.run_build("edit", ("--roadmap", path))
+                self.assertEqual(rc, 2, out + err)
+        (self.root / "link.md").symlink_to(outside)
+        git(self.root, "add", "-A")
+        git(self.root, "commit", "-qm", "link")
+        self.head = git(self.root, "rev-parse", "HEAD").strip()
+        rc, out, err = self.run_build("edit", ("--roadmap", "link.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
+    def test_roadmap_option_without_builder_codex_refuses(self):
+        self.monorepo("---\ndefaults:\n  flow: lean\n  builder: claude\n---\n")
+        rc, out, err = self.run_build("edit", ("--roadmap", "apps/web/ROADMAP.md"))
+        self.assertEqual(rc, 2, out + err)
+        self.assertEqual(self.calls(), [])
+
     def test_refuses_dirty_worktree_and_wrong_head(self):
         (self.root / "calc.py").write_text("user work in progress\n")
         rc, _, err = self.run_build("edit")

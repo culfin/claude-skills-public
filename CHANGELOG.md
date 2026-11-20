@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.4 — 2026-11-20
+
+**dev** — `codex-build.sh` read `defaults.builder` only from `ROADMAP.md` at the worktree root, so in monorepos (roadmap in a sub-directory) Codex never built and every phase fell back to Claude; new `--roadmap <path>` (default `ROADMAP.md`, no `..`, inside the worktree) and `lean.md` passes the phase's roadmap.
+
 ## v4.16.3 — 2026-11-20
 
 **dev** — `detect-stack.py` crashed with `ValueError: Unacceptable pattern` when a repo's pnpm-workspace.yaml lists the root as a package (`"."`); `"."`, leading `./` and negated `!` patterns are now handled like pnpm does.
