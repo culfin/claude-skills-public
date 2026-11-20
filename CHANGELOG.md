@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.2 — 2026-11-20
+
+**dev** — `befragung.md` no longer mentions a "product team"; the core-rule confirmation goes to the product role (in t3-team: via the project lead).
+
 ## v4.16.1 — 2026-11-20
 
 **dev** — `codex-build.sh` ran against the real Codex CLI (0.169.0) for the first time, and six
