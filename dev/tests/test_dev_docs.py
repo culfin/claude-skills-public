@@ -21,6 +21,10 @@ class DevDocsTests(unittest.TestCase):
             for ref in re.findall(r"analyzers/([a-z0-9-]+\.md)", p.read_text()):
                 self.assertTrue((DEV / "analyzers" / ref).exists(), f"{f} -> analyzers/{ref}")
 
+    def test_no_product_team(self):
+        for p in DEV.rglob("*.md"):
+            self.assertNotIn("product team", p.read_text().lower(), str(p.relative_to(DEV)))
+
     def test_gate_fast_is_gone(self):
         for p in DEV.rglob("*.md"):
             self.assertNotIn("@gate: fast", p.read_text(), str(p.relative_to(DEV)))
