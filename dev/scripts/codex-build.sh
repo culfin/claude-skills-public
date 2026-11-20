@@ -6,7 +6,7 @@
 #
 # Run from inside the phase worktree, clean and at --head. --brief is the phase brief (spec,
 # acceptance criteria, files); --out a file outside the worktree. --roadmap is the phase's
-# ROADMAP.md relative to the worktree root (default ROADMAP.md; monorepos: e.g. apps/web/ROADMAP.md).
+# ROADMAP.md relative to the worktree root (default ROADMAP.md, basename ROADMAP.md, tracked at --head; monorepos: e.g. apps/web/ROADMAP.md).
 # Exit 0 = Codex finished: its changes are left uncommitted in the worktree. --out holds
 #          `builder: codex`, `files:`, `ignored-new:` (new ignored paths), `ignored-changed:` (files
 #          changed inside ignored trees that existed, e.g. node_modules/), `hooks-changed:` (tracked
@@ -114,14 +114,15 @@ out=$(cd "$(dirname "$out")" && pwd -P)/$(basename "$out")
 [[ "$out" == "$top"/* ]] && usage "--out inside the worktree"
 case "/$roadmap/" in /../*|*/../*|*/./*|//*|*//*) usage "--roadmap must be a relative path without .. inside the worktree" ;; esac
 [[ "$roadmap" == /* || -z "$roadmap" ]] && usage "--roadmap must be a relative path without .. inside the worktree"
+[[ "$(basename "$roadmap")" == ROADMAP.md ]] || usage "--roadmap basename must be ROADMAP.md"
+case "/$roadmap/" in */.git/*) usage "--roadmap must not be under .git" ;; esac
 roadmap_file=$(real "$top/$roadmap")
 [[ "$roadmap_file" == "$top"/* ]] || usage "--roadmap leaves the worktree"
-python3 - "$roadmap_file" <<'PY' || usage "$roadmap frontmatter lacks defaults.builder: codex"
+# The opt-in is read from the committed content at --head, never from the working tree.
+roadmap_text=$(git -C "$top" show "$commit:$roadmap" 2>/dev/null) || usage "$roadmap is not tracked at --head, so it cannot set defaults.builder: codex"
+printf '%s\n' "$roadmap_text" | python3 -c '
 import re, sys
-try:
-    text = open(sys.argv[1], encoding="utf-8").read()
-except OSError:
-    sys.exit(1)
+text = sys.stdin.read()
 m = re.match(r"---\n(.*?)\n---\s*\n", text, re.S)
 block, inside = m.group(1) if m else "", False
 for line in block.splitlines():
@@ -130,7 +131,7 @@ for line in block.splitlines():
     elif inside and re.fullmatch(r"\s+builder:\s*codex\s*(#.*)?", line):
         sys.exit(0)
 sys.exit(1)
-PY
+' || usage "$roadmap frontmatter lacks defaults.builder: codex"
 rm -f "$out"
 cd "$top" || usage
 
