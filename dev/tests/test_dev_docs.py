@@ -622,7 +622,8 @@ class DevDocsTests(unittest.TestCase):
                   "only if Codex's diff is the bulk of the phase",
                   "the Claude implementer wrote a task or more than a few lines → no line",
                   "`ignored-changed:` before running the tests", "`hooks-changed:` before committing",
-                  "Start no other processes in the worktree while it runs"):
+                  "Start no other processes in the worktree while it runs",
+                  "nobody builds in that worktree until you have inspected it and those processes are gone"):
             self.assertIn(s, sec)
         gate = " ".join(text("gate.md").split())
         self.assertIn("Phase file `Builder: codex` → no `codex diff` item.", gate)

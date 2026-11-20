@@ -9,7 +9,9 @@
   sweep       --top T --scratch S --before F --pgid N --sid N
 
 Git always runs against the recorded git dir and work tree, without system or global config,
-hooks or fsmonitor: nothing Codex wrote runs.
+hooks or fsmonitor: nothing Codex wrote runs. Every check fails closed: a failing git listing or
+an unreadable directory ends the command with exit 4 and `unreadable: <path>` or `git <cmd>
+failed`, never a silently shorter list.
 """
 import argparse
 import json
@@ -32,6 +34,25 @@ def git(a, *args):
     p = subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=", *args],
                        cwd=a.top, env=env, capture_output=True)
     return p.stdout if p.returncode == 0 else None
+
+
+class CheckFailed(Exception):
+    pass
+
+
+def git_list(a, *args):
+    """A git listing the checks rely on: a failure is never an empty list."""
+    out = git(a, *args)
+    if out is None:
+        raise CheckFailed(f"git {args[0]} failed")
+    return nul(out)
+
+
+def walk(top):
+    """os.walk that fails instead of silently skipping an unreadable directory."""
+    def fail(e):
+        raise CheckFailed(f"unreadable: {e.filename}")
+    return os.walk(top, onerror=fail)
 
 
 def nul(data):
@@ -76,7 +97,7 @@ def is_env(name):
 
 
 def walk_envs(top):
-    for d, dirs, files in os.walk(top):
+    for d, dirs, files in walk(top):
         dirs[:] = sorted(x for x in dirs if x not in (".git", "node_modules"))
         for f in sorted(files + [x for x in dirs if os.path.islink(os.path.join(d, x))]):
             if is_env(f):
@@ -94,7 +115,7 @@ def cmd_env_targets(a):
     """Read grants only for the worktree's .env* links that follow the convention: untracked, at
     most one level down, to a regular file inside the main checkout, and not in a denied folder."""
     home = os.path.realpath(a.home)
-    tracked = set(nul(git(a, "ls-files", "-z")))
+    tracked = set(git_list(a, "ls-files", "-z"))
     out = []
     for rel in walk_envs(a.top):
         p = os.path.join(a.top, rel)
@@ -113,6 +134,8 @@ def cmd_env_targets(a):
             reason = "target in a denied folder"
         elif not os.path.isfile(target):
             reason = "target is not a regular file"
+        elif os.stat(target).st_nlink > 1:
+            reason = "target has another hard link"     # its other name may lie anywhere
         elif not under(target, a.main):
             reason = "target not in the main checkout"
         else:
@@ -126,7 +149,7 @@ def cmd_env_targets(a):
 
 def ignored(a):
     res = {}
-    for p in nul(git(a, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory")):
+    for p in git_list(a, "ls-files", "-z", "--others", "--ignored", "--exclude-standard", "--directory"):
         full = os.path.join(a.top, p.rstrip("/"))
         res[p] = ("link " + os.readlink(full)) if os.path.islink(full) else (
             "dir" if os.path.isdir(full) else "file")
@@ -154,8 +177,8 @@ def scripts_of(text):
 def cmd_analyze(a):
     before = json.load(open(a.before))
     after = snapshot(a)
-    changed = sorted(set(nul(git(a, "diff", "--no-ext-diff", "--name-only", "-z", a.commit)))
-                     | set(nul(git(a, "ls-files", "-z", "--others", "--exclude-standard"))))
+    changed = sorted(set(git_list(a, "diff", "--no-ext-diff", "--name-only", "-z", a.commit))
+                     | set(git_list(a, "ls-files", "-z", "--others", "--exclude-standard")))
     bi, ai = before["ignored"], after["ignored"]
     new_ignored = sorted(p for p in ai if p not in bi)
     touched = sorted(p for p in ai if bi.get(p) != ai[p])
@@ -165,7 +188,7 @@ def cmd_analyze(a):
     prefixes = tuple(p if p.endswith("/") else p + "/" for p in new_ignored)
     seen = set(changed) | set(new_ignored)
     newer = []
-    for d, dirs, files in os.walk(a.top):
+    for d, dirs, files in walk(a.top):
         if d == a.top:
             dirs[:] = [x for x in dirs if x != ".git"]
             files = [x for x in files if x != ".git"]
@@ -198,7 +221,7 @@ def cmd_analyze(a):
     for p in new_ignored:
         root = os.path.join(a.top, p.rstrip("/"))
         if os.path.isdir(root) and not os.path.islink(root):
-            for d, dirs, files in os.walk(root):
+            for d, dirs, files in walk(root):
                 deep += [os.path.relpath(os.path.join(d, x), a.top) for x in files + dirs]
     outside = []
     for p in changed + touched + newer + deep:
@@ -390,8 +413,12 @@ def main():
     s.add_argument("--pgid", default=""); s.add_argument("--sid", default="")
     s.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
-    return {"env-targets": cmd_env_targets, "snapshot": cmd_snapshot, "analyze": cmd_analyze,
-            "remove": cmd_remove, "refdiff": cmd_refdiff, "sweep": cmd_sweep}[a.cmd](a)
+    try:
+        return {"env-targets": cmd_env_targets, "snapshot": cmd_snapshot, "analyze": cmd_analyze,
+                "remove": cmd_remove, "refdiff": cmd_refdiff, "sweep": cmd_sweep}[a.cmd](a)
+    except CheckFailed as e:
+        print(show(str(e)))
+        return 4
 
 
 if __name__ == "__main__":

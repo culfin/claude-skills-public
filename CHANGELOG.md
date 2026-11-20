@@ -2,6 +2,31 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.1 — 2026-11-20
+
+**dev** — `codex-build.sh` ran against the real Codex CLI (0.169.0) for the first time, and six
+minors from its review are closed. The stub tests could only show the script is consistent with
+itself; the smoke run shows the real permission profile holds.
+
+- **New `scripts/codex-build-smoke.sh`**: a throwaway layout (main checkout, phase worktree inside
+  it, `.env` symlink to the main checkout) and two real cases. Positive: a tiny Python change →
+  exit 0, changes uncommitted, `--out` with `files:` and the summary, the test green. Negative: a
+  brief that reads the main checkout's README by absolute path → Codex reported "Permission denied
+  by the active filesystem policy", nothing leaked. The permission check passed with the real
+  binary. Costs quota, so never in the suite; `DEV_CODEX_SMOKE=1` runs it from pytest.
+- **Fail closed instead of open**: a failing `git ls-files` (env-link check, snapshot, analysis) no
+  longer yields an empty list, and an unreadable directory is no longer skipped by the walks; both
+  end in exit 3 (`worktree check failed: …` before the run, `analysis failed` after). Before, a
+  failing listing let a tracked `.env` link pass as untracked.
+- **A `.env` target with another hard link is refused**: its other name may lie outside the main
+  checkout or in a credential folder, which the inode comparison cannot see.
+- **The permission check probes a case variant** (`.SSH` under a `.ssh` deny inside a grant): APFS
+  is case-insensitive, and an enforcer comparing path strings would let it through. Real Codex
+  denies it. `RULE_REV` 3, so cached checks run again.
+- **Surviving processes still set the quota marker and report refs**; refs are read only while
+  `.git` and git config are unchanged. `lean.md`: after `partial: not touched` nobody builds in that
+  worktree until it is inspected and the processes are gone.
+
 ## v4.16.0 — 2026-11-19
 
 **dev** — Codex builds a phase in lean pilot projects (`defaults.builder: codex`). Building is the
