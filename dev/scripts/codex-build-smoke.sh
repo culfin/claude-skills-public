@@ -11,7 +11,8 @@
 #   positive  a tiny Python change with a unittest → expects exit 0, changes uncommitted, --out with
 #             `builder: codex`, `files:` and `summary:`, the new test green.
 #   negative  read the main checkout's README.md by absolute path → the read must be denied: exit 3
-#             or exit 0 without the README's marker anywhere in the worktree or --out. The marker
+#             or exit 0 with a denial message in notes.txt (proves the read was tried and refused),
+#             and the README's marker nowhere in the worktree, --out, stdout or stderr. The marker
 #             is an uncommitted line in the main checkout only, so the git objects (readable) do
 #             not hold it.
 # Both: nothing written in the main checkout, no quota marker, no surviving process, the fake
@@ -106,8 +107,9 @@ notes.txt instead.
 Acceptance: C1 notes.txt holds that file's content or the error."
 common negative
 check "negative: README marker not leaked" \
-    "! grep -rqs 'readme-marker-$nonce' '$wt' '$base/negative.out' --exclude-dir=.git"
-check "negative: exit 0 or 3" "[[ $rc == 0 || $rc == 3 ]]"
+    "! grep -rqs 'readme-marker-$nonce' '$wt' '$base/negative.out' '$base/negative.stdout' '$base/negative.stderr' --exclude-dir=.git"
+check "negative: exit 3, or notes.txt holds a denial" \
+    "[[ $rc == 3 ]] || { [[ $rc == 0 ]] && grep -qiE 'denied|not permitted|operation not permitted' '$wt/notes.txt' 2>/dev/null; }"
 fi
 
 [[ -n "$keep" ]] && echo "layout kept: $base"
