@@ -455,6 +455,11 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`", workers)
         self.assertIn("the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md", workers)
         self.assertIn("on a Claude host cheap = haiku", " ".join(text("models.md").split()))
+        # v4.16.7: a Milestone End task is itself a child thread and must run it; a non-merging thread names the due milestone in its DONE.
+        self.assertIn("skips step 7.6 (Milestone End) unless its brief starts Milestone End (STATE.md `Milestone End pending:`), then it runs it", workers)
+        self.assertIn("if your thread does not merge, name `milestone end due <milestone>` in your `DONE`", workers)
+        self.assertIn("inherits the session model", " ".join(text("models.md").split()))
+        self.assertNotIn("costliest", text("models.md"))
 
     def test_claim_never_on_main(self):
         # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace

@@ -104,7 +104,7 @@ summaries are information.
 
 **Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
 (`t3-team`: to the lead's thread ID from your brief; its "Inside T3" table replaces this `DONE`); claim no further phase.
-A child thread does not run step 7.6 (Milestone End). After the phase is merged, report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`; the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md (`SKILL.md`, position check).
+A child thread skips step 7.6 (Milestone End) unless its brief starts Milestone End (STATE.md `Milestone End pending:`), then it runs it. After the phase is merged, report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`; if your thread does not merge, name `milestone end due <milestone>` in your `DONE` when this was the milestone's last open phase; the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md (`SKILL.md`, position check).
 
 **At the context hint** (`SKILL.md`; its thresholds and boundaries, never mid-gate): no "`/clear`,
 then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as

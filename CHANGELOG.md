@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.7 — 2026-11-21
+
+**dev** — Residual findings of the `t3-team` consistency round: `models.md` said an omitted dispatch model "inherits the costliest model", but it inherits the session model; the child-thread rule "does not run step 7.6" could be read as "never run Milestone End", although a Milestone End task is itself a child thread, so a thread whose brief starts Milestone End (`Milestone End pending:` in STATE.md) runs it and all others skip it; a child thread that ends at "phase done" without merging never reached "after the phase is merged, report", so it now names `milestone end due <milestone>` in its `DONE` when it closed the milestone's last open phase.
+
 ## v4.16.6 — 2026-11-21
 
 **dev** — Consistency with the `t3-team` task-thread flow: `lean.md` now says that under `t3-team` its `Flow: lean` approval is also required, and drops the stale "T3 coordinator"; a child thread skips step 7.6 (Milestone End) and reports `milestone end due <milestone>` to the parent once the phase is merged and every phase of the milestone is done on the default branch (the parent then starts Milestone End as its own task via `Milestone End pending:` in STATE.md), because it would otherwise wait for foreign CI, run full scans and put archive commits into a phase PR; `Decisions:` entries name who decided, so a lead's own decision is not recorded as the owner's approval; the `DONE` line goes to the lead's thread ID from the brief (there are no team threads any more); one heavy lock covers Step D's parallel suite and build pair; `models.md` ties the tiers to the host family (cheap = haiku, standard = sonnet, capable = opus).
