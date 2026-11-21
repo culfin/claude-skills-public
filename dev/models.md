@@ -1,6 +1,6 @@
 # Subagent model choice
 
-**Name a model in every dispatch**; an omitted one inherits the costliest session model. Tiers by host family: cheap = haiku, standard = sonnet, capable = opus:
+**Name a model in every dispatch**; an omitted one inherits the costliest model. Tiers: on a Claude host cheap = haiku, standard = sonnet, capable = opus:
 
 | Role | Tier |
 |---|---|

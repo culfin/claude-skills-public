@@ -452,6 +452,9 @@ class DevDocsTests(unittest.TestCase):
         workers = " ".join(text("runtime.md").split("### Child threads", 1)[1].split())
         self.assertIn("**Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done", workers)
         self.assertIn("claim no further phase", workers)
+        self.assertIn("report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`", workers)
+        self.assertIn("the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md", workers)
+        self.assertIn("on a Claude host cheap = haiku", " ".join(text("models.md").split()))
 
     def test_claim_never_on_main(self):
         # v4.3.0 RED 2/2: in Orca mode a session on <main> switched branch inside the workspace
