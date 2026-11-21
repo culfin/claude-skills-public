@@ -41,7 +41,7 @@ In planning a type only steers 4a.
 | `backend` | Large tier: Security review; with `postgres` also `pg:design-postgres-tables` when migrations or SQL changed |
 | `data` | `pg:design-postgres-tables` with `postgres`, when migrations or SQL changed |
 | `auth`, `security`, `data` | Security review in full scope, not phase scope |
-| `landing` | Design detector and Taste pre-flight in either tier; Taste findings are notes |
+| `landing` | Taste pre-flight in either tier; its findings are notes |
 | `refactor` | Similar-bugs scan also when code moved (Step C) |
 
 The rollback check and the smoke test also apply whenever `gate-tier.py` names `DB change:`.
@@ -65,13 +65,11 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 - [ ] Tech-Stack Review: <stack id>  <!-- one per matching stack (except `nextjs`, which has the item above), e.g. shadcn -->
 - [ ] Performance review
 - [ ] Accessibility review
-- [ ] Design detector
-- [ ] Motion review
 - [ ] Taste pre-flight
 - [ ] UX review
 - [ ] Polish review                <!-- web UI -->
 - [ ] Second opinion: codex diff      <!-- "Codex" -->
-<!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only; refactor: Similar-bugs also when code moved) -->
+<!-- Steps B and C, only when Step B fixes a defect (test patches alone: Fix review only, Step B; refactor: Similar-bugs also when code moved) -->
 - [ ] Fix review
 - [ ] Similar-bugs scan
 - [ ] Second opinion: codex fix
@@ -91,12 +89,12 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too.
 - A trigger that does not fire → the item is not listed.
-- **Skipped is closed, never passed.** Only Design detector, Motion review, Taste pre-flight, UX review, Polish review
+- **Skipped is closed, never passed.** Only Taste pre-flight, UX review, Polish review
   and Tech-Stack Review items may be closed as `skipped: <reason>` (no `@…`), when the optional source
   or tool they need is missing (design sources under `$DEV_DESIGN_DIR`, a stack source under
-  `$DEV_STACK_DIR` or bundled docs, an unbuilt detector, a skill not installed), and Second
-  opinion items when `codex-review.sh` exits 3:
-  `- [x] Design detector — skipped: engine not built`. Such an item does not block the phase, never
+  `$DEV_STACK_DIR` or bundled docs, a skill not installed), and Second
+  opinion items without substitute:
+  `- [x] Polish review — skipped: vibepolish not installed`. Such an item does not block the phase, never
   counts as "no findings", and is listed under "Skipped checks" in the gate summary.
 - **Evidence belongs to one state of the code.** After a fix, the review items (Step A) stay valid
   as long as a checked `Fix review` carries the current state.
@@ -119,19 +117,18 @@ dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows t
 | Diff review | `analyzers/diff-review.md` | always |
 | Spec checker | the prompt below | always |
 | Security review | `analyzers/security.md` | **either tier**, whenever its trigger matrix in `tech-stack-triggers.md` matches, including a `gate-tier.py` reason `ops files` or `dependency manifest`, or a gate addition by type |
-| Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md` | large tier, matching files changed |
+| Tech-Stack Review: `<stack id>` | per `tech-stack-triggers.md` and `stack/INDEX.md`; reports criticals and at most 3 notes (more → first 3) | large tier, matching files changed |
 | Performance review | `analyzers/performance.md` | large tier, only on cause (`tech-stack-triggers.md`) |
 | Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |
-| Design detector, Motion review | `analyzers/design-detector.md`, `analyzers/motion.md` | large tier; Design detector: UI files changed (`landing`: either tier); Motion review: a motion probe hits |
 | Taste pre-flight | taste source per `design/INDEX.md` row "4a landing", pre-flight checks only | `@type: landing` |
-| UX review | `ux-ui-design` in Review mode on the changed views, findings only; its severity 4 → critical, the rest notes | UI files changed, **either tier, any `@type:`** |
-| Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), on the changed views and their direct dependencies; its confirmed Critical → critical, the rest notes | web UI files changed (Design detector's row), either tier; native UI: not run, UX review covers it |
+| UX review | `ux-ui-design` in Review mode on the changed views' screenshots (below) and code, findings only; its severity 4 → critical, the rest notes | UI files changed, **either tier, any `@type:`** |
+| Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), on the same screenshots and the changed views' direct dependencies; its confirmed Critical → critical, the rest notes | web UI files changed, either tier; native UI: not run, UX review covers it |
 
-**UI files** are those of the Accessibility review and Design detector rows in `tech-stack-triggers.md`;
-the diff decides, not `@type:`.
+**UI files** (web UI files: its first list) are those of the Accessibility review row in `tech-stack-triggers.md`;
+the diff decides, not `@type:`. **Screenshots** (UX, Polish review): the running app per `ui-review.md` step 2, each changed view at 390 and 1440 px, plus the longest-label language; not startable → "judged from code".
 
 **Analyzer dispatch** (also `/dev check`, Milestone End, `/dev ui`). Never open `analyzers/CONTRACT.md`
-or the analyzer file, not even to check a prompt or a reply: this paragraph suffices. The
+or the analyzer file: this paragraph suffices. The
 prompt names both by absolute path (`$DEV_DIR/analyzers/…`) for the subagent to read, then gives the
 mode (`phase`; `fix` = Step B's fix diff only; `full`), the file list and, for `phase`/`fix`, the diff
 as a file, untracked files included (`git ls-files --others --exclude-standard`), the requirement,
@@ -147,8 +144,7 @@ none), run in the background:
 `--prompt`: the Claude item's prompt; `--input`: its diff file plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
-or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host a Claude subagent gives it (same prompt, input); none: `skipped: host is codex`.
-Exit 3 → `skipped: <fallback reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
+or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input; evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers
@@ -165,8 +161,8 @@ Its patch saved: `git worktree remove --force <path>`, `git branch -D` its own a
 requirement: a dropped criterion, error handling, trust-boundary validation, or security or
 data-integrity behaviour is critical.
 
-**Effect probe** (Spec checker, large tier only; verdict table stays in both) — for at most 2 security- or contract-critical criteria `met` by an
-existing test: name that test, break the guarding line in its worktree (comment out, negate, default
+**Effect probe** (Spec checker) — for at most 2 criteria `met` by an
+existing test, security- or contract-critical ones first: name that test, break the guarding line in its worktree (comment out, negate, default
 value), run only that test, restore. Still green → critical, the test cannot fail; no named red
 test → invalid, not passed.
 
@@ -177,6 +173,7 @@ same analyzer file, or an equivalent tool the project uses), never the implement
 
 ## Step B — Fix
 
+- **Only (d) findings with their proven patches:** apply them yourself (`git apply`), run those tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch, other review or second opinion.
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`) with the Spec
   checker's test patches — one agent sees how fixes interact; it follows `receiving-code-review`.
   Lowering the floor (skipping a test, loosening a check) is not a fix. When the cause of a finding
@@ -224,7 +221,8 @@ Permanent, in `docs/gates/phase-<N>.md` before the gate commit (old format: STAT
 - Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
-- Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none | skipped (small tier)>
+- Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none>
+- Criticals: <finder — what, one per finding (Codex alone, Step D, CI, acceptance too) | none>
 - Skipped checks: <none | check — reason, one per skipped item>
 - Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```

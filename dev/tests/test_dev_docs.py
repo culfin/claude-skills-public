@@ -36,7 +36,7 @@ class DevDocsTests(unittest.TestCase):
                      "Gate summary (docs/gates/phase-N.md)", "Gate commit"):
             self.assertIn(f"- [ ] {name}", g)
         for name in ("Security review", "Tech-Stack Review: <stack id>", "Performance review",
-                     "Accessibility review", "Design detector", "Motion review", "Taste pre-flight",
+                     "Accessibility review", "Taste pre-flight",
                      "UX review", "Polish review", "Second opinion: codex diff",
                      "Second opinion: codex fix"):
             self.assertIn(f"- [ ] {name}", g)
@@ -131,7 +131,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("pre-v3 checklist", g)  # v4: no rebuild of v2 checklists
         self.assertNotIn("add the pattern to `gate-tier.py`", g)
         self.assertIn("rerun the tier with `--gate full`", g)
-        self.assertIn("| Similar-bugs scan (gate Step C) | **standard** |", text("models.md"))
+        self.assertIn("Similar-bugs scan, Performance review", text("models.md"))
         self.assertIn("never their specs or plans", text("befragung.md"))
 
     def test_v3_1_state_claims_probe_security(self):
@@ -185,8 +185,8 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("| Accessibility review | `analyzers/accessibility.md` | UI files changed, **either tier** |", g)
         self.assertIn("| UI files changed, **either tier, any `@type:`** |", g)
         self.assertIn("| Polish review | `vibepolish`, focused review, audit only (no fixes, no `AUDIT.md`), "
-                      "on the changed views and their direct dependencies; its confirmed Critical → critical, "
-                      "the rest notes | web UI files changed (Design detector's row), either tier; native UI: "
+                      "on the same screenshots and the changed views' direct dependencies; its confirmed Critical → critical, "
+                      "the rest notes | web UI files changed, either tier; native UI: "
                       "not run, UX review covers it |", g)
         self.assertIn("the diff decides, not `@type:`", g)
         self.assertIn("Taste pre-flight, UX review, Polish review and Tech-Stack Review items", g)
@@ -482,15 +482,16 @@ class DevDocsTests(unittest.TestCase):
 
     def test_codex_host_gets_a_claude_second_opinion(self):
         gate = text("gate.md")
-        self.assertIn("On a Codex host a Claude subagent gives it", gate)
-        self.assertIn("`skipped: host is codex`", gate)
+        self.assertIn("On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input; "
+                      "evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`.", " ".join(gate.split()))
+        self.assertNotIn("Exit 3 → `skipped: <fallback reason>`", gate)
 
     def test_small_fixes_v4_11_1(self):
         # Review of 15.11.2026: contradictions and stale spots found in gate records and texts.
         skill = text("SKILL.md")
         self.assertIn("deleting branches (except the run's own task and agent branches)", skill)
         gate = text("gate.md")
-        self.assertIn("Motion review: a motion probe hits", gate)
+        self.assertNotIn("Motion review", gate)  # v4.18.0: 0 criticals in 38 gate runs; `/dev ui` keeps it
         self.assertIn("A trigger that does not fire → the item is not listed.", gate)
         commands = text("commands.md")
         self.assertNotIn("/brag", commands)
@@ -518,10 +519,10 @@ class DevDocsTests(unittest.TestCase):
                        "Exit 0 → its findings count like any analyzer's",
                        "a critical one only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, "
                        "crashes or loses data; else a note: no question, no round.",
-                       "`Result:` line, `codex`, `@…`", "Exit 3 → `skipped: <fallback reason>`",
+                       "`Result:` line, `codex`, `@…`",
                        "The Claude item runs regardless."):
             self.assertIn(needle, codex)
-        self.assertIn("and Second opinion items when `codex-review.sh` exits 3", gate)
+        self.assertIn("and Second opinion items without substitute", gate)
         self.assertIn("Similar-bugs scan, Fix review and their Second opinion items are always rerun", gate)
         self.assertIn("| Second opinion (gate, `codex-review.sh`) | Codex's default |", text("models.md"))
         r = text("runtime.md")
@@ -537,7 +538,7 @@ class DevDocsTests(unittest.TestCase):
         # v4.5.0: the contract is for the analyzer subagents; the dispatcher's part lives in gate.md.
         gate = " ".join(text("gate.md").split())
         self.assertIn("**Analyzer dispatch**", gate)
-        self.assertIn("Never open `analyzers/CONTRACT.md` or the analyzer file, not even to check a prompt or a reply", gate)
+        self.assertIn("Never open `analyzers/CONTRACT.md` or the analyzer file: this paragraph suffices", gate)
         self.assertIn("by absolute path", gate)
         for needle in ("the diff as a file", "untracked files included", "the requirement", "page kind",
                        "`models.md`", "Ask for refutation", "`Result:` line is the item's evidence"):
@@ -658,6 +659,28 @@ class DevDocsTests(unittest.TestCase):
         gate = " ".join(text("gate.md").split())
         self.assertIn("Phase file `Builder: codex` → no `codex diff` item.", gate)
         self.assertTrue(os.access(DEV / "scripts" / "codex-build.sh", os.X_OK))
+
+    def test_gate_review_audit_v4_18_0(self):
+        # v4.18.0 RED (174 gate summaries, 5 projects): Design detector 31 runs / Motion 7 runs, 0 criticals;
+        # Tech-Stack 466 notes for 8 criticals; UI bugs found only at acceptance (mobile width, long labels);
+        # Codex quota out in 21 gates and the item was skipped; test-only Spec checker patches cost a full
+        # fix round; effect probes only in the large tier; summaries did not say who found a critical.
+        g = " ".join(text("gate.md").split())
+        for gone in ("- [ ] Design detector", "- [ ] Motion review", "large tier only", "skipped (small tier)"):
+            self.assertNotIn(gone, g)
+        self.assertNotIn("Design detector", text("tech-stack-triggers.md"))
+        self.assertIn("| ui: web UI changed |", text("design/INDEX.md"))
+        self.assertIn('"ui: motion changed"', text("ui-review.md"))
+        self.assertIn("reports criticals and at most 3 notes (more → first 3)", g)
+        self.assertIn("ux-ui-design` in Review mode on the changed views' screenshots (below) and code", g)
+        self.assertIn("**Screenshots** (UX, Polish review): the running app per `ui-review.md` step 2, each changed view "
+                      "at 390 and 1440 px, plus the longest-label language; not startable → \"judged from code\".", g)
+        self.assertIn("**Effect probe** (Spec checker) — for at most 2 criteria `met` by an existing test, "
+                      "security- or contract-critical ones first", g)
+        self.assertIn("- **Only (d) findings with their proven patches:** apply them yourself (`git apply`), run those "
+                      "tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch, other review "
+                      "or second opinion.", g)
+        self.assertIn("- Criticals: <finder — what, one per finding (Codex alone, Step D, CI, acceptance too) | none>", g)
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

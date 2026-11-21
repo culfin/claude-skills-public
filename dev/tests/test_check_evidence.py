@@ -201,19 +201,19 @@ class EvidenceTests(unittest.TestCase):
     def test_skipped_optional_check_is_closed_and_reported_as_skipped(self):
         i = self.sid()
         self.state([f"- [x] Diff review — 0 critical @{i}",
-                    "- [x] Design detector — skipped: engine not built",
-                    f"- [x] Motion review — skipped: animation standards not found @{i}",
+                    "- [x] Polish review — skipped: vibepolish not installed",
+                    f"- [x] UX review — skipped: ux-ui-design not installed @{i}",
                     "- [x] Tech-Stack Review: shadcn — skipped: skill not installed",
                     "- [x] Second opinion: codex diff — skipped: quota-exhausted"])
         self.assertEqual(self.run_check(), [])
         self.assertEqual(ce.skipped(self.root / "STATE.md"),
-                         [("Design detector", "engine not built"),
-                          ("Motion review", "animation standards not found"),
+                         [("Polish review", "vibepolish not installed"),
+                          ("UX review", "ux-ui-design not installed"),
                           ("Tech-Stack Review: shadcn", "skill not installed"),
                           ("Second opinion: codex diff", "quota-exhausted")])
 
     def test_skipped_item_survives_a_later_code_change(self):
-        self.state(["- [x] Design detector — skipped: engine not built"])
+        self.state(["- [x] Polish review — skipped: vibepolish not installed"])
         (self.root / "a.txt").write_text("three\n")
         self.assertEqual(self.run_check(), [])
 
@@ -225,20 +225,20 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(ce.skipped(self.root / "STATE.md"), [])
 
     def test_skip_without_reason_is_reported(self):
-        self.state(["- [x] Design detector — skipped:"])
+        self.state(["- [x] Polish review — skipped:"])
         self.assertIn("no reason", self.run_check()[0])
 
     def test_open_skipped_item_still_blocks(self):
-        self.state(["- [ ] Design detector — skipped: engine not built"])
+        self.state(["- [ ] Polish review — skipped: vibepolish not installed"])
         self.assertIn("open", self.run_check()[0])
 
     def test_cli_prints_skipped_not_passed(self):
         self.state([f"- [x] Diff review — 0 critical @{self.sid()}",
-                    "- [x] Design detector — skipped: engine not built"])
+                    "- [x] Polish review — skipped: vibepolish not installed"])
         run = subprocess.run(["python3", str(HERE.parent / "scripts" / "check-evidence.py"), "check", "STATE.md"],
                              cwd=self.root, capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertIn("skipped: Design detector — engine not built", run.stdout)
+        self.assertIn("skipped: Polish review — vibepolish not installed", run.stdout)
         self.assertIn("1 skipped, not passed", run.stdout)
 
     def test_ux_and_polish_review_can_be_skipped(self):

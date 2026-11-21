@@ -34,7 +34,7 @@ gate.md rebuilds such a checklist on resume.
 
 A check whose optional source or tool is missing is closed visibly instead (gate.md):
 
-    - [x] Design detector — skipped: engine not built
+    - [x] Polish review — skipped: vibepolish not installed
 
 Such an item is closed, needs no `@<state>`, and is printed as `skipped: <item> — <reason>` — it
 is never reported as passed. Only the checks in SKIPPABLE may be skipped this way.
@@ -85,13 +85,12 @@ SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 COUNTED = ("typecheck + lint + tests", "e2e tests")
 COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
 NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
-SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "ux review", "polish review",
+SKIPPABLE = ("taste pre-flight", "ux review", "polish review",
              "tech-stack review", "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
 # Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
 REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
-                "performance review", "accessibility review", "design detector", "motion review",
-                "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
+                "performance review", "accessibility review", "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
 
 
 def state_id(root):
