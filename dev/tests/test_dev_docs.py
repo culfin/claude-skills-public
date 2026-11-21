@@ -682,6 +682,15 @@ class DevDocsTests(unittest.TestCase):
                       "tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch or other review.", g)
         self.assertIn("- Criticals: <finder — what; finder — what (Codex alone, Step D too) | none>", g)
 
+    def test_sources_follow_upstream_11_2026(self):
+        # /dev updates 21.11.2026: stripe removed upgrade-stripe (missing-read-path); impeccable's CLI gained
+        # `loop`, `shot`, `audit-storage` subcommands that install hooks or upload.
+        src = " ".join(text("sources.md").split())
+        self.assertIn("`install`, `hooks on`, `loop`, `shot`, `audit-storage`, or a downloaded binary", src)
+        self.assertIn("or a skill that needs the Stripe CLI or a login (`stripe-docs`)", src)
+        self.assertNotIn("upgrade-stripe", text("stack/INDEX.md"))
+        self.assertIn("or the Stripe SDK or API version changes", text("stack/INDEX.md"))
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

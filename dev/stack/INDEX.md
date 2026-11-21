@@ -54,8 +54,7 @@ gate's E2E step, debug = the `/dev debug` flow.
 | `better-auth` 4a/4c: auth setup, session or plugin work | `$DEV_STACK_DIR/better-auth/better-auth/best-practices/SKILL.md` | subagent |
 | `better-auth` 5c: auth files or the auth config changed | `$DEV_STACK_DIR/better-auth/security/SKILL.md` | subagent |
 | `postgres` 4a/5c: schema change planned, migrations or SQL changed | `$DEV_STACK_DIR/postgres/skills/postgres-best-practices/SKILL.md` | subagent |
-| `stripe` 4a/4c/5c: payment, billing or webhook code planned or changed | `$DEV_STACK_DIR/stripe/skills/stripe-best-practices/SKILL.md` | subagent |
-| `stripe` 4a/5c: Stripe SDK or API version changes | `$DEV_STACK_DIR/stripe/skills/upgrade-stripe/SKILL.md` | subagent |
+| `stripe` 4a/4c/5c: payment, billing or webhook code planned or changed, or the Stripe SDK or API version changes | `$DEV_STACK_DIR/stripe/skills/stripe-best-practices/SKILL.md` | subagent |
 | `fastify` 4a/4c/5c: routes, plugins, hooks or schemas planned or changed | `$DEV_STACK_DIR/fastify/skills/fastify/SKILL.md` | subagent |
 | `wordpress` 4a/4c/5c: plugin or theme PHP (hooks, admin, settings, cron, nonces, escaping) planned or changed | `$DEV_STACK_DIR/wordpress/skills/wp-plugin-development/SKILL.md` | subagent |
 | `wordpress` 4a/4c/5c: REST routes, controllers or `register_rest_*` planned or changed | `$DEV_STACK_DIR/wordpress/skills/wp-rest-api/SKILL.md` | subagent |
