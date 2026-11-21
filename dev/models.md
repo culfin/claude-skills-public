@@ -1,6 +1,6 @@
 # Subagent model choice
 
-**Name a model in every dispatch** — an omitted one inherits the most expensive session model. Reviews: standard; cheap for transcription, capable for security and full scans:
+**Name a model in every dispatch**; an omitted one inherits the costliest session model. Tiers by host family: cheap = haiku, standard = sonnet, capable = opus:
 
 | Role | Tier |
 |---|---|

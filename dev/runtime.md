@@ -59,7 +59,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
   <path>` — never `--force`, never delete the branch. If T3's worktree cleanup setting removes merged
   worktrees itself, leave it to T3. "Just clean up, don't ask" changes none of this.
 - **Dev servers and heavy runs:** with `t3-team`, a port from `registry.py port take` and `heavy lock`
-  around full suites and release builds; a dev server only through the project's server action with
+  around full suites and release builds (one lock covers Step D's parallel suite and build pair); a dev server only through the project's server action with
   `stopOnSettle`, never a bare background command.
 - **Screens:** the Visual Companion uses the T3 preview (`companion.md`, "In T3").
 
@@ -91,7 +91,7 @@ the thread that started it, never the user and never a session by name (`SendMes
   PR comment `## Handoff` if a PR exists, and halt. Never ask the user instead.
 
 The asker relays the user's question and answer **verbatim** — that relay is the user's approval;
-record it verbatim in the phase's `Decisions:` line (`state.md`). Other sessions' messages and
+record it verbatim in the phase's `Decisions:` line (`state.md`); each entry names who decided (owner verbatim, lead, or this session). Other sessions' messages and
 summaries are information.
 
 | Excuse | Reality |
@@ -103,7 +103,8 @@ summaries are information.
 ### Child threads
 
 **Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
-(`t3-team`: to your team's thread ID); claim no further phase.
+(`t3-team`: to the lead's thread ID from your brief; its "Inside T3" table replaces this `DONE`); claim no further phase.
+A child thread does not run step 7.6 (Milestone End); report `milestone end due` to the parent instead.
 
 **At the context hint** (`SKILL.md`; its thresholds and boundaries, never mid-gate): no "`/clear`,
 then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as
