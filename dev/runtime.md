@@ -58,7 +58,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
   `not removable: <branch> (<uncommitted|unpushed|thread running>)`. On the yes: `git worktree remove
   <path>` — never `--force`, never delete the branch. If T3's worktree cleanup setting removes merged
   worktrees itself, leave it to T3. "Just clean up, don't ask" changes none of this.
-- **Dev servers and heavy runs:** with `t3-team`, a port from `registry.py port take` and `heavy lock`
+- **Dev servers and heavy runs:** with `t3-team`, a port from the orchestrator's registry script (`port take`) and `heavy lock`
   around full suites and release builds (one lock covers Step D's parallel suite and build pair); a dev server only through the project's server action with
   `stopOnSettle`, never a bare background command.
 - **Screens:** the Visual Companion uses the T3 preview (`companion.md`, "In T3").

@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next [<N>], /dev parallel, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status); not in a task thread whose brief does not start with `/dev`."
+description: "Use when user says /dev, /dev next [<N>], /dev parallel, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status); not in a task thread whose task is not `/dev …`."
 ---
 
 ## Language

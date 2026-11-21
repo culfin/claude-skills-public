@@ -12,7 +12,7 @@ STATE.md next to the marker (migrated) is code except its `Milestone End pending
 that changes its content goes through the gate like any file; without the marker (old format, the
 checklist lives there) all of STATE.md is bookkeeping. "Migrated" here means the marker in this working
 tree, the tree the id describes. So the migration itself changes the id once: ticked items of a
-phase in progress go stale and are rerun (commands.md, `migrate:`).
+phase in progress go stale and are rerun (next.md, `migrate:`).
 It does not change when that exact content is committed, so a gate commit that contains the checked
 content keeps every item valid — and any edit to the code after a check makes that item stale.
 

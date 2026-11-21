@@ -632,7 +632,7 @@ class DevDocsTests(unittest.TestCase):
             self.assertNotIn(sec + "\n\n**", text("commands.md"))
             self.assertNotIn(sec + "\n\nSession", text("commands.md"))
         self.assertIn("In `next.md`.", text("commands.md"))
-        self.assertIn("not in a task thread whose brief does not start with `/dev`", sk.split("---", 2)[1])
+        self.assertIn("not in a task thread whose task is not `/dev …`", sk.split("---", 2)[1])
         ex = " ".join(text("execution.md").split())
         self.assertIn('one background `bash "$DEV_DIR/scripts/load-ok.sh" --wait`', ex)
         self.assertIn("task ID to `t3_background_wait`", ex)
