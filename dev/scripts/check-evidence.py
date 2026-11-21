@@ -85,11 +85,13 @@ SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 COUNTED = ("typecheck + lint + tests", "e2e tests")
 COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
 NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
-SKIPPABLE = ("taste pre-flight", "ux review", "polish review",
+# Design detector and Motion review left the gate in v4.18.0; checklists written before still list them.
+LEGACY = ("design detector", "motion review")
+SKIPPABLE = LEGACY + ("taste pre-flight", "ux review", "polish review",
              "tech-stack review", "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
 # Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
-REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
+REVIEW_ITEMS = LEGACY + ("diff review", "spec checker", "security review", "tech-stack review",
                 "performance review", "accessibility review", "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
 
 

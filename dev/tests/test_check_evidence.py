@@ -76,6 +76,15 @@ class EvidenceTests(unittest.TestCase):
         step_d = self.summary("2 critical (Step D too) + 0 notes", "Diff review — race; Step D — e2e red on login")
         self.assertEqual(ce.summary_problems(step_d), [])
 
+    def test_legacy_design_and_motion_items_still_close(self):
+        # v4.18.0 removed both from the gate; checklists written before keep them and must still pass.
+        i = self.sid()
+        self.state([f"- [x] Diff review — 0 critical @{i}",
+                    "- [x] Design detector — skipped: engine not built",
+                    "- [x] Motion review — 0 critical @0123456789ab",
+                    f"- [x] Fix review — 0 critical @{i}"])
+        self.assertEqual(self.run_check(), [])
+
     def test_old_gate_summary_without_criticals_line_is_not_checked(self):
         phase = self.summary("0 critical", "none")
         g = self.root / "docs" / "gates" / "phase-31.md"
@@ -298,7 +307,7 @@ class EvidenceTests(unittest.TestCase):
         items = [line.split("]", 1)[1].split("<!--")[0].strip().lower()
                  for line in step_a.splitlines() if line.startswith("- [ ]")]
         items = ["tech-stack review" if i.startswith("tech-stack review") else i for i in items]
-        self.assertEqual(sorted(set(items)), sorted(ce.REVIEW_ITEMS))
+        self.assertEqual(sorted(set(items)), sorted(set(ce.REVIEW_ITEMS) - set(ce.LEGACY)))
 
     def test_full_run_in_ci_is_valid_test_evidence(self):
         i = self.sid()
