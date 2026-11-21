@@ -512,7 +512,7 @@ class CheckSourceUpdateTests(unittest.TestCase):
         self.assertIsNone(m.scan_scope('emil', DEV / 'sources.md'))
         self.assertIsNone(m.scan_scope('superpowers', DEV / 'sources.md'))
         self.assertEqual(m.scan_scope('stripe', DEV / 'sources.md'),
-                         ({'skills/stripe-best-practices', 'skills/upgrade-stripe'}, {'LICENSE'}))
+                         ({'skills/stripe-best-practices'}, {'LICENSE'}))
 
     def test_missing_stack_index_next_to_contract_is_usage_error(self):
         self.contract.write_text(CONTRACT.replace('`SKILL.md`, `skills/a/SKILL.md`', '`stack/INDEX.md`'))
@@ -724,7 +724,7 @@ class ListingTests(unittest.TestCase):
         stripe = self.run_cli('--scope', '--source', 'stripe')
         self.assertEqual(stripe.returncode, 0, stripe.stderr)
         names = '\n'.join(m.LICENSE_NAMES) + '\n'
-        self.assertEqual(stripe.stdout, 'skills/stripe-best-practices\nskills/upgrade-stripe\n' + names)
+        self.assertEqual(stripe.stdout, 'skills/stripe-best-practices\n' + names)
         self.assertEqual(self.run_cli('--scope', '--source', 'better-auth').stdout,
                          'better-auth/best-practices\nsecurity\n' + names)
         for name in m.LICENSE_NAMES:
@@ -794,7 +794,7 @@ class RealContractTests(unittest.TestCase):
             'gha': ['skills/gha-security-review/SKILL.md', 'LICENSE'],
             'better-auth': ['better-auth/best-practices/SKILL.md', 'security/SKILL.md'],
             'postgres': ['skills/postgres-best-practices/SKILL.md', 'LICENSE'],
-            'stripe': ['skills/stripe-best-practices/SKILL.md', 'skills/upgrade-stripe/SKILL.md', 'LICENSE'],
+            'stripe': ['skills/stripe-best-practices/SKILL.md', 'LICENSE'],  # upgrade-stripe removed upstream 11/2026
             'fastify': ['skills/fastify/SKILL.md', 'LICENSE'],
         }
         for source, reads in expected.items():
