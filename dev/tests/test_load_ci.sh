@@ -13,6 +13,11 @@ DEV_LOAD=10 DEV_CORES=10 bash "$here/scripts/load-ok.sh" >/dev/null && bad "equa
 real=$(bash "$here/scripts/load-ok.sh")   # exit status depends on the machine; only the format is checked
 grep -qE '^load [0-9.]+ cores [0-9]+$' <<< "$real" && ok "real measurement prints" || bad "real measurement format: $real"
 
+# load-ok --wait: exits 0 as soon as the load is fine, 1 after the cap (no real sleeping)
+DEV_LOAD=3 DEV_CORES=10 DEV_WAIT_STEP=0 DEV_WAIT_MAX=0 bash "$here/scripts/load-ok.sh" --wait >/dev/null && ok "wait: low load returns 0" || bad "wait low"
+DEV_LOAD=30 DEV_CORES=10 DEV_WAIT_STEP=0 DEV_WAIT_MAX=0 bash "$here/scripts/load-ok.sh" --wait >/dev/null && bad "wait: high load passed" || ok "wait: capped, exit 1"
+DEV_LOAD=30 DEV_CORES=10 DEV_WAIT_STEP=1 DEV_WAIT_MAX=2 bash "$here/scripts/load-ok.sh" --wait >/dev/null && bad "wait: high load passed (2 s)" || ok "wait: polls, then exit 1"
+
 # ci-watch: gh stub answers from $STUB_DIR/answer (or fails if $STUB_DIR/fail exists)
 mkdir -p "$tmp/bin" "$tmp/stub"
 cat > "$tmp/bin/gh" <<'S'

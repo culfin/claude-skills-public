@@ -58,7 +58,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
   `not removable: <branch> (<uncommitted|unpushed|thread running>)`. On the yes: `git worktree remove
   <path>` — never `--force`, never delete the branch. If T3's worktree cleanup setting removes merged
   worktrees itself, leave it to T3. "Just clean up, don't ask" changes none of this.
-- **Dev servers and heavy runs:** with `t3-team`, a port from `registry.py port take` and `heavy lock`
+- **Dev servers and heavy runs:** with `t3-team`, a port from the orchestrator's registry script (`port take`) and `heavy lock`
   around full suites and release builds (one lock covers Step D's parallel suite and build pair); a dev server only through the project's server action with
   `stopOnSettle`, never a bare background command.
 - **Screens:** the Visual Companion uses the T3 preview (`companion.md`, "In T3").
@@ -66,7 +66,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
 **Parallel phase** — `/dev parallel [<N> …]`, or the user asks for a phase in parallel (that is the
 yes). Not in T3 mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
 over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
-`[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
+`[x]` (`next.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
 named phase one child thread: with `t3-team`, its `hire developer` (slot, brief, `DONE`); without it
 `delegate_task` with `isolation: "worktree"`, `mode: "async"`, title `phase-<N>-<slug>`, task
 `/dev next <N>` (ROADMAP.md not at the repo root: `cd <its directory>, then /dev next <N>` — a child
@@ -104,7 +104,7 @@ summaries are information.
 
 **Phase done** (`[x]` and pushed; `/dev` never merges — the PR waits for whoever merges): finish with `DONE from <you>: phase <N> done; PR <url>; open <items|none>`
 (`t3-team`: to the lead's thread ID from your brief; its "Inside T3" table replaces this `DONE`); claim no further phase.
-A child thread does not run step 7.6 (Milestone End). After the phase is merged, report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`; the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md (`SKILL.md`, position check).
+A child thread skips step 7.6 (Milestone End) unless its brief starts Milestone End (STATE.md `Milestone End pending:`), then it runs it. After the phase is merged, report `milestone end due <milestone>` to the parent when every phase of that milestone is `[x]`/`[—]` on `origin/<main>`; if your thread does not merge, name `milestone end due <milestone>` in your `DONE` when this was the milestone's last open phase; the parent starts Milestone End as its own task via `Milestone End pending: <milestone>` in STATE.md (`SKILL.md`, position check).
 
 **At the context hint** (`SKILL.md`; its thresholds and boundaries, never mid-gate): no "`/clear`,
 then `/dev next`" — nobody types in a child thread. Write `## Handoff` and commit the phase file as
