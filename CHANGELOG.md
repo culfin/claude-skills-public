@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.17.0 — 2026-11-21
+
+**dev** — Fewer tokens per phase, no gate lowered. New `next.md` holds "Pick a phase" and "State findings"; the router sends `/dev next <N>` there instead of to `commands.md`, so a phase no longer reads ~1,900 words of Status, Milestone End, Pre-Release and Debug text to reach 146 (`commands.md` keeps a one-line pointer; references in `SKILL.md`, `gate.md`, `state.md`, `state-old-format.md`, `runtime.md`, `lean.md` follow). The description's session-start trigger no longer fires in a task thread whose brief does not start with `/dev` (reviewer, design or docs threads loaded 2,600 words to print one status line). The load brake in `execution.md` was one background run, turn end and wake-up per 60-second check, up to ten per wave; `load-ok.sh --wait` now polls for up to 10 minutes in one background command (one task ID to `t3_background_wait` in T3). Hot path 7,621 → 7,620 words.
+
 ## v4.16.7 — 2026-11-21
 
 **dev** — Residual findings of the `t3-team` consistency round: `models.md` said an omitted dispatch model "inherits the costliest model", but it inherits the session model; the child-thread rule "does not run step 7.6" could be read as "never run Milestone End", although a Milestone End task is itself a child thread, so a thread whose brief starts Milestone End (`Milestone End pending:` in STATE.md) runs it and all others skip it; a child thread that ends at "phase done" without merging never reached "after the phase is merged, report", so it now names `milestone end due <milestone>` in its `DONE` when it closed the milestone's last open phase.

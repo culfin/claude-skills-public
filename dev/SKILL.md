@@ -1,6 +1,6 @@
 ---
 name: dev
-description: "Use when user says /dev, /dev next [<N>], /dev parallel, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status)."
+description: "Use when user says /dev, /dev next [<N>], /dev parallel, /dev init, /dev status, /dev skip, /dev add, /dev reorder, /dev review, /dev pause, /dev debug, /dev check, /dev ui, or /dev updates. Also use when the user asks to use dev for one of these, and at session start when ROADMAP.md exists in project root (then only a one-line status); not in a task thread whose brief does not start with `/dev`."
 ---
 
 ## Language
@@ -22,7 +22,7 @@ step needs.
 | Command or step | File | When |
 |---|---|---|
 | `/dev`, `/dev next` | this file | Session Start |
-| `/dev next <N>`; `/dev parallel [<N> …]` | `commands.md`; for `parallel` also `runtime.md` | On the command |
+| `/dev next <N>`; `/dev parallel [<N> …]` | `next.md`; for `parallel` also `runtime.md` | On the command |
 | `/dev init` | `roadmap-creation.md` | Roadmap Creation (writes and commits ROADMAP.md, STATE.md) |
 | `/dev status`, `skip`, `add`, `reorder`, `pause`, `review` (Pre-Release Review); Milestone End | `commands.md` | On the command |
 | "stop", "drop it", "cancel", "do something else" in a `[~]`/`[!]` phase | `commands.md` | Phase Interruption, at once |
@@ -55,7 +55,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
 
 1. **Sync, then read ROADMAP.md.** None in the project root: "No ROADMAP.md found. Run `/dev init` to create one." Stop. Otherwise, **before** reading it or any phase file:
    `git fetch -q` and `python3 "$DEV_DIR/scripts/state-check.py" check`; show its findings;
-   any finding → handle it per `commands.md`, "State findings" — `behind:` first, `migrate:` next.
+   any finding → handle it per `next.md`, "State findings" — `behind:` first, `migrate:` next.
    Then read ROADMAP.md.
 2. **Read the state** (`state.md`): STATE.md (missing → create its shared sections, `roadmap-creation.md` step 7) and, for a `[~]`/`[!]` phase claimed by this branch, its `.dev/phase-<N>.md` — position, handoff and checklist come only from there. No marker `<prefix>.dev/.gitkeep` on `origin/<main>` → old format for every phase (`state.md`, "Old format").
 3. **Detect tech stack** once per session: `python3 "$DEV_DIR/scripts/detect-stack.py"` (project root)
@@ -150,7 +150,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    `/dev parallel <N>` does (`runtime.md`, "Parallel phase"), report the child thread and end the run
    as coordinator. Otherwise, and on a host's `t3/…` branch, `git fetch -q && git switch -c phase-<N>-<slug> --no-track
    origin/<main>` (slug: `runtime.md`), then claim there; push it only as `git push -u origin HEAD:refs/heads/<branch>`.
-   Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `commands.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it (refspec above) if the repo has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
+   Mark phase `[~]` in ROADMAP.md with `@claim:<current branch>@<today>`. New phase: create `.dev/phase-<N>.md` with `Branch: <current branch>`, `## Position` and `Phase base: <git rev-parse HEAD>`; a `[!]` phase without one stays `[!]`, its file per `next.md`, `phase file missing:`. Takeover: replace the claim and only the `Branch:` line; `Phase base:` stays. Old format: no phase file (`state.md`). Commit them at once as `roadmap: claim Phase N` on this branch, push it (refspec above) if the repo has a remote — never a PR or commit to `<main>` for a claim: `state-check.py` reads claims from every recent branch.
 3. Resolve pre-skills: `defaults.phase-types.<@type>.pre` from the frontmatter (post-skills: `.post`); an unknown type → empty lists (reported once, "Parse phases"). Built-in phase types and `@gate:`: `gate.md`.
 4. Dispatch pre-skills as parallel Agent subagents; 4a gets their output paths and reads only relevant findings.
 

@@ -35,7 +35,7 @@ Next: Step B fix dispatch with the build error, then Step D again
 - **Branch:** line 1, the only line a takeover replaces.
 - **Position:** one line — step, next action, date; written only at a halt, pause or hand-off (between
   them commits, ledger and Gate Checklist carry it). Progress is counted from ROADMAP.md, never stored.
-- **Phase base:** `git rev-parse HEAD` at the claim, kept on a takeover; the gate diffs against it. A `[!]` claimed after its merge: base and `Phase head:` per `commands.md`.
+- **Phase base:** `git rev-parse HEAD` at the claim, kept on a takeover; the gate diffs against it. A `[!]` claimed after its merge: base and `Phase head:` per `next.md`.
 - **Domain model:** core-rule phases only (`SKILL.md` 4a): `Current:` with `file:line`, `Intended:` in the owner's words, `Confirmed: <who>, <date>`; the spec quotes it, the Spec checker reads it.
 - **Acceptance criteria:** the draft of a small phase, the requirement the Spec checker and E2E read; the last line `Criteria complete.` marks it finished (`SKILL.md`, Resume logic).
 - **Quality Gate:** read by `check-evidence.py check` without a file argument.

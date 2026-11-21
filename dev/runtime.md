@@ -66,7 +66,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
 **Parallel phase** — `/dev parallel [<N> …]`, or the user asks for a phase in parallel (that is the
 yes). Not in T3 mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)
 over the `[ ]` phases of the current milestone that no branch claims and that build on no phase not yet
-`[x]` (`commands.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
+`[x]` (`next.md`, "Pick a phase"); each phase left out gets a line with its reason. Per chosen or
 named phase one child thread: with `t3-team`, its `hire developer` (slot, brief, `DONE`); without it
 `delegate_task` with `isolation: "worktree"`, `mode: "async"`, title `phase-<N>-<slug>`, task
 `/dev next <N>` (ROADMAP.md not at the repo root: `cd <its directory>, then /dev next <N>` — a child

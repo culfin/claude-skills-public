@@ -247,8 +247,8 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("closed phase", " ".join(st.split()))
         self.assertIn("the migrating session uses the new one from its `migrate` commit on", " ".join(text("state-old-format.md").split()))
         sk = text("SKILL.md")
-        # v4: the handling of each state-check finding lives in commands.md, "State findings".
-        cm = text("commands.md")
+        # v4.17.0: the handling of each state-check finding lives in next.md, "State findings".
+        cm = text("next.md")
         self.assertIn('"State findings" — `behind:` first, `migrate:` next', sk)
         self.assertIn("`git cat-file -e origin/<main>:<prefix>.dev/.gitkeep`", cm)
         self.assertIn("Present (the project agreed) → run `migrate` for the own claim's parts without asking", cm)
@@ -324,7 +324,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("ROADMAP.md not at the repo root: `cd <its directory>, then /dev next <N>`", r)
         self.assertNotIn("workspace card", r)
         self.assertNotIn("(Status, Session Start)", r)
-        cm = " ".join(text("commands.md").split())
+        cm = " ".join(text("next.md").split())
         self.assertIn("`/dev next <N> on <branch>`", cm)
         self.assertNotIn("workspace", cm)
         step2 = " ".join(text("SKILL.md").split("2. **On `<main>`**", 1)[1].split("\n   Mark phase", 1)[0].split())
@@ -372,7 +372,7 @@ class DevDocsTests(unittest.TestCase):
         # the full override range and the companion check after a superpowers update.
         j = lambda rel: " ".join(text(rel).split())
         marker = "`<prefix>.dev/.gitkeep`"
-        for rel in ("SKILL.md", "state.md", "commands.md"):
+        for rel in ("SKILL.md", "state.md", "next.md"):
             self.assertIn(marker, j(rel), rel)
             self.assertNotIn("No `.dev/` on", j(rel), rel)
             self.assertNotIn("ls-tree -d", j(rel), rel)
@@ -383,12 +383,13 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("git rebase", completion)
         self.assertNotIn("origin/main", text("SKILL.md"))
         self.assertIn("git show origin/<main>:<prefix>ROADMAP.md", completion)
-        c = j("commands.md")
+        c = j("next.md")
         self.assertIn("not pushed → `git rebase origin/<main>`, pushed → `git merge origin/<main>`; never a force-push", c)
         # first migration reaches <main> without the working branch's claim or phase file
         self.assertIn("run `state-check.py migrate` on a fresh branch from `origin/<main>`", c)
         self.assertIn("no claim there, so no phase file reaches `<main>`", c)
         self.assertNotIn("cherry-pick", c)
+        c = j("commands.md")
         self.assertIn("SHAs in the gate files of all milestones since the last release tag", c)
         self.assertIn("`- CI: none`", c)
         self.assertIn("`- CI: none`", j("ci.md"))
@@ -436,7 +437,7 @@ class DevDocsTests(unittest.TestCase):
     def test_pick_and_parallel_phase(self):
         # /dev next <N> and /dev parallel: RED 2 of 2 without them (no rule; handoff without --branch,
         # ambiguous "/dev next — Phase N" prompt, race for the first free phase).
-        pick = text("commands.md").split("## Pick a phase", 1)[1].split("\n---", 1)[0]
+        pick = text("next.md").split("## Pick a phase", 1)[1].split("\n---", 1)[0]
         for needle in ("`/dev next <N>`", "Claimed by another branch", "Builds on a phase not yet `[x]`",
                        "The run ends after Phase N"):
             self.assertIn(needle, pick)
@@ -617,8 +618,25 @@ class DevDocsTests(unittest.TestCase):
         self.assertEqual(refs, ["SKILL.md"])
         self.assertEqual(text("SKILL.md").count("lean.md"), 1)
         self.assertIn("`defaults.flow: lean`", text("commands.md"))
-        # The pilot must not cost the hot path: 7621 words before v4.15.0.
-        self.assertLessEqual(sum(len(text(f).split()) for f in hot), 7621)
+        # The pilot must not cost the hot path: 7621 words before v4.15.0, 7620 since v4.17.0.
+        self.assertLessEqual(sum(len(text(f).split()) for f in hot), 7620)
+
+    def test_next_split_load_brake_and_trigger(self):
+        # v4.17.0 RED: every `/dev next <N>` read all of commands.md (~1900 dead words); the description
+        # fired in reviewer/design task threads; the load brake woke the developer up to 10 times.
+        sk = text("SKILL.md")
+        self.assertIn("| `/dev next <N>`; `/dev parallel [<N> …]` | `next.md`;", sk)
+        nx = text("next.md")
+        for sec in ("## Pick a phase", "## State findings"):
+            self.assertIn(sec, nx)
+            self.assertNotIn(sec + "\n\n**", text("commands.md"))
+            self.assertNotIn(sec + "\n\nSession", text("commands.md"))
+        self.assertIn("In `next.md`.", text("commands.md"))
+        self.assertIn("not in a task thread whose brief does not start with `/dev`", sk.split("---", 2)[1])
+        ex = " ".join(text("execution.md").split())
+        self.assertIn('one background `bash "$DEV_DIR/scripts/load-ok.sh" --wait`', ex)
+        self.assertIn("task ID to `t3_background_wait`", ex)
+        self.assertNotIn("wait 60 s in the background", ex)
 
     def test_codex_builder_in_lean(self):
         # v4.16.0 RED: lean.md was not read in 4c and named no way for Codex to build, so a lean

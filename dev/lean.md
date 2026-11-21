@@ -1,7 +1,7 @@
 # Lean flow — pilot
 
 Read only when the ROADMAP.md frontmatter sets `defaults.flow: lean`; without it this file does not
-apply. It adds to `SKILL.md` and `commands.md`; everything not named here runs as usual (claim,
+apply. It adds to `SKILL.md`, `commands.md` and `next.md`; everything not named here runs as usual (claim,
 branch, phase file, gate, PR). Under `t3-team`, its approval (`docs/team.md` `Flow: lean`) is also required.
 
 ```yaml

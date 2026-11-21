@@ -24,7 +24,7 @@ python3 "$DEV_DIR/scripts/gate-tier.py" --base <phase base> --type <@type> --tas
 ```
 
 `<phase base>` is the phase file's `Phase base:` line; a CI repair never changes it (none recorded →
-the parent of its `roadmap: claim` commit; a `Phase head:` line: `commands.md`). `*.md` files count only towards sensitive paths,
+the parent of its `roadmap: claim` commit; a `Phase head:` line: `next.md`). `*.md` files count only towards sensitive paths,
 not size. Line 1 is `small` or `large`, the `- …` lines are the reasons; copy both into the checklist
 header. Exit 2 means git failed — fix the base ref, never guess a tier. `@gate: full` forces large (`--gate full`).
 
