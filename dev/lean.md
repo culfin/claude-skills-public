@@ -2,7 +2,7 @@
 
 Read only when the ROADMAP.md frontmatter sets `defaults.flow: lean`; without it this file does not
 apply. It adds to `SKILL.md` and `commands.md`; everything not named here runs as usual (claim,
-branch, phase file, gate, PR).
+branch, phase file, gate, PR). Under `t3-team`, its approval (`docs/team.md` `Flow: lean`) is also required.
 
 ```yaml
 defaults:
@@ -59,7 +59,7 @@ for any phase (`gate.md`). The builder writes a test per criterion first, named 
 - **After step 7 the run ends** with "Phase N done — `/clear`, then `/dev next`" (child thread:
   report done to the parent, `runtime.md`). The next phase starts in a fresh context with the phase
   file, its criteria and `Decisions:` line, not in this session's history.
-- `/dev parallel` and the T3 coordinator start one child thread per phase, as before.
+- `/dev parallel` and the lead start one child thread per phase, as before.
 
 ## Builder: Codex
 

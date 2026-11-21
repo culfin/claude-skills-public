@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.16.6 — 2026-11-21
+
+**dev** — Consistency with the `t3-team` task-thread flow: `lean.md` now says that under `t3-team` its `Flow: lean` approval is also required, and drops the stale "T3 coordinator"; a child thread skips step 7.6 (Milestone End) and reports `milestone end due <milestone>` to the parent once the phase is merged and every phase of the milestone is done on the default branch (the parent then starts Milestone End as its own task via `Milestone End pending:` in STATE.md), because it would otherwise wait for foreign CI, run full scans and put archive commits into a phase PR; `Decisions:` entries name who decided, so a lead's own decision is not recorded as the owner's approval; the `DONE` line goes to the lead's thread ID from the brief (there are no team threads any more); one heavy lock covers Step D's parallel suite and build pair; `models.md` ties the tiers to the host family (cheap = haiku, standard = sonnet, capable = opus).
+
 ## v4.16.5 — 2026-11-20
 
 **dev** — `codex-build.sh --roadmap` could point at an untracked or ignored file saying `builder: codex` and so grant Codex write rights without an opt-in; the basename must now be `ROADMAP.md`, and the opt-in is read from the file as committed at `--head` (via `git show`), never from the working tree; paths under `.git` are refused.
