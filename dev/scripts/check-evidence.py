@@ -179,6 +179,30 @@ def skipped(state_file, repair=False):
     return out
 
 
+def summary_problems(state_file):
+    """The gate summary (docs/gates/phase-<N>.md beside .dev/) counts every critical once (gate.md, Gate summary):
+    `Found: <N> critical` equals the entries of `Criticals:`, and each `untested` criterion is a Spec checker one."""
+    state_file = Path(state_file)
+    m = re.fullmatch(r"phase-(.+)\.md", state_file.name)
+    gate = state_file.parent.parent / "docs" / "gates" / state_file.name if m and state_file.parent.name == ".dev" else None
+    if gate is None or not gate.is_file():
+        return []
+    lines = {k: v for k, v in re.findall(r"^- (Found|Criticals|Criteria): (.*)$", gate.read_text(encoding="utf-8"), re.M)}
+    if "Criticals" not in lines:  # a summary from before v4.18.0
+        return []
+    entries = [] if lines["Criticals"].strip().lower() == "none" else [e for e in lines["Criticals"].split(";") if e.strip()]
+    found = re.match(r"\s*(\d+)\s+critical", lines.get("Found", ""))
+    problems = []
+    if found and int(found.group(1)) != len(entries):
+        problems.append(f"gate summary {gate.name}: Found says {found.group(1)} critical, Criticals lists {len(entries)}")
+    untested = len(re.findall(r"\buntested\b", lines.get("Criteria", "")))
+    spec = sum(1 for e in entries if e.strip().lower().startswith("spec checker"))
+    if untested > spec:
+        problems.append(f"gate summary {gate.name}: {untested} criteria untested but {spec} Spec checker criticals — "
+                        "an untested criterion is a critical (d), never a note")
+    return problems
+
+
 def check(root, state_file, before_commit=False, repair=False):
     items = gate_items(Path(state_file).read_text(encoding="utf-8"), repair)
     if items is None:
@@ -225,7 +249,7 @@ def check(root, state_file, before_commit=False, repair=False):
             if fix_current and name.lower().startswith(REVIEW_ITEMS):
                 continue
             problems.append(f"stale: {name} was checked on @{tag.group(1)}, the code is now @{current} — rerun it")
-    return problems
+    return problems + summary_problems(state_file)
 
 
 def main():

@@ -44,6 +44,35 @@ class EvidenceTests(unittest.TestCase):
     def sid(self):
         return ce.state_id(self.root)
 
+    def summary(self, found, criticals, criteria="C1 met (t1)"):
+        (self.root / ".dev").mkdir(exist_ok=True)
+        (self.root / "docs" / "gates").mkdir(parents=True, exist_ok=True)
+        phase = self.root / ".dev" / "phase-31.md"
+        phase.write_text(f"# Phase 31\n\n## Quality Gate — Phase 31: x\n- [x] Diff review — 0 critical @{self.sid()}\n")
+        (self.root / "docs" / "gates" / "phase-31.md").write_text(
+            f"## Gate summary — Phase 31: x\n- Tier: small — 3 files\n- Found: {found}\n- Criteria: {criteria}\n"
+            f"- Criticals: {criticals}\n")
+        return phase
+
+    def test_gate_summary_counts_every_critical(self):
+        # v4.18.0 RED: 174 gate summaries; Spec checker test gaps were often written as "0 critical" or notes.
+        ok = self.summary("2 critical + 1 notes (Diff review: 1, Spec checker: 1)",
+                          "Diff review — race in save; Spec checker — C2 untested",
+                          "C1 met (t1); C2 untested → test added")
+        self.assertEqual(ce.summary_problems(ok), [])
+        short = self.summary("1 critical + 0 notes", "Diff review — race in save; Spec checker — C2 untested")
+        self.assertTrue(any("Found says 1 critical, Criticals lists 2" in p for p in ce.summary_problems(short)))
+        gap = self.summary("0 critical + 1 notes (Spec checker: test gap as note)", "none",
+                           "C1 met (t1); C2 untested → test added")
+        self.assertTrue(any("untested" in p and "Spec checker" in p for p in ce.summary_problems(gap)))
+        self.assertTrue(any("gate summary" in p for p in ce.check(self.root, gap)))
+
+    def test_old_gate_summary_without_criticals_line_is_not_checked(self):
+        phase = self.summary("0 critical", "none")
+        g = self.root / "docs" / "gates" / "phase-31.md"
+        g.write_text("\n".join(l for l in g.read_text().splitlines() if not l.startswith("- Criticals:")) + "\n")
+        self.assertEqual(ce.summary_problems(phase), [])
+
     def test_all_checked_with_current_id_passes(self):
         i = self.sid()
         self.state([f"- [x] Diff review — 0 critical @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
