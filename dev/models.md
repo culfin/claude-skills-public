@@ -5,15 +5,9 @@
 | Role | Tier |
 |---|---|
 | Implementer | **cheap** when the plan carries the code (transcription), **standard** when the task needs judgement |
-| Task review (per task, planned phases only) | **standard** |
-| Diff review (gate Step A) | **standard** |
-| Spec checker | **standard** |
+| Task review, Diff review, Spec checker, Fix review, Similar-bugs scan, Performance review, Tech-Stack Review, Accessibility review, UX review, Polish review; `/dev ui`: Design detector, Motion review, density critique | **standard** |
 | Security review (phase or full scope) | **capable** |
-| Performance review, Tech-Stack Review | **standard** |
-| Accessibility review, Design detector, Motion review, UX review, Polish review, density critique | **standard** |
 | Fix agent (gate Steps B and D) | **standard**; **capable** from round 3 |
-| Fix review (gate Step B) | **standard** |
-| Similar-bugs scan (gate Step C) | **standard** |
 | Second opinion (gate, `codex-review.sh`) | Codex's default |
 | Taste subagent (4a landing digest, Taste pre-flight, `/dev ui`), impeccable subagent (pre-release audit/polish) | **standard** |
 | Configured skills (pre/post-phase, milestone start, pre-release) | **standard** unless the skill says otherwise |

@@ -34,7 +34,7 @@ gate.md rebuilds such a checklist on resume.
 
 A check whose optional source or tool is missing is closed visibly instead (gate.md):
 
-    - [x] Design detector — skipped: engine not built
+    - [x] Polish review — skipped: vibepolish not installed
 
 Such an item is closed, needs no `@<state>`, and is printed as `skipped: <item> — <reason>` — it
 is never reported as passed. Only the checks in SKIPPABLE may be skipped this way.
@@ -85,13 +85,14 @@ SKIP = re.compile(r"^skipped:\s*(.*)$", re.I)
 COUNTED = ("typecheck + lint + tests", "e2e tests")
 COUNT = re.compile(r"\b(\d+)\s+(?:tests?\s+)?passed\b", re.I)
 NO_TESTS = re.compile(r"\bno tests configured\b", re.I)
-SKIPPABLE = ("design detector", "motion review", "taste pre-flight", "ux review", "polish review",
+# Design detector and Motion review left the gate in v4.18.0; checklists written before still list them.
+LEGACY = ("design detector", "motion review")
+SKIPPABLE = LEGACY + ("taste pre-flight", "ux review", "polish review",
              "tech-stack review", "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
 # Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
-REVIEW_ITEMS = ("diff review", "spec checker", "security review", "tech-stack review",
-                "performance review", "accessibility review", "design detector", "motion review",
-                "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
+REVIEW_ITEMS = LEGACY + ("diff review", "spec checker", "security review", "tech-stack review",
+                "performance review", "accessibility review", "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
 
 
 def state_id(root):
@@ -180,6 +181,31 @@ def skipped(state_file, repair=False):
     return out
 
 
+def summary_problems(state_file):
+    """The gate summary (docs/gates/phase-<N>.md beside .dev/) counts every critical once (gate.md, Gate summary):
+    `Found: <N> critical` equals the entries of `Criticals:`, and each `untested` criterion is a Spec checker one."""
+    state_file = Path(state_file)
+    m = re.fullmatch(r"phase-(.+)\.md", state_file.name)
+    gate = state_file.parent.parent / "docs" / "gates" / state_file.name if m and state_file.parent.name == ".dev" else None
+    if gate is None or not gate.is_file():
+        return []
+    lines = {k: v for k, v in re.findall(r"^- (Found|Criticals|Criteria): (.*)$", gate.read_text(encoding="utf-8"), re.M)}
+    if "Criticals" not in lines:  # a summary from before v4.18.0
+        return []
+    crit = lines["Criticals"].strip()
+    entries = [] if re.match(r"none\b", crit, re.I) else [e for e in re.split(r";\s+(?=[^;]*—)", crit) if e.strip()]
+    found = re.match(r"\s*(\d+)\s+critical", lines.get("Found", ""))
+    problems = []
+    if found and int(found.group(1)) != len(entries):
+        problems.append(f"gate summary {gate.name}: Found says {found.group(1)} critical, Criticals lists {len(entries)}")
+    untested = len(re.findall(r"\buntested\b", lines.get("Criteria", "")))
+    spec = sum(1 for e in entries if e.strip().lower().startswith("spec checker"))
+    if untested > spec:
+        problems.append(f"gate summary {gate.name}: {untested} criteria untested but {spec} Spec checker criticals — "
+                        "an untested criterion is a critical (d), never a note")
+    return problems
+
+
 def check(root, state_file, before_commit=False, repair=False):
     items = gate_items(Path(state_file).read_text(encoding="utf-8"), repair)
     if items is None:
@@ -226,7 +252,7 @@ def check(root, state_file, before_commit=False, repair=False):
             if fix_current and name.lower().startswith(REVIEW_ITEMS):
                 continue
             problems.append(f"stale: {name} was checked on @{tag.group(1)}, the code is now @{current} — rerun it")
-    return problems
+    return problems + summary_problems(state_file)
 
 
 def main():

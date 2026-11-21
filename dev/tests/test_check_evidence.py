@@ -44,6 +44,53 @@ class EvidenceTests(unittest.TestCase):
     def sid(self):
         return ce.state_id(self.root)
 
+    def summary(self, found, criticals, criteria="C1 met (t1)"):
+        (self.root / ".dev").mkdir(exist_ok=True)
+        (self.root / "docs" / "gates").mkdir(parents=True, exist_ok=True)
+        phase = self.root / ".dev" / "phase-31.md"
+        phase.write_text(f"# Phase 31\n\n## Quality Gate — Phase 31: x\n- [x] Diff review — 0 critical @{self.sid()}\n")
+        (self.root / "docs" / "gates" / "phase-31.md").write_text(
+            f"## Gate summary — Phase 31: x\n- Tier: small — 3 files\n- Found: {found}\n- Criteria: {criteria}\n"
+            f"- Criticals: {criticals}\n")
+        return phase
+
+    def test_gate_summary_counts_every_critical(self):
+        # v4.18.0 RED: 174 gate summaries; Spec checker test gaps were often written as "0 critical" or notes.
+        ok = self.summary("2 critical + 1 notes (Diff review: 1, Spec checker: 1)",
+                          "Diff review — race in save; Spec checker — C2 untested",
+                          "C1 met (t1); C2 untested → test added")
+        self.assertEqual(ce.summary_problems(ok), [])
+        short = self.summary("1 critical + 0 notes", "Diff review — race in save; Spec checker — C2 untested")
+        self.assertTrue(any("Found says 1 critical, Criticals lists 2" in p for p in ce.summary_problems(short)))
+        gap = self.summary("0 critical + 1 notes (Spec checker: test gap as note)", "none",
+                           "C1 met (t1); C2 untested → test added")
+        self.assertTrue(any("untested" in p and "Spec checker" in p for p in ce.summary_problems(gap)))
+        self.assertTrue(any("gate summary" in p for p in ce.check(self.root, gap)))
+
+    def test_gate_summary_entries_split_only_between_findings(self):
+        # Final review: a `;` inside an entry or "None — 0" were miscounted.
+        semi = self.summary("1 critical + 0 notes", "Diff review — save() drops rows; see a.py:3; b.py:4")
+        self.assertEqual(ce.summary_problems(semi), [])
+        none = self.summary("0 critical + 2 notes", "None — 0 criticals")
+        self.assertEqual(ce.summary_problems(none), [])
+        step_d = self.summary("2 critical (Step D too) + 0 notes", "Diff review — race; Step D — e2e red on login")
+        self.assertEqual(ce.summary_problems(step_d), [])
+
+    def test_legacy_design_and_motion_items_still_close(self):
+        # v4.18.0 removed both from the gate; checklists written before keep them and must still pass.
+        i = self.sid()
+        self.state([f"- [x] Diff review — 0 critical @{i}",
+                    "- [x] Design detector — skipped: engine not built",
+                    "- [x] Motion review — 0 critical @0123456789ab",
+                    f"- [x] Fix review — 0 critical @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_old_gate_summary_without_criticals_line_is_not_checked(self):
+        phase = self.summary("0 critical", "none")
+        g = self.root / "docs" / "gates" / "phase-31.md"
+        g.write_text("\n".join(l for l in g.read_text().splitlines() if not l.startswith("- Criticals:")) + "\n")
+        self.assertEqual(ce.summary_problems(phase), [])
+
     def test_all_checked_with_current_id_passes(self):
         i = self.sid()
         self.state([f"- [x] Diff review — 0 critical @{i}", f"- [x] Typecheck + lint + tests — 412 passed @{i}"])
@@ -201,19 +248,19 @@ class EvidenceTests(unittest.TestCase):
     def test_skipped_optional_check_is_closed_and_reported_as_skipped(self):
         i = self.sid()
         self.state([f"- [x] Diff review — 0 critical @{i}",
-                    "- [x] Design detector — skipped: engine not built",
-                    f"- [x] Motion review — skipped: animation standards not found @{i}",
+                    "- [x] Polish review — skipped: vibepolish not installed",
+                    f"- [x] UX review — skipped: ux-ui-design not installed @{i}",
                     "- [x] Tech-Stack Review: shadcn — skipped: skill not installed",
                     "- [x] Second opinion: codex diff — skipped: quota-exhausted"])
         self.assertEqual(self.run_check(), [])
         self.assertEqual(ce.skipped(self.root / "STATE.md"),
-                         [("Design detector", "engine not built"),
-                          ("Motion review", "animation standards not found"),
+                         [("Polish review", "vibepolish not installed"),
+                          ("UX review", "ux-ui-design not installed"),
                           ("Tech-Stack Review: shadcn", "skill not installed"),
                           ("Second opinion: codex diff", "quota-exhausted")])
 
     def test_skipped_item_survives_a_later_code_change(self):
-        self.state(["- [x] Design detector — skipped: engine not built"])
+        self.state(["- [x] Polish review — skipped: vibepolish not installed"])
         (self.root / "a.txt").write_text("three\n")
         self.assertEqual(self.run_check(), [])
 
@@ -225,20 +272,20 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(ce.skipped(self.root / "STATE.md"), [])
 
     def test_skip_without_reason_is_reported(self):
-        self.state(["- [x] Design detector — skipped:"])
+        self.state(["- [x] Polish review — skipped:"])
         self.assertIn("no reason", self.run_check()[0])
 
     def test_open_skipped_item_still_blocks(self):
-        self.state(["- [ ] Design detector — skipped: engine not built"])
+        self.state(["- [ ] Polish review — skipped: vibepolish not installed"])
         self.assertIn("open", self.run_check()[0])
 
     def test_cli_prints_skipped_not_passed(self):
         self.state([f"- [x] Diff review — 0 critical @{self.sid()}",
-                    "- [x] Design detector — skipped: engine not built"])
+                    "- [x] Polish review — skipped: vibepolish not installed"])
         run = subprocess.run(["python3", str(HERE.parent / "scripts" / "check-evidence.py"), "check", "STATE.md"],
                              cwd=self.root, capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertIn("skipped: Design detector — engine not built", run.stdout)
+        self.assertIn("skipped: Polish review — vibepolish not installed", run.stdout)
         self.assertIn("1 skipped, not passed", run.stdout)
 
     def test_ux_and_polish_review_can_be_skipped(self):
@@ -260,7 +307,7 @@ class EvidenceTests(unittest.TestCase):
         items = [line.split("]", 1)[1].split("<!--")[0].strip().lower()
                  for line in step_a.splitlines() if line.startswith("- [ ]")]
         items = ["tech-stack review" if i.startswith("tech-stack review") else i for i in items]
-        self.assertEqual(sorted(set(items)), sorted(ce.REVIEW_ITEMS))
+        self.assertEqual(sorted(set(items)), sorted(set(ce.REVIEW_ITEMS) - set(ce.LEGACY)))
 
     def test_full_run_in_ci_is_valid_test_evidence(self):
         i = self.sid()

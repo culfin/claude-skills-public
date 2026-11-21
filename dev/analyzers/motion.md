@@ -16,8 +16,8 @@ do not work from memory:**
 $DEV_DESIGN_DIR/emil/skills/review-animations/STANDARDS.md   (default DEV_DESIGN_DIR=~/.claude/dev-design)
 ```
 
-If the file is missing, stop and return `Result: skipped: animation standards not found` — the gate
-ticks the checkbox with evidence `skipped: <reason>`, never as a pass. Cite the standard's values (curves,
+If the file is missing, stop and return `Result: skipped: animation standards not found` — `/dev ui`
+reports it as `skipped: <reason>`, never as a pass. Cite the standard's values (curves,
 durations, frequency table) in findings instead of approximating them.
 
 ## Sweep
