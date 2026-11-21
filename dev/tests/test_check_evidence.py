@@ -67,6 +67,15 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(any("untested" in p and "Spec checker" in p for p in ce.summary_problems(gap)))
         self.assertTrue(any("gate summary" in p for p in ce.check(self.root, gap)))
 
+    def test_gate_summary_entries_split_only_between_findings(self):
+        # Final review: a `;` inside an entry or "None — 0" were miscounted.
+        semi = self.summary("1 critical + 0 notes", "Diff review — save() drops rows; see a.py:3; b.py:4")
+        self.assertEqual(ce.summary_problems(semi), [])
+        none = self.summary("0 critical + 2 notes", "None — 0 criticals")
+        self.assertEqual(ce.summary_problems(none), [])
+        step_d = self.summary("2 critical (Step D too) + 0 notes", "Diff review — race; Step D — e2e red on login")
+        self.assertEqual(ce.summary_problems(step_d), [])
+
     def test_old_gate_summary_without_criticals_line_is_not_checked(self):
         phase = self.summary("0 critical", "none")
         g = self.root / "docs" / "gates" / "phase-31.md"

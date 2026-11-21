@@ -482,9 +482,10 @@ class DevDocsTests(unittest.TestCase):
 
     def test_codex_host_gets_a_claude_second_opinion(self):
         gate = text("gate.md")
-        self.assertIn("On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input; "
+        self.assertIn("On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; "
                       "evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`.", " ".join(gate.split()))
         self.assertNotIn("Exit 3 → `skipped: <fallback reason>`", gate)
+        self.assertIn("Fix review (not a test-patches-only one) gets its Second opinion item", " ".join(gate.split()))
 
     def test_small_fixes_v4_11_1(self):
         # Review of 15.11.2026: contradictions and stale spots found in gate records and texts.
@@ -677,10 +678,9 @@ class DevDocsTests(unittest.TestCase):
                       "at 390 and 1440 px, plus the longest-label language; not startable → \"judged from code\".", g)
         self.assertIn("**Effect probe** (Spec checker) — for at most 2 criteria `met` by an existing test, "
                       "security- or contract-critical ones first", g)
-        self.assertIn("- **Only (d) findings with their proven patches:** apply them yourself (`git apply`), run those "
-                      "tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch, other review "
-                      "or second opinion.", g)
-        self.assertIn("- Criticals: <finder — what, one per finding (Codex alone, Step D, CI, acceptance too) | none>", g)
+        self.assertIn("- **Only (d) findings with their proven patches:** apply them (`git apply`), run those "
+                      "tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch or other review.", g)
+        self.assertIn("- Criticals: <finder — what; finder — what (Codex alone, Step D too) | none>", g)
 
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.

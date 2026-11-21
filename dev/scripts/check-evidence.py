@@ -190,7 +190,8 @@ def summary_problems(state_file):
     lines = {k: v for k, v in re.findall(r"^- (Found|Criticals|Criteria): (.*)$", gate.read_text(encoding="utf-8"), re.M)}
     if "Criticals" not in lines:  # a summary from before v4.18.0
         return []
-    entries = [] if lines["Criticals"].strip().lower() == "none" else [e for e in lines["Criticals"].split(";") if e.strip()]
+    crit = lines["Criticals"].strip()
+    entries = [] if re.match(r"none\b", crit, re.I) else [e for e in re.split(r";\s+(?=[^;]*—)", crit) if e.strip()]
     found = re.match(r"\s*(\d+)\s+critical", lines.get("Found", ""))
     problems = []
     if found and int(found.group(1)) != len(entries):

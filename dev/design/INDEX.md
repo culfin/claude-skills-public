@@ -8,7 +8,8 @@ source listed under `$DEV_DESIGN_DIR` is missing on disk, the step reports
 "skipped", never a silent success. Files marked `subagent` are large and are
 delegated rather than read inline. `run` marks an analyzer document
 (`analyzers/…`) whose subagent runs a script instead of reading a guideline —
-the document says which script and how a missing engine is reported.
+the document says which script and how a missing engine is reported. A `ui:` trigger is `/dev ui`'s
+(`ui-review.md`), never 4a, 4c or the gate.
 
 | Trigger | Load | How |
 |---|---|---|

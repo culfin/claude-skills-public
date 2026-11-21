@@ -109,8 +109,8 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 ## Step A — Review wave
 
 Dispatch every Step A item **in one message** as parallel Agent subagents ("Analyzer
-dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows tagged `5c` (`--triggers --step gate`,
-`design/INDEX.md`) belong to this wave, `5g` to E2E.
+dispatch" below). Record the wave's `@state` — Step B diffs against it. Rows tagged `5c` (`--triggers --step gate`)
+belong to this wave, `5g` to E2E.
 
 | Item | Analyzer / source | When |
 |---|---|---|
@@ -138,13 +138,13 @@ finding without file:line, quoted line and failing input is an open question, no
 checker and Second opinion too.
 
 **Codex** — with ROADMAP frontmatter `defaults.second-opinion: codex`, on every host, each run
-of Diff review or Fix review gets its Second opinion item (role `diff`, `fix`; Similar-bugs scan gets
+of Diff review or Fix review (not a test-patches-only one) gets its Second opinion item (role `diff`, `fix`; Similar-bugs scan gets
 none), run in the background:
 `bash "$DEV_DIR/scripts/codex-review.sh" --role <role> --prompt <file> --input <file> --head <HEAD sha> --out <file>`.
 `--prompt`: the Claude item's prompt; `--input`: its diff file plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
-or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input; evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
+or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers
@@ -166,14 +166,14 @@ existing test, security- or contract-critical ones first: name that test, break 
 value), run only that test, restore. Still green → critical, the test cannot fail; no named red
 test → invalid, not passed.
 
-**Timeouts.** A subagent still running after 15 minutes is cancelled and restarted once, if
-useful with the scope split in two. Still no report → its item stays open with "timeout", the phase
+**Timeouts.** A subagent still running after 15 minutes is cancelled and restarted once, its scope
+split if useful. Still no report → its item stays open with "timeout", the phase
 stays `[!]`; Step D may go on. Only an independent substitute counts (another subagent with the
 same analyzer file, or an equivalent tool the project uses), never the implementer on its own change.
 
 ## Step B — Fix
 
-- **Only (d) findings with their proven patches:** apply them yourself (`git apply`), run those tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch, other review or second opinion.
+- **Only (d) findings with their proven patches:** apply them (`git apply`), run those tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch or other review.
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`) with the Spec
   checker's test patches — one agent sees how fixes interact; it follows `receiving-code-review`.
   Lowering the floor (skipping a test, loosening a check) is not a fix. When the cause of a finding
@@ -218,11 +218,11 @@ Permanent, in `docs/gates/phase-<N>.md` before the gate commit (old format: STAT
 ```markdown
 ## Gate summary — Phase N: <Name>
 - Tier: small|large — <first reason>
-- Found: <N critical + M notes> (Diff review: X, Spec checker: Y, security: W)
+- Found: <N critical (Step D too) + M notes> (Diff review: X, Spec checker: Y, security: W)
 - Fixed: <what was fixed, in one sentence>
 - Tests: <Spec checker N gaps, tests red→green proven | no gaps>
 - Criteria: <C1 met (<test>); C2 untested → test added; …>; effect probe: <C2 red | none>
-- Criticals: <finder — what, one per finding (Codex alone, Step D, CI, acceptance too) | none>
+- Criticals: <finder — what; finder — what (Codex alone, Step D too) | none>
 - Skipped checks: <none | check — reason, one per skipped item>
 - Known pre-existing failures: <none | test, evidence it fails on the base, follow-up>
 ```
