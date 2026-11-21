@@ -78,7 +78,7 @@ def test_skipped_check_rule_is_the_same_everywhere():
     """A check whose optional source is missing is ticked as `skipped: <reason>`, listed in the
     summary, never a pass and never left open — gate, contract, triggers, /dev ui and the script agree."""
     gate = (DEV / "gate.md").read_text()
-    assert "- [x] Design detector — skipped: engine not built" in gate
+    assert "- [x] Polish review — skipped: vibepolish not installed" in gate
     assert "- Skipped checks:" in gate
     assert "- [ ] Taste pre-flight" in gate
     for name in ("gate.md", "analyzers/CONTRACT.md", "tech-stack-triggers.md", "ui-review.md"):
@@ -90,7 +90,7 @@ def test_skipped_check_rule_is_the_same_everywhere():
     assert "Skipped checks" in (DEV / "tech-stack-triggers.md").read_text()
     assert 'never "no findings"' in (DEV / "ui-review.md").read_text()
     script = (DEV / "scripts/check-evidence.py").read_text()
-    for check in ("design detector", "motion review", "taste pre-flight", "tech-stack review"):
+    for check in ("taste pre-flight", "polish review", "tech-stack review"):
         assert f'"{check}"' in script, check
         assert check in gate.lower(), check
 

@@ -21,6 +21,9 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 0
 fi
 interval="${DEV_CI_INTERVAL:-60}"; none_after="${DEV_CI_NONE_AFTER:-900}"; max="${DEV_CI_MAX:-5400}"
+# Green counts only when the same runs are still all green one settle period later: a workflow_run
+# chain (deploy -> e2e) starts its next run only after the first one completed.
+settle="${DEV_CI_SETTLE:-120}"; seen=""
 mkdir -p "$(dirname "$out")"
 put(){ printf '%s\n' "$1" > "$out.tmp" && mv "$out.tmp" "$out"; }
 put pending
@@ -43,7 +46,11 @@ while :; do
             (( SECONDS - start >= none_after )) && { put none; exit 0; }
         elif [[ $(jq '[.[] | select(.status != "completed")] | length' <<< "$json") -eq 0 ]]; then
             bad=$(jq -r '[.[] | select(.conclusion != "success") | "\(.name)=\(.conclusion)"] | join(" ")' <<< "$json")
-            [[ -z "$bad" ]] && { put "green $(jq -r '[.[].databaseId] | join(" ")' <<< "$json")${via:+ via $via}"; exit 0; }
+            if [[ -z "$bad" ]]; then
+                ids=$(jq -r '[.[].databaseId] | join(" ")' <<< "$json")
+                [[ "$ids" == "$seen" ]] && { put "green $ids${via:+ via $via}"; exit 0; }
+                seen=$ids; sleep "$settle"; continue
+            fi
             other=$(jq '[.[] | select(.conclusion != "success" and .conclusion != "cancelled")] | length' <<< "$json")
             if [[ "$other" -ne 0 || -z "$branch" ]]; then put "red $bad${via:+ via $via}"; exit 0; fi
             if successor; then

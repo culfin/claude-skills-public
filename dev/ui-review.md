@@ -44,8 +44,8 @@ Load only the `design/INDEX.md` rows that match the scope — never the whole in
 | forms | "4a ui: forms" | density subagent |
 | empty/loading/error views | "4a ui: error, empty, loading states" | density subagent |
 | visible copy | "4a ui/landing: copy in drafts" | density subagent |
-| web UI files | "5c web UI changed" (design detector, `run`) | design-detector subagent |
-| animation (unsure → run `motion.md`'s sweep probes to decide) | "5c motion changed" | motion subagent |
+| web UI files | "ui: web UI changed" (design detector, `run`) | design-detector subagent |
+| animation (unsure → run `motion.md`'s sweep probes to decide) | "ui: motion changed" | motion subagent |
 | kind `landing` | "4a landing" (taste, `subagent`) | taste subagent |
 | `ux-ui-design` available | none — the forms, states and copy rows are then not loaded | ux subagent |
 

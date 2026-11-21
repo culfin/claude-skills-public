@@ -26,7 +26,7 @@ cat > "$tmp/bin/gh" <<'S'
 cat "$STUB_DIR/answer"
 S
 chmod +x "$tmp/bin/gh"
-watch(){ PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
+watch(){ PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
          bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status"; cat "$tmp/status"; }
 
 echo '[{"databaseId":1,"status":"completed","conclusion":"success","name":"ci"},{"databaseId":2,"status":"completed","conclusion":"success","name":"e2e"}]' > "$tmp/stub/answer"
@@ -36,11 +36,11 @@ echo '[{"databaseId":1,"status":"completed","conclusion":"success","name":"ci"},
 echo '[]' > "$tmp/stub/answer"
 [[ "$(watch)" == "none" ]] && ok "no run -> none" || bad "none: $(cat "$tmp/status")"
 echo '[{"databaseId":1,"status":"in_progress","conclusion":"","name":"ci"}]' > "$tmp/stub/answer"
-PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=99 DEV_CI_MAX=1 \
+PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=99 DEV_CI_MAX=1 \
   bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status"
 [[ "$(cat "$tmp/status")" == "timeout" ]] && ok "running too long -> timeout" || bad "timeout: $(cat "$tmp/status")"
 touch "$tmp/stub/fail"
-PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
+PATH="$tmp/bin:$PATH" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
   bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status"
 [[ "$(cat "$tmp/status")" == "timeout" ]] && ok "gh error is never none/green" || bad "gh error: $(cat "$tmp/status")"
 
@@ -64,7 +64,7 @@ cat "$STUB_DIR/commit-$c" 2>/dev/null || echo '[]'
 S
 chmod +x "$tmp/bin2/gh"
 follow(){ ( cd "$repo" && PATH="$tmp/bin2:$PATH" STUB_DIR="$tmp/stub2" DEV_CI_BRANCH=main DEV_CI_INTERVAL=0 \
-            DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "$A" "$tmp/status2" ); cat "$tmp/status2"; }
+            DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "$A" "$tmp/status2" ); cat "$tmp/status2"; }
 run(){ printf '{"headSha":"%s","databaseId":%s,"status":"completed","conclusion":"%s","name":"ci"}' "$1" "$2" "$3"; }
 echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/commit-$A"
 echo "[$(run "$B" 456 success)]" > "$tmp/stub2/commit-$B"
@@ -91,7 +91,7 @@ echo "[$(run "$A" 123 cancelled)]" > "$tmp/stub2/commit-$A"
 # a short SHA is resolved to the full one: gh run list --commit matches only full SHAs
 echo "[$(run "$B" 456 success)]" > "$tmp/stub2/commit-$B"
 ( cd "$repo" && PATH="$tmp/bin2:$PATH" STUB_DIR="$tmp/stub2" DEV_CI_BRANCH=main DEV_CI_INTERVAL=0 \
-    DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "${B:0:8}" "$tmp/status3" )
+    DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 bash "$here/scripts/ci-watch.sh" "${B:0:8}" "$tmp/status3" )
 [[ "$(cat "$tmp/status3")" == "green 456" ]] && ok "short_sha_resolved_to_full" \
   || bad "short_sha_resolved_to_full: $(cat "$tmp/status3")"
 touch "$tmp/stub2/fail-branch"
@@ -105,10 +105,27 @@ for tool in bash dirname mkdir mv git cat sleep printf; do
     ln -s /bin/$tool "$tmp/nojq/bin/$tool" 2>/dev/null || ln -s /usr/bin/$tool "$tmp/nojq/bin/$tool"
 done
 cp "$tmp/bin/gh" "$tmp/nojq/bin/gh"
-PATH="$tmp/nojq/bin" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
+PATH="$tmp/nojq/bin" STUB_DIR="$tmp/stub" DEV_CI_INTERVAL=0 DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=1 \
   bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status_nojq" >/dev/null 2>&1
 rc=$?
 [[ "$(cat "$tmp/status_nojq")" == "timeout" ]] && [[ $rc -eq 0 ]] && ok "missing jq -> timeout exit 0" || bad "missing jq: $(cat "$tmp/status_nojq") rc=$rc"
+
+# ci-watch waits a settle period after the first all-green: a workflow_run chain (deploy -> e2e) starts
+# its second run only after the first completed; green before it appeared was a false pass (v4.18.0).
+mkdir -p "$tmp/seqbin" "$tmp/seq"
+cat > "$tmp/seqbin/gh" <<'S'
+#!/usr/bin/env bash
+n=$(( $(cat "$STUB_DIR/count" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$STUB_DIR/count"
+f="$STUB_DIR/$n"; [[ -f "$f" ]] || f=$(ls "$STUB_DIR"/[0-9]* | sort -V | tail -1)
+cat "$f"
+S
+chmod +x "$tmp/seqbin/gh"
+echo '[{"databaseId":1,"status":"completed","conclusion":"success","name":"deploy"}]' > "$tmp/seq/1"
+echo '[{"databaseId":1,"status":"completed","conclusion":"success","name":"deploy"},{"databaseId":2,"status":"in_progress","conclusion":"","name":"e2e"}]' > "$tmp/seq/2"
+echo '[{"databaseId":1,"status":"completed","conclusion":"success","name":"deploy"},{"databaseId":2,"status":"completed","conclusion":"failure","name":"e2e"}]' > "$tmp/seq/3"
+PATH="$tmp/seqbin:$PATH" STUB_DIR="$tmp/seq" DEV_CI_INTERVAL=0 DEV_CI_SETTLE=0 DEV_CI_NONE_AFTER=0 DEV_CI_MAX=5 \
+  bash "$here/scripts/ci-watch.sh" abc123 "$tmp/status_seq"
+[[ "$(cat "$tmp/status_seq")" == "red e2e=failure" ]] && ok "chained run after first green is awaited" || bad "chain: $(cat "$tmp/status_seq")"
 
 echo "load/ci: $fails failed"
 [[ $fails -eq 0 ]]

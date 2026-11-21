@@ -8,7 +8,8 @@ source listed under `$DEV_DESIGN_DIR` is missing on disk, the step reports
 "skipped", never a silent success. Files marked `subagent` are large and are
 delegated rather than read inline. `run` marks an analyzer document
 (`analyzers/…`) whose subagent runs a script instead of reading a guideline —
-the document says which script and how a missing engine is reported.
+the document says which script and how a missing engine is reported. A `ui:` trigger is `/dev ui`'s
+(`ui-review.md`), never 4a, 4c or the gate.
 
 | Trigger | Load | How |
 |---|---|---|
@@ -26,8 +27,8 @@ the document says which script and how a missing engine is reported.
 | 4c animation Expo | `$DEV_DESIGN_DIR/emil/skills/animate-expo/SKILL.md` | read |
 | 4c web on a phone | `$DEV_DESIGN_DIR/emil/skills/mobile-native/SKILL.md` | read |
 | 4c Apple design | `$DEV_DESIGN_DIR/emil/skills/apple-design/SKILL.md` | subagent |
-| 5c motion changed | `$DEV_DESIGN_DIR/emil/skills/review-animations/STANDARDS.md` | subagent |
-| 5c web UI changed | `analyzers/design-detector.md` | run |
+| ui: motion changed | `$DEV_DESIGN_DIR/emil/skills/review-animations/STANDARDS.md` | subagent |
+| ui: web UI changed | `analyzers/design-detector.md` | run |
 | pre-release web | `$DEV_DESIGN_DIR/impeccable/.claude/skills/impeccable/SKILL.md` | subagent |
 
 "4a landing" (taste): the subagent reads `SKILL.md`. If `references/` sits beside it (taste 2.5 and
