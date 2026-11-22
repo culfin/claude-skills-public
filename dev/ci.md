@@ -15,7 +15,10 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    each later commit updates it. T3: `runtime.md`, "PR opened".
    Never push to a protected or production branch for this. **One push, one CI run per phase:** a
    phase's gate commit goes out together with its completion commit (`SKILL.md` 7.5), which carries
-   the gate SHA's `## CI` line into `docs/gates/`; other gate commits (CI repair, `/dev check`) at once.
+   the gate SHA's `## CI` line into `docs/gates/`. A CI repair or a `/dev check` round (review findings) goes
+   out once, when its checks are green — never commit by commit: every push to an open PR cancels the run of
+   the push before it. `<main>` comes into the branch only on a conflict (`gh pr view <pr> --json mergeable`
+   → `CONFLICTING`) or when the merge itself refuses a branch that is behind; `BEHIND` alone is no reason.
 2. After the push, start `bash "$DEV_DIR/scripts/ci-watch.sh" <gate sha>` with `run_in_background` (T3: its task ID to
    `t3_background_wait` at once, `runtime.md`); the gate SHA goes into the phase file right after the gate commit:
    ```markdown
