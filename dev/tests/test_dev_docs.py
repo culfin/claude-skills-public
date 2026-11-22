@@ -691,6 +691,17 @@ class DevDocsTests(unittest.TestCase):
         self.assertNotIn("upgrade-stripe", text("stack/INDEX.md"))
         self.assertIn("or the Stripe SDK or API version changes", text("stack/INDEX.md"))
 
+    def test_rework_pushes_once_per_round(self):
+        # 22.11.2026 (owner Q-lead-41, CI analysis): ~9,000 runner-minutes a week were runs cancelled by the next
+        # push; post-gate rework pushed every fix commit ("other gate commits ... at once"), and main was merged in
+        # on BEHIND alone.
+        ci = " ".join(text("ci.md").split())
+        self.assertIn("A CI repair or a `/dev check` round (review findings) goes out once, when its checks are green", ci)
+        self.assertIn("never commit by commit", ci)
+        self.assertIn("`<main>` comes into the branch only on a conflict", ci)
+        self.assertIn("`BEHIND` alone is no reason", ci)
+        self.assertNotIn("other gate commits (CI repair, `/dev check`) at once", ci)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

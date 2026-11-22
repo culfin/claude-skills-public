@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.18.2 — 2026-11-22
+
+**dev** — Fewer cancelled CI runs. A measurement of four repositories found about 9,000 runner-minutes a week in PR runs cancelled by the next push: rework after the gate (review findings, CI repairs) pushed every fix commit as it came ("other gate commits … at once"), and `main` was merged into the branch on `BEHIND` alone. `ci.md` now sends a CI repair or a `/dev check` round out once, when its checks are green, and brings `<main>` in only on a conflict (`CONFLICTING`) or when the merge itself refuses a branch that is behind.
+
 ## v4.18.1 — 2026-11-21
 
 **dev** — Sources follow two held-back upstream updates (`/dev updates`, owner: "adapt /dev first"). stripe removed `skills/upgrade-stripe` (the watcher's `missing-read-path`): its trigger, "Stripe SDK or API version changes", moves to the `stripe-best-practices` row, which now names the latest API version itself; O10 now also excludes skills that need the Stripe CLI or a login (`stripe-docs`, new upstream). impeccable's locally built CLI gained `loop`, `shot` and `audit-storage` subcommands that install hooks or upload: O6 names them beside `install` and `hooks on`.
