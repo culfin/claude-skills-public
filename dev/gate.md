@@ -83,8 +83,8 @@ Appended to the phase file (`state.md`) at `[~]` → `[!]`.
 
 **Evidence rules:**
 - **A checkmark carries its evidence and the state it ran on:**
-  `- [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04`. The `@…` value is
-  `python3 "$DEV_DIR/scripts/check-evidence.py" id`, taken when the check ran. No evidence, no
+  `- [x] Typecheck + lint + tests — 0 errors, 412 passed @3f9c2a1b7d04`. Tick it right after the
+  check with `python3 "$DEV_DIR/scripts/check-evidence.py" mark "<item>" "<evidence>"`. No evidence, no
   checkmark — "should pass" and "I checked that earlier" are not evidence. **Test items name how
   many tests ran,** per suite (`unit 412 passed, e2e 18 passed`), or `no tests configured`: a runner
   that found no tests exits green too.
@@ -230,8 +230,8 @@ Permanent, in `docs/gates/phase-<N>.md` before the gate commit (old format: STAT
 ## Evidence check and Gate commit
 
 **Evidence check:** `python3 "$DEV_DIR/scripts/check-evidence.py" check --before-commit` must
-exit 0. It lists every open, evidence-less or stale item; rerun those checks, never edit an `@…`
-value by hand. It checks consistency, not truth — reading the evidence stays your job.
+exit 0. It lists every open, evidence-less or stale item; rerun those checks (`covered:`
+items: only the Fix review). It checks consistency, not truth — reading the evidence stays your job.
 
 **Gate commit** — once every other item is `[x]`, before any post-phase skill:
 `chore: quality gate — Phase N <name> [gate-pass]`.

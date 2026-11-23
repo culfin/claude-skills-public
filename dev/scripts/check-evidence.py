@@ -20,6 +20,7 @@ content keeps every item valid — and any edit to the code after a check makes 
     check-evidence.py check [FILE]                    # before completing the phase
     check-evidence.py check [FILE] --before-commit    # before the gate commit (Gate commit may be open)
     check-evidence.py check [FILE] --repair           # the '(CI repair)' checklist instead of the phase's
+    check-evidence.py mark ITEM EVIDENCE [FILE]       # tick ITEM: '- [x] ITEM — EVIDENCE @<id>'
 
 FILE is the phase file `.dev/phase-<N>.md` (the normal case) or, during the transition, STATE.md.
 Without FILE the first existing of these is read, relative to the folder of ROADMAP.md (the working
@@ -47,7 +48,13 @@ After a bundled fix the gate reviews only the fix diff ("Fix review"). So when a
 carries the current @state, the review items in REVIEW_ITEMS (diff, spec, security, ...) may keep
 an older @state; tests, build, E2E, similar-bugs scan, the Fix review itself and their Codex
 items must stay current.
-Without that, a full re-run of every analysis would be forced after every fix.
+Without that, a full re-run of every analysis would be forced after every fix. When the Fix review
+is listed but not current, those review items are reported in one `covered:` line: rerun the Fix
+review on the new fix diff, not the analyses.
+
+`mark` ticks one item of that section in place (no hand edit of the line): ITEM is the start of its
+name (case-insensitive, must match one item), EVIDENCE the decisive output; it appends the current
+id, except for `skipped: <reason>`. A ticked item is overwritten (rerun on a newer state).
 
 Exit 0 = consistent. Exit 1 = problems, one per line. What it cannot know: whether the evidence
 text is true, or whether the checklist lists every required check — that stays the gate's job.
@@ -214,6 +221,8 @@ def check(root, state_file, before_commit=False, repair=False):
     current = state_id(root)
     problems = []
     fix_current = False
+    fix_listed = any(_split(b)[0].lower().startswith("fix review") for _, b in items)
+    covered = []
     for done, body in items:
         name, evidence = _split(body)
         t = STATE_TAG.search(body)
@@ -249,16 +258,60 @@ def check(root, state_file, before_commit=False, repair=False):
         if not tag:
             problems.append(f"no @state: {name} (append '@{current}' when checked on this state)")
         elif not current.startswith(tag.group(1)[:ID_LEN]) and not tag.group(1).startswith(current):
-            if fix_current and name.lower().startswith(REVIEW_ITEMS):
-                continue
+            if name.lower().startswith(REVIEW_ITEMS):
+                if fix_current:
+                    continue
+                if fix_listed:
+                    covered.append(name)
+                    continue
             problems.append(f"stale: {name} was checked on @{tag.group(1)}, the code is now @{current} — rerun it")
+    if covered:
+        problems.append(f"covered: {', '.join(covered)} — stale, but a current Fix review keeps them valid: "
+                        f"rerun only the Fix review on the fix diff to @{current}, not these analyses")
     return problems + summary_problems(state_file)
 
 
+def mark(root, state_file, item, evidence, repair=False):
+    """Tick the one gate item whose name starts with ITEM; returns the new line. Raises ValueError."""
+    path = Path(state_file)
+    lines = path.read_text(encoding="utf-8").split("\n")
+    inside, hits = False, []
+    for n, line in enumerate(lines):
+        if line.startswith("## "):
+            inside = line.startswith("## Quality Gate") and ("(CI repair)" in line) == repair
+            continue
+        m = inside and ITEM.match(line)
+        if m and _split(m.group(2))[0].lower().startswith(item.strip().lower()):
+            hits.append((n, _split(m.group(2))[0]))
+    if len(hits) != 1:
+        names = ", ".join(h[1] for h in hits) or "none"
+        raise ValueError(f"'{item}' matches {len(hits)} gate items ({names}) in {path} — name exactly one")
+    n, name = hits[0]
+    evidence = evidence.strip()
+    if not evidence:
+        raise ValueError("no evidence: give the decisive output")
+    tag = "" if SKIP.match(evidence) else f" @{state_id(root)}"
+    indent = lines[n][:len(lines[n]) - len(lines[n].lstrip())]
+    lines[n] = f"{indent}- [x] {name} — {evidence}{tag}"
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return lines[n].strip()
+
+
 def main():
-    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0], formatter_class=argparse.RawDescriptionHelpFormatter,
+                                epilog="examples:\n"
+                                "  check-evidence.py id\n"
+                                "  check-evidence.py mark 'Typecheck + lint + tests' '0 errors, 412 passed'\n"
+                                "  check-evidence.py mark 'Polish review' 'skipped: vibepolish not installed'\n"
+                                "  check-evidence.py mark 'Gate commit' \"$(git rev-parse --short HEAD)\"\n"
+                                "  check-evidence.py check --before-commit")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("id")
+    mk = sub.add_parser("mark", help="tick one gate item with its evidence and the current id")
+    mk.add_argument("item", help="start of the item's name, e.g. 'Diff review'")
+    mk.add_argument("evidence", help="decisive output, or 'skipped: <reason>'")
+    mk.add_argument("state", nargs="?", default=None, help="phase file; default as for check")
+    mk.add_argument("--repair", action="store_true")
     c = sub.add_parser("check")
     c.add_argument("state", nargs="?", default=None,
                    help="phase file (.dev/phase-<N>.md) or, in transition, STATE.md; default: see above")
@@ -274,6 +327,13 @@ def main():
         return 0
     if a.state is None:
         a.state = str(default_file("."))
+    if a.cmd == "mark":
+        try:
+            print(mark(root, a.state, a.item, a.evidence, a.repair))
+        except (ValueError, OSError) as e:
+            print(e, file=sys.stderr)
+            return 1
+        return 0
     problems = check(root, a.state, a.before_commit, a.repair)
     for line in problems:
         print(line)
