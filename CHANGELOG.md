@@ -16,7 +16,7 @@ With ROADMAP frontmatter `defaults.gate: slim`, and under `t3-team` also `docs/t
 
 `check-evidence.py` recognises the `<!-- gate: slim` checklist marker. A slim Fix review must name its round (`round <k>:`). `mark` refuses round 3, and `check` reports it. Untriggered items are simply absent. `Code review` is covered by a current Fix review like the other review items, and stale evidence is caught as before.
 
-`ci.md` now calls T3's `link_pull_request` right where the PR is created. Hot path 7,619 → 7,617 words: the router row is shared with `lean.md`, and a rationale clause was cut in Step C. The whole skill grows from 38,055 to 38,402 words.
+`ci.md` now calls T3's `link_pull_request` right where the PR is created. Hot path 7,619 → 7,617 words: the router row is shared with `lean.md`, and a rationale clause was cut in Step C. The whole skill grows from 38,055 to 38,402 words; its cap rises by 215 words (38,189 → 38,404) by owner decision, and the hot path limit is unchanged.
 
 ## v4.18.3 — 2026-11-23
 

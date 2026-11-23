@@ -745,9 +745,10 @@ class DevDocsTests(unittest.TestCase):
         sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
         total = sum(n for n, _ in sizes)
         # Hot path raised 2026-11-14 by owner decision for always-on UI/UX review (7500 → 7650).
-        msg = f"hot path {hot}/7650, total {total}/38189; largest: {sizes[:5]}"
+        # Total raised 2026-11-23 by owner decision for the opt-in slim gate (38189 → 38404, +215).
+        msg = f"hot path {hot}/7650, total {total}/38404; largest: {sizes[:5]}"
         self.assertLessEqual(hot, 7650, msg)
-        self.assertLessEqual(total, 38189, msg)
+        self.assertLessEqual(total, 38404, msg)
 
 
 if __name__ == "__main__":
