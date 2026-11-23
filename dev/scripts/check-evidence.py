@@ -102,7 +102,9 @@ SKIPPABLE = LEGACY + ("taste pre-flight", "ux review", "polish review",
              "tech-stack review", "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
 # Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
-REVIEW_ITEMS = LEGACY + ("diff review", "spec checker", "code review", "security review", "tech-stack review",
+# The slim gate's one reviewer (gate-slim.md), covered like the Step A analyses.
+SLIM_REVIEW = ("code review",)
+REVIEW_ITEMS = LEGACY + SLIM_REVIEW + ("diff review", "spec checker", "security review", "tech-stack review",
                 "performance review", "accessibility review", "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
 # Slim gate: marker comment in the checklist section, and its fix-round limit.
 SLIM = re.compile(r"<!--\s*gate:\s*slim\b", re.I)

@@ -307,7 +307,7 @@ class EvidenceTests(unittest.TestCase):
         items = [line.split("]", 1)[1].split("<!--")[0].strip().lower()
                  for line in step_a.splitlines() if line.startswith("- [ ]")]
         items = ["tech-stack review" if i.startswith("tech-stack review") else i for i in items]
-        self.assertEqual(sorted(set(items)), sorted(set(ce.REVIEW_ITEMS) - set(ce.LEGACY)))
+        self.assertEqual(sorted(set(items)), sorted(set(ce.REVIEW_ITEMS) - set(ce.LEGACY) - set(ce.SLIM_REVIEW)))
 
     def test_full_run_in_ci_is_valid_test_evidence(self):
         i = self.sid()
