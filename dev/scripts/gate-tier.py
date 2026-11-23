@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Decides the Quality Gate tier of a phase: `small` or `large`. Read-only.
 
-    gate-tier.py --base <ref> [--type <phase type>] [--tasks <n>] [--gate full] [--root <dir>]
+    gate-tier.py --base <ref> [--type <phase type>] [--tasks <n>] [--gate full] [--root <dir>] [--slim]
 
-Prints `small` or `large` on the first line, then one `- <reason>` per line. Exit 0 = decided,
+Prints `small` or `large` on the first line, then one `- <reason>` per line. With `--slim`
+(gate-slim.md) it then prints which specialists of the slim gate fire, one `+ <name>: <why>` line
+each (`security`, `ui`, `codex`) with the checklist items it adds after `→`, or `+ none`. Exit 0 = decided,
 2 = usage or git error (nothing on stdout, so a caller never reads a half answer as a tier).
 
 Why a script: the tier decides which checks run, and a judgement call ("this looks small") is
@@ -41,6 +43,39 @@ DEPS = re.compile(
     r"|[^/]*\.gradle[^/]*|Podfile\.lock|pom\.xml|Pipfile\.lock|uv\.lock|composer\.(json|lock)"
     r"|bun\.lockb|pnpm-workspace\.yaml|Package\.resolved|[^/]*\.csproj)$")
 
+# Slim gate (gate-slim.md): extra security paths (secrets, tokens, access policy, expensive endpoints) ...
+SECRETS = re.compile(r"(^|/)\.env|secret|credential|password|token|oauth|jwt|crypt|(^|/)[^/]*(signup|register|reset"
+                     r"|otp|upload|polic)[^/]*$|(^|/)(auth|login|session|middleware)[^/]*$|(^|/)route\.[cm]?[jt]sx?$", re.I)
+STYLE = (".css", ".scss", ".less")
+# Test names of the native stacks, beyond TEST_PATH (which also decides the tier).
+SLIM_TESTS = re.compile(r"[^/]*Tests?\.(swift|kt|java)$|(^|/)[^/]*Tests/")
+# ... and UI files: the Accessibility review row of tech-stack-triggers.md.
+UI = re.compile(r"\.(tsx|jsx|svelte|vue|astro|html|css|scss|less|xaml)$|(^|/)[^/]*(View|Screen)\.(swift|kt)$"
+                r"|(^|/)Views?/[^/]*\.swift$|(^|/)res/layout[^/]*/[^/]*\.xml$", re.I)
+SLIM_CODEX_LINES = 300
+WEB_UI = (".tsx", ".jsx", ".svelte", ".vue", ".astro", ".html", ".css", ".scss", ".less")
+
+
+def slim_triggers(rows, typ):
+    """`+ <specialist>: <why>` lines for the slim gate; tests never trigger a specialist."""
+    kept = [(p, n) for p, n in rows if not TEST_PATH.search(p) and not SLIM_TESTS.search(p)]
+    code = [p for p, _ in kept]
+    lines = sum(n for p, n in kept if not p.lower().endswith(".md"))
+    sec = sorted({p for p in code if SENSITIVE.search(p) or DB_CHANGE.search(p)
+                  or (SECRETS.search(p) and not p.lower().endswith(STYLE))
+                  or (not p.lower().endswith(".md") and (OPS.search(p) or DEPS.search(p)))})
+    ui = sorted({p for p in code if UI.search(p)})
+    web = any(p.lower().endswith(WEB_UI) for p in ui)
+    out = []
+    if sec or typ in RISK_TYPES:
+        out.append("+ security: " + (listed(sec) if sec else f"risk type @type: {typ}") + " → Security review")
+    if ui:
+        out.append("+ ui: " + listed(ui) + " → UX review, Accessibility review" + (", Polish review" if web else ""))
+    if lines > SLIM_CODEX_LINES or sec or typ in RISK_TYPES:
+        out.append("+ codex: " + (f"{lines} changed lines (without *.md and tests) > {SLIM_CODEX_LINES}"
+                                  if lines > SLIM_CODEX_LINES else "security-relevant") + " → Second opinion: codex diff")
+    return out or ["+ none"]
+
 
 def listed(paths):
     return ", ".join(paths[:5]) + (" …" if len(paths) > 5 else "")
@@ -73,6 +108,7 @@ def main():
     ap.add_argument("--tasks", type=int, default=1)
     ap.add_argument("--gate", default="")
     ap.add_argument("--root", default=".")
+    ap.add_argument("--slim", action="store_true", help="also print the slim gate's specialist triggers")
     a = ap.parse_args()
     try:
         git(a.root, "rev-parse", "--verify", f"{a.base}^{{commit}}")
@@ -110,6 +146,8 @@ def main():
     else:
         print("small")
         print(f"- {a.tasks} task(s), {lines} changed lines (without *.md), no risk type, no sensitive files")
+    if a.slim:
+        print("\n".join(slim_triggers(rows, a.type)))
     return 0
 
 

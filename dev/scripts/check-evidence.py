@@ -52,6 +52,10 @@ Without that, a full re-run of every analysis would be forced after every fix. W
 is listed but not current, those review items are reported in one `covered:` line: rerun the Fix
 review on the new fix diff, not the analyses.
 
+A slim gate (gate-slim.md, `defaults.gate: slim`) marks its section with `<!-- gate: slim … -->`. Its
+untriggered specialists are absent, as any untriggered item. Each Fix review evidence starts with
+`round <k>:`; k > 2 is refused (`mark`) and reported (`check`): at most 2 fix rounds, then the lead decides.
+
 `mark` ticks one item of that section in place (no hand edit of the line): ITEM is the start of its
 name (case-insensitive, must match one item), EVIDENCE the decisive output; it appends the current
 id, except for `skipped: <reason>`. A ticked item is overwritten (rerun on a newer state).
@@ -98,8 +102,14 @@ SKIPPABLE = LEGACY + ("taste pre-flight", "ux review", "polish review",
              "tech-stack review", "second opinion")
 # Analyses that may keep an older @state when a current "Fix review" covers the fix diff. Of the
 # Codex items only the Step A ones: `codex fix`/`codex similar` rerun like Fix review/Similar-bugs.
-REVIEW_ITEMS = LEGACY + ("diff review", "spec checker", "security review", "tech-stack review",
+# The slim gate's one reviewer (gate-slim.md), covered like the Step A analyses.
+SLIM_REVIEW = ("code review",)
+REVIEW_ITEMS = LEGACY + SLIM_REVIEW + ("diff review", "spec checker", "security review", "tech-stack review",
                 "performance review", "accessibility review", "taste pre-flight", "ux review", "polish review", "second opinion: codex diff")
+# Slim gate: marker comment in the checklist section, and its fix-round limit.
+SLIM = re.compile(r"<!--\s*gate:\s*slim\b", re.I)
+SLIM_MAX_ROUNDS = 2
+ROUND = re.compile(r"^round\s+(\d+)\b", re.I)
 
 
 def state_id(root):
@@ -170,6 +180,33 @@ def gate_items(text, repair=False):
     return lines if found else None
 
 
+def is_slim(text, repair=False):
+    """True if the last matching '## Quality Gate' section carries the slim marker."""
+    inside, slim = False, False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.startswith("## Quality Gate") and ("(CI repair)" in line) == repair
+            if inside:
+                slim = False
+            continue
+        if inside and SLIM.search(line):
+            slim = True
+    return slim
+
+
+def round_problem(name, evidence):
+    """Slim gate: a Fix review names its round, at most SLIM_MAX_ROUNDS; None if fine."""
+    if not name.lower().startswith("fix review") or SKIP.match(evidence):
+        return None
+    m = ROUND.match(evidence)
+    if not m:
+        return f"slim gate: {name} must name its round (write '— round <k>: <result>')"
+    if int(m.group(1)) > SLIM_MAX_ROUNDS:
+        return (f"slim gate: {name} round {m.group(1)} refused — at most {SLIM_MAX_ROUNDS} fix rounds; halt, keep the PR "
+                "open, list the remaining findings under 'Open:' in the gate summary for the lead (gate-slim.md)")
+    return None
+
+
 def _split(body):
     """(name, evidence without the @state tag) of one checklist item."""
     name = body.split(" — ")[0].split(" @")[0].strip()
@@ -206,7 +243,7 @@ def summary_problems(state_file):
     if found and int(found.group(1)) != len(entries):
         problems.append(f"gate summary {gate.name}: Found says {found.group(1)} critical, Criticals lists {len(entries)}")
     untested = len(re.findall(r"\buntested\b", lines.get("Criteria", "")))
-    spec = sum(1 for e in entries if e.strip().lower().startswith("spec checker"))
+    spec = sum(1 for e in entries if e.strip().lower().startswith(("spec checker", "code review")))  # slim: code review
     if untested > spec:
         problems.append(f"gate summary {gate.name}: {untested} criteria untested but {spec} Spec checker criticals — "
                         "an untested criterion is a critical (d), never a note")
@@ -214,7 +251,9 @@ def summary_problems(state_file):
 
 
 def check(root, state_file, before_commit=False, repair=False):
-    items = gate_items(Path(state_file).read_text(encoding="utf-8"), repair)
+    text = Path(state_file).read_text(encoding="utf-8")
+    items = gate_items(text, repair)
+    slim = is_slim(text, repair)
     if items is None:
         kind = "CI-repair checklist ('## Quality Gate … (CI repair)'" if repair else "gate checklist ('## Quality Gate …'"
         return [f"{state_file}: no {kind} section)"]
@@ -248,6 +287,8 @@ def check(root, state_file, before_commit=False, repair=False):
             elif not skip.group(1).strip():
                 problems.append(f"no reason: {name} (write '— skipped: <reason>')")
             continue
+        if slim and evidence and round_problem(name, evidence):
+            problems.append(round_problem(name, evidence))
         if not evidence:
             problems.append(f"no evidence: {name} (write '— <decisive output>' after the item)")
         elif name.lower().startswith(COUNTED) and not NO_TESTS.search(evidence):
@@ -290,6 +331,8 @@ def mark(root, state_file, item, evidence, repair=False):
     evidence = evidence.strip()
     if not evidence:
         raise ValueError("no evidence: give the decisive output")
+    if is_slim("\n".join(lines), repair) and round_problem(name, evidence):
+        raise ValueError(round_problem(name, evidence))
     tag = "" if SKIP.match(evidence) else f" @{state_id(root)}"
     indent = lines[n][:len(lines[n]) - len(lines[n].lstrip())]
     lines[n] = f"{indent}- [x] {name} — {evidence}{tag}"
@@ -303,6 +346,7 @@ def main():
                                 "  check-evidence.py id\n"
                                 "  check-evidence.py mark 'Typecheck + lint + tests' '0 errors, 412 passed'\n"
                                 "  check-evidence.py mark 'Polish review' 'skipped: vibepolish not installed'\n"
+                                "  check-evidence.py mark 'Fix review' 'round 1: 0 critical'   # slim gate\n"
                                 "  check-evidence.py mark 'Gate commit' \"$(git rev-parse --short HEAD)\"\n"
                                 "  check-evidence.py check --before-commit")
     sub = p.add_subparsers(dest="cmd", required=True)

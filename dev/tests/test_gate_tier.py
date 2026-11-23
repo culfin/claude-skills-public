@@ -202,6 +202,61 @@ class GateTierTests(unittest.TestCase):
         rc, out, _ = self.run_tier("--tasks", "1", "--gate", "full")
         self.assertEqual(out[0], "large")
 
+    def slim(self, *extra):
+        rc, out, _ = self.run_tier("--slim", *extra)
+        self.assertEqual(rc, 0)
+        return [l for l in out if l.startswith("+ ")]
+
+    def test_slim_triggers_none_for_plain_code(self):
+        self.write("app.py", 20)
+        self.assertEqual(self.slim(), ["+ none"])
+
+    def test_slim_triggers_security_by_path_and_type(self):
+        self.write("src/lib/auth/session.ts", 5)
+        self.assertTrue(self.slim()[0].startswith("+ security: "), self.slim())
+        self.assertTrue(any(l.startswith("+ codex: security") for l in self.slim()))
+        self.assertTrue(self.slim()[0].endswith("→ Security review"), self.slim())
+
+    def test_slim_security_ignores_tests_and_covers_secrets_and_types(self):
+        self.write("tests/auth/session.test.ts", 5)
+        self.assertEqual(self.slim(), ["+ none"])
+        self.write("config/secrets.py", 5)
+        self.assertTrue(self.slim()[0].startswith("+ security: "), self.slim())
+
+    def test_slim_security_by_risk_type(self):
+        self.write("app.py", 5)
+        self.assertTrue(self.slim("--type", "data")[0].startswith("+ security: "))
+
+    def test_slim_triggers_ui_and_codex_by_size(self):
+        self.write("src/components/Button.tsx", 10)
+        self.assertEqual([l.split(":")[0] for l in self.slim()], ["+ ui"])
+        self.assertTrue(self.slim()[0].endswith("→ UX review, Accessibility review, Polish review"), self.slim())
+        self.write("big.py", 301)
+        self.assertEqual([l.split(":")[0] for l in self.slim()], ["+ ui", "+ codex"])
+
+    def test_slim_review_findings_auth_basenames_native_tests_styles_test_lines(self):
+        # /code-review high on v4.19.0: matrix basenames missed, Swift tests and CSS tokens triggered, test lines counted.
+        for f in ("src/lib/auth-options.ts", "src/components/LoginForm.ts", "src/lib/sessionStore.ts",
+                  "src/app/webhooks/stripe/route.ts"):
+            with self.subTest(f):
+                self.setUp()
+                self.write(f, 3)
+                self.assertTrue(self.slim()[0].startswith("+ security: "), self.slim())
+        self.setUp()
+        self.write("AppTests/TokenRefreshTests.swift", 3)
+        self.write("src/styles/reset.css", 3)
+        self.write("src/styles/tokens.css", 3)
+        self.assertEqual([l.split(":")[0] for l in self.slim()], ["+ ui"])
+        self.setUp()
+        self.write("tests/test_big.py", 350)
+        self.write("app.py", 2)
+        self.assertEqual(self.slim(), ["+ none"])
+
+    def test_without_slim_no_trigger_lines(self):
+        self.write("src/lib/auth/session.ts", 5)
+        rc, out, _ = self.run_tier()
+        self.assertFalse(any(l.startswith("+ ") for l in out), out)
+
     def test_bad_base_exits_2(self):
         out = subprocess.run([sys.executable, str(SCRIPT), "--base", "nope", "--root", str(self.root)],
                              capture_output=True, text=True)

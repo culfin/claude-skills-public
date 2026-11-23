@@ -2,6 +2,22 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.19.0 — 2026-11-23
+
+**dev** — Opt-in slim gate, approved by the owner. In a 3-day sample of about 150 gates across several projects, a gate dispatched 5–20 review subagents and ran up to 7 fix rounds: the backstop of 6 was outrun because some rounds "do not count". Deferred review notes became whole roadmap milestones (15 of 46 in one roadmap were gate leftovers). Outside evidence points the same way. Multi-round review raises false positives per artifact (about 5.2 → 9.7) and lowers F1 (arXiv 2603.16244), and independent single passes score best. A reviewer asked to find problems always finds something, so it should review against the spec, for correctness only. Anthropic's long-running harness cut its evaluator to one final pass.
+
+With ROADMAP frontmatter `defaults.gate: slim`, and under `t3-team` also `docs/team.md` `Gate: slim`, the new `gate-slim.md` replaces the checklist, Steps A–C and `## Minor (deferred)`. The default gate is unchanged. The slim gate works as follows:
+- Deterministic checks (Step D) run first.
+- The one fresh-context reviewer is Claude Code's built-in `/code-review` at level `high` (owner decision). Its args are the phase range plus the acceptance criteria and "correctness gaps only". A trial on this change showed that it reads criteria given in its target text: every finding named the criterion it broke. On other hosts the Spec checker substitutes, without (b) and the effect probe.
+- Specialists run in parallel only on a mechanical trigger. The new `gate-tier.py --slim` prints `+ security:`, `+ ui:` and `+ codex:` lines with the item each adds. Security covers the sensitive, DB, ops and dependency paths, the Security matrix basenames (auth, login, session, middleware, `route.ts`), secret and token names (not in stylesheets), signup, upload and policy paths, and risk types. UI uses the Accessibility row's files. Codex fires on more than 300 changed lines or on security. Test files, including Swift, Kotlin and Java test names, never trigger and never count.
+- A Similar-bugs scan runs only after a fixed critical.
+- A gate gets at most 2 fix rounds, and every round counts. After that the PR stays open with the gaps under `Open:`, and the lead or user decides.
+- Findings outside the spec, pre-existing findings and unfixed notes go through the new `scripts/followup-issue.py`, never into roadmap phases. The script searches open `followup` issues by file and comments on a twin, raising its severity label if needed. Otherwise it creates the `followup` and `severity:<…>` labels if missing and opens the issue.
+
+`check-evidence.py` recognises the `<!-- gate: slim` checklist marker. A slim Fix review must name its round (`round <k>:`). `mark` refuses round 3, and `check` reports it. Untriggered items are simply absent. `Code review` is covered by a current Fix review like the other review items, and stale evidence is caught as before.
+
+`ci.md` now calls T3's `link_pull_request` right where the PR is created. Hot path 7,619 → 7,617 words: the router row is shared with `lean.md`, and a rationale clause was cut in Step C. The whole skill grows from 38,055 to 38,402 words; its cap rises by 215 words (38,189 → 38,404) by owner decision, and the hot path limit is unchanged.
+
 ## v4.18.3 — 2026-11-23
 
 **dev** — Less gate rework, measured on a 3-day sample of session transcripts. Agents ticked gate items by hand: 383 `sed -i` edits of phase files in 137 sessions, often retrying the pattern. `check-evidence.py mark "<item>" "<evidence>"` now ticks one item in place in the format `check` expects (current `@state` appended, none for `skipped: <reason>`; an ambiguous or unknown item name is refused), and `gate.md` tells the gate to tick that way; `--help` shows examples. After a fix, a stale Fix review made `check` print every Step A analysis as "stale … rerun it" (23 of 27 such outputs); sessions then reran all analyses, though a current Fix review alone keeps them valid. Those items are now one `covered:` line that says to rerun only the Fix review; tests, build, E2E and Similar-bugs still go stale as before. Hot path 7,620 → 7,619 words.
