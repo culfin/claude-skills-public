@@ -12,7 +12,7 @@ If `.github/workflows/` exists, CI checks the gate commit while `/dev` goes on:
    format: STATE.md) `## CI` and follow it.
    CI runs only on `pull_request` (the workflows' `on:`) and the project takes PRs → the route is a
    PR from the phase branch to `<main>` (`gh pr create`), opened once, never merged here; the push of
-   each later commit updates it. T3: `runtime.md`, "PR opened".
+   each later commit updates it. T3: `link_pull_request` with its URL at once (`runtime.md`).
    Never push to a protected or production branch for this. **One push, one CI run per phase:** a
    phase's gate commit goes out together with its completion commit (`SKILL.md` 7.5), which carries
    the gate SHA's `## CI` line into `docs/gates/`. A CI repair or a `/dev check` round (review findings) goes

@@ -193,8 +193,7 @@ same analyzer file, or an equivalent tool the project uses), never the implement
 
 ## Step C — Similar-bugs
 
-Only if Step B fixed a defect, or `@type: refactor` moved code (a pattern survives in its old
-place): `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix) or of the moves as
+Only if Step B fixed a defect, or `@type: refactor` moved code: `analyzers/similar-bugs.md` with the list of fixes (file, defect, fix) or of the moves as
 input, whole codebase. A confirmed twin goes back through Step B; complex ones go to `## Minor (deferred)`.
 
 ## Step D — Verify

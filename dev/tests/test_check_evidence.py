@@ -564,5 +564,57 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(ce.check(self.root, ce.default_file(app)), [])
 
 
+    def test_slim_gate_lists_only_triggered_items(self):
+        # Opt-in `defaults.gate: slim` (gate-slim.md): one Spec checker plus the specialists whose trigger fired;
+        # untriggered specialists are simply absent, as in the default gate.
+        i = self.sid()
+        self.state(["<!-- gate: slim; tier: small -->", f"- [x] Spec checker — 0 critical @{i}",
+                    f"- [x] Security review — 0 critical @{i}",
+                    f"- [x] Typecheck + lint + tests — 0 errors, 12 passed @{i}",
+                    f"- [x] Production Build — ok @{i}", "- [ ] Gate commit"])
+        self.assertEqual(self.run_check(before_commit=True), [])
+        self.state(["<!-- gate: slim -->", f"- [x] Spec checker — 0 critical @{i}",
+                    f"- [x] Typecheck + lint + tests — 0 errors, 12 passed @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_slim_gate_still_catches_stale_evidence(self):
+        old = self.sid()
+        self.state(["<!-- gate: slim -->", f"- [x] Spec checker — 0 critical @{old}",
+                    f"- [x] Typecheck + lint + tests — 0 errors, 12 passed @{old}"])
+        (self.root / "a.txt").write_text("three\n")
+        problems = self.run_check()
+        self.assertTrue(any(p.startswith("stale: Spec checker") for p in problems), problems)
+        self.assertTrue(any(p.startswith("stale: Typecheck") for p in problems), problems)
+        # A current Fix review still covers the review items in the slim gate.
+        i = self.sid()
+        self.state(["<!-- gate: slim -->", f"- [x] Code review — 1 finding @{old}",
+                    f"- [x] Fix review — round 1: 0 critical @{i}",
+                    f"- [x] Typecheck + lint + tests — 0 errors, 12 passed @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_slim_gate_refuses_a_third_fix_round(self):
+        i = self.sid()
+        self.state(["<!-- gate: slim -->", f"- [x] Spec checker — 1 critical @{i}",
+                    f"- [x] Fix review — round 3: 0 critical @{i}"])
+        problems = self.run_check()
+        self.assertTrue(any("at most 2 fix rounds" in p for p in problems), problems)
+        self.state(["<!-- gate: slim -->", f"- [x] Spec checker — 1 critical @{i}",
+                    f"- [x] Fix review — 0 critical @{i}"])
+        self.assertTrue(any("name its round" in p for p in self.run_check()))
+        self.state(["<!-- gate: slim -->", f"- [x] Spec checker — 1 critical @{i}", "- [ ] Fix review"])
+        f = self.root / "STATE.md"
+        with self.assertRaises(ValueError) as e:
+            ce.mark(self.root, f, "Fix review", "round 3: 0 critical")
+        self.assertIn("at most 2 fix rounds", str(e.exception))
+        self.assertIn("round 2: 0 critical", ce.mark(self.root, f, "Fix review", "round 2: 0 critical"))
+
+    def test_default_gate_has_no_round_limit_in_the_script(self):
+        # Without the slim marker nothing changes: rounds are counted per finding by gate.md, not here.
+        i = self.sid()
+        self.state([f"- [x] Diff review — 1 critical @{i}", f"- [x] Fix review — round 3: 0 critical @{i}",
+                    f"- [x] Fix review — 0 critical @{i}"])
+        self.assertEqual(self.run_check(), [])
+        self.assertIn("round 3", ce.mark(self.root, self.root / "STATE.md", "Diff review", "round 3: x"))
+
 if __name__ == "__main__":
     unittest.main()

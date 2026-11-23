@@ -708,6 +708,32 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn('check-evidence.py" mark "<item>" "<evidence>"', gate)
         self.assertIn("(`covered:` items: only the Fix review)", gate)
 
+    def test_slim_gate_is_opt_in(self):
+        # Owner-approved 23.11.2026. RED (3-day sample, ~150 gates): 5–20 review subagents per gate, up to 7 fix
+        # rounds (rounds that "do not count" outran the backstop of 6), and deferred notes became roadmap
+        # milestones (15 of 46 in one roadmap). gate-slim.md: one spec reviewer, path-triggered specialists,
+        # at most 2 fix rounds, out-of-spec findings as `followup` issues.
+        slim = " ".join(text("gate-slim.md").split())
+        # Owner 23.11.2026: the one reviewer is Claude Code's built-in /code-review at level high.
+        for s in ("`defaults.gate: slim`", "`Gate: slim`", "<!-- gate: slim", "--slim", "exactly one",
+                  "`/code-review`", "args `high <phase base>...HEAD", "acceptance criteria", "correctness gaps only",
+                  "`+ <trigger>: <why> → <item>`", "Similar-bugs scan", "**At most 2 fix rounds.**",
+                  "no third round", "round <k>:", "Every round counts", "scripts/followup-issue.py\" --severity",
+                  "<low|medium|high>", "dedupes against open `followup` issues",
+                  "never a ROADMAP.md milestone or phase", "Follow-ups:", "Open:"):
+            self.assertIn(s, slim)
+        hot = ("SKILL.md", "gate.md", "execution.md", "state.md", "models.md")
+        for f in [p for p in DEV.rglob("*.md") if "tests" not in p.parts]:
+            for line in f.read_text().splitlines():
+                if "gate-slim.md" in line:
+                    self.assertIn("`defaults.gate: slim`", line, str(f.relative_to(DEV)))
+        self.assertEqual([f for f in hot if "gate-slim.md" in text(f)], ["SKILL.md"])
+        self.assertIn("SLIM_MAX_ROUNDS = 2", text("scripts/check-evidence.py"))
+        self.assertIn("--slim", text("scripts/gate-tier.py"))
+        # T3 thread shows its PR right where the PR is created.
+        pr = next(l for l in text("ci.md").splitlines() if "(`gh pr create`)" in l)
+        self.assertIn("link_pull_request", pr + text("ci.md").split("(`gh pr create`)", 1)[1].split("\n", 2)[1])
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):
