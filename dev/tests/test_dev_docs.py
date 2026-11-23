@@ -702,6 +702,12 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("`BEHIND` alone is no reason", ci)
         self.assertNotIn("other gate commits (CI repair, `/dev check`) at once", ci)
 
+    def test_gate_ticks_items_with_mark(self):
+        # v4.18.3 RED: 383 hand edits (`sed -i`) of phase-file checkboxes in 137 sessions of a 3-day sample.
+        gate = " ".join(text("gate.md").split())
+        self.assertIn('check-evidence.py" mark "<item>" "<evidence>"', gate)
+        self.assertIn("(`covered:` items: only the Fix review)", gate)
+
     def test_word_budget(self):
         # Keep /dev lean: hot path read on every phase (models.md included since v4), whole skill not above v2.
         def words(f):

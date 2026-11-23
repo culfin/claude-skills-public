@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.18.3 — 2026-11-23
+
+**dev** — Less gate rework, measured on a 3-day sample of session transcripts. Agents ticked gate items by hand: 383 `sed -i` edits of phase files in 137 sessions, often retrying the pattern. `check-evidence.py mark "<item>" "<evidence>"` now ticks one item in place in the format `check` expects (current `@state` appended, none for `skipped: <reason>`; an ambiguous or unknown item name is refused), and `gate.md` tells the gate to tick that way; `--help` shows examples. After a fix, a stale Fix review made `check` print every Step A analysis as "stale … rerun it" (23 of 27 such outputs); sessions then reran all analyses, though a current Fix review alone keeps them valid. Those items are now one `covered:` line that says to rerun only the Fix review; tests, build, E2E and Similar-bugs still go stale as before. Hot path 7,620 → 7,619 words.
+
 ## v4.18.2 — 2026-11-22
 
 **dev** — Fewer cancelled CI runs. A measurement of four repositories found about 9,000 runner-minutes a week in PR runs cancelled by the next push: rework after the gate (review findings, CI repairs) pushed every fix commit as it came ("other gate commits … at once"), and `main` was merged into the branch on `BEHIND` alone. `ci.md` now sends a CI repair or a `/dev check` round out once, when its checks are green, and brings `<main>` in only on a conflict (`CONFLICTING`) or when the merge itself refuses a branch that is behind.

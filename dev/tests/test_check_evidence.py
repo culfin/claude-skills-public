@@ -335,8 +335,63 @@ class EvidenceTests(unittest.TestCase):
         self.state([f"- [x] Diff review — 0 findings @{self.OLD}", f"- [x] Spec checker — ok @{self.OLD}",
                     f"- [x] Fix review — fix diff clean @{self.OLD}"])
         problems = self.run_check()
-        self.assertEqual(len(problems), 3)
-        self.assertTrue(any("Fix review" in x for x in problems))
+        # v4.18.3 RED: a stale Fix review listed every Step A item as "rerun it" (23 of 27 such
+        # outputs in a 3-day sample); the sessions reran all analyses instead of the Fix review.
+        self.assertEqual(len(problems), 2)
+        self.assertTrue(problems[0].startswith("stale: Fix review"))
+        self.assertTrue(problems[1].startswith("covered: Diff review, Spec checker"))
+        self.assertIn("rerun only the Fix review", problems[1])
+
+    def test_open_fix_review_covers_the_review_items(self):
+        self.state([f"- [x] Diff review — 0 findings @{self.OLD}", "- [ ] Fix review"])
+        problems = self.run_check()
+        self.assertEqual(problems[0], "open: Fix review")
+        self.assertTrue(problems[1].startswith("covered: Diff review"))
+        self.assertEqual(len(problems), 2)
+
+    def test_covered_never_hides_tests_or_similar_bugs(self):
+        self.state([f"- [x] Fix review — clean @{self.OLD}", f"- [x] Similar-bugs scan — none @{self.OLD}",
+                    f"- [x] Typecheck + lint + tests — 412 passed @{self.OLD}"])
+        problems = self.run_check()
+        self.assertEqual([x.split(" was")[0] for x in problems],
+                         ["stale: Fix review", "stale: Similar-bugs scan", "stale: Typecheck + lint + tests"])
+
+    def test_mark_ticks_one_item_with_the_current_id(self):
+        # v4.18.3 RED: agents ticked items with `sed -i` on the phase file (383 edits in 137 sessions
+        # of a 3-day sample), often retrying the regex.
+        self.state(["- [ ] Diff review", "- [ ] Typecheck + lint + tests", "- [ ] Polish review"])
+        f = self.root / "STATE.md"
+        line = ce.mark(self.root, f, "typecheck", "0 errors, 412 passed")
+        self.assertEqual(line, f"- [x] Typecheck + lint + tests — 0 errors, 412 passed @{self.sid()}")
+        ce.mark(self.root, f, "Diff review", "0 critical")
+        ce.mark(self.root, f, "Polish review", "skipped: vibepolish not installed")
+        self.assertEqual(self.run_check(), [])
+        self.assertIn("- [x] unrelated", f.read_text())
+
+    def test_mark_overwrites_a_ticked_item_and_rejects_ambiguity(self):
+        self.state([f"- [x] Diff review — 1 critical @{self.OLD}", "- [ ] Second opinion: codex diff"])
+        f = self.root / "STATE.md"
+        ce.mark(self.root, f, "diff review", "0 critical")
+        self.assertIn(f"- [x] Diff review — 0 critical @{self.sid()}", f.read_text())
+        with self.assertRaises(ValueError):
+            ce.mark(self.root, f, "", "x")
+        with self.assertRaises(ValueError):
+            ce.mark(self.root, f, "unknown", "x")
+        with self.assertRaises(ValueError):
+            ce.mark(self.root, f, "second", "  ")
+
+    def test_mark_cli(self):
+        self.state(["- [ ] Diff review"])
+        script = HERE.parent / "scripts" / "check-evidence.py"
+        r = subprocess.run(["python3", str(script), "mark", "Diff", "0 critical", "STATE.md"],
+                           cwd=self.root, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        r = subprocess.run(["python3", str(script), "mark", "Nope", "x", "STATE.md"],
+                           cwd=self.root, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("matches 0 gate items", r.stderr)
+        h = subprocess.run(["python3", str(script), "--help"], capture_output=True, text=True).stdout
+        self.assertIn("check-evidence.py mark 'Typecheck + lint + tests'", h)
 
     def test_tests_item_never_inherits(self):
         i = self.sid()
