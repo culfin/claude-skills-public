@@ -320,6 +320,10 @@ class CodexReviewTests(unittest.TestCase):
                 self.assertTrue(out.startswith("fallback: "), out)
                 self.assertEqual(len(out.strip().splitlines()), 1, out)
                 self.assertFalse(self.out.exists())
+        # The reason names the phrase that tripped the check, so a gate file shows why.
+        rc, out, err = self.run_review(answer=json.dumps(dict(VALID, findings=[], checked="x " * 80 + "shell commands timed out")))
+        self.assertEqual(rc, 3, out + err)
+        self.assertIn('"shell commands timed out"', out)
         for name, answer in {"plain text": "tool attempts timed out. Result: no findings",
                              "empty": "", "missing field": json.dumps({"checked": "x"})}.items():
             with self.subTest(name):
@@ -406,7 +410,11 @@ class CodexReviewTests(unittest.TestCase):
         self.assertEqual(rc, 0, out + err)
         self.assertIn("Result: no findings", self.out.read_text().splitlines())
         for checked in ("probes: timeout handling, retries; lenses: logic, timeout",
-                        "could not run the test suite (no node_modules); read calc.py"):
+                        "could not run the test suite (no node_modules); read calc.py",
+                        # A phase about guard tests: the summary describes the reviewed code, not Codex's own reads.
+                        "Compared assertions before and after, traced all cdb- and wd- allocations to cleanup "
+                        "hooks; nested run attempts failed as expected; spawned commands timed out under the cap; "
+                        "calls failed closed"):
             with self.subTest(checked):
                 rc, out, err = self.run_review(answer=json.dumps(dict(VALID, checked=checked)))
                 self.assertEqual(rc, 0, out + err)

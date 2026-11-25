@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.19.1 — 2026-11-25
+
+**dev** — The Codex second opinion fell back (exit 3) on the whole-phase diff in nearly every phase of one project's two milestones, while it ran fine on the smaller fix-round diffs. The one recorded reason was `codex could not check: Checked: Compared assertions before and after, traced all … allocations to cleanup hooks …`. Codex had reviewed. The check that catches "exit 0 without having read anything" scanned the `checked` summary for words like "commands/calls/attempts … failed/timed out". Those words also describe the reviewed code, and that phase reviewed guard tests about failing and timing-out commands. The check's heads now name only Codex's own tooling (`tool`, `shell`, `sandbox`, `file reads`). `blocked_reason` and `files_read: 0` still catch a run that read nothing. The fallback reason now quotes the phrase that tripped the check, and the gate records the `fallback:` line as the substitute's reason, so the next such case shows its cause.
+
 ## v4.19.0 — 2026-11-23
 
 **dev** — Opt-in slim gate, approved by the owner. In a 3-day sample of about 150 gates across several projects, a gate dispatched 5–20 review subagents and ran up to 7 fix rounds: the backstop of 6 was outrun because some rounds "do not count". Deferred review notes became whole roadmap milestones (15 of 46 in one roadmap were gate leftovers). Outside evidence points the same way. Multi-round review raises false positives per artifact (about 5.2 → 9.7) and lowers F1 (arXiv 2603.16244), and independent single passes score best. A reviewer asked to find problems always finds something, so it should review against the spec, for correctness only. Anthropic's long-running harness cut its evaluator to one final pass.
