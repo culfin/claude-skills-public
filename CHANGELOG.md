@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.19.2 — 2026-11-25
+
+**dev** — The Codex second opinion still fell back three times in a row on one phase, now with the reason `codex could not check ("sandbox blocked")` that v4.19.1 made visible. Codex had compared the base and head logic against the new fixtures; the sandbox had only kept it from running something. "sandbox denied/blocked" was one of the "could not check" phrases since the check was added, so this is the same false positive class as v4.19.1, not a regression of it. The phrase now counts only when the sandbox blocked reads, files, access or opening. A blocked test run or network stays a normal part of a review; `blocked_reason` and `files_read: 0` still catch a run that read nothing.
+
 ## v4.19.1 — 2026-11-25
 
 **dev** — The Codex second opinion fell back (exit 3) on the whole-phase diff in nearly every phase of one project's two milestones, while it ran fine on the smaller fix-round diffs. The one recorded reason was `codex could not check: Checked: Compared assertions before and after, traced all … allocations to cleanup hooks …`. Codex had reviewed. The check that catches "exit 0 without having read anything" scanned the `checked` summary for words like "commands/calls/attempts … failed/timed out". Those words also describe the reviewed code, and that phase reviewed guard tests about failing and timing-out commands. The check's heads now name only Codex's own tooling (`tool`, `shell`, `sandbox`, `file reads`). `blocked_reason` and `files_read: 0` still catch a run that read nothing. The fallback reason now quotes the phrase that tripped the check, and the gate records the `fallback:` line as the substitute's reason, so the next such case shows its cause.

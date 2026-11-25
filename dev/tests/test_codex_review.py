@@ -312,6 +312,8 @@ class CodexReviewTests(unittest.TestCase):
             "timed out reading": dict(VALID, findings=[], checked="timed out reading calc.py"),
             "files_read": dict(VALID, findings=[], files_read=0),
             "blocked": dict(VALID, findings=[], blocked_reason="could not open the diff file"),
+            "sandbox blocked reads": dict(VALID, findings=[], checked="the sandbox blocked reading calc.py"),
+            "sandbox denied access": dict(VALID, findings=[], checked="sandbox denied file access"),
         }
         for name, answer in cases.items():
             with self.subTest(name):
@@ -414,7 +416,10 @@ class CodexReviewTests(unittest.TestCase):
                         # A phase about guard tests: the summary describes the reviewed code, not Codex's own reads.
                         "Compared assertions before and after, traced all cdb- and wd- allocations to cleanup "
                         "hooks; nested run attempts failed as expected; spawned commands timed out under the cap; "
-                        "calls failed closed"):
+                        "calls failed closed",
+                        # Codex read and compared the code; the sandbox only kept it from running something.
+                        "Compared the base and head rule logic against all six new fixtures, verified the workflow "
+                        "passes them; running the test suite: sandbox blocked (no network)"):
             with self.subTest(checked):
                 rc, out, err = self.run_review(answer=json.dumps(dict(VALID, checked=checked)))
                 self.assertEqual(rc, 0, out + err)
