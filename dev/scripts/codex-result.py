@@ -42,7 +42,9 @@ UNVERIFIED = re.compile(
     r"\b(?:tools?|shell|sandbox|file reads?|my reads?)(?: \w+){0,2} (?:timed out|failed)"
     r"|\btimed out (?:while |when )?(?:reading|running|opening|executing|calling)"
     r"|could(?: not|n't) (?:read|open|access)|unable to (?:read|open|access)|not able to (?:read|open|access)"
-    r"|nothing (?:was )?(?:read|checked)|no files? (?:were |was )?read|sandbox (?:denied|blocked)", re.I)
+    r"|nothing (?:was )?(?:read|checked)|no files? (?:were |was )?read"
+    # The sandbox blocking a test run or network is normal; only blocked reads mean nothing was checked.
+    r"|sandbox (?:denied|blocked)(?: \w+){0,2} (?:reads?|reading|files?|access|opening)", re.I)
 
 
 def errors(value, schema, path="$"):
