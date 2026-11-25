@@ -482,8 +482,8 @@ class DevDocsTests(unittest.TestCase):
 
     def test_codex_host_gets_a_claude_second_opinion(self):
         gate = text("gate.md")
-        self.assertIn("On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; "
-                      "evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`.", " ".join(gate.split()))
+        self.assertIn("On a Codex host or exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; "
+                      "evidence `substitute: <reason | fallback line>`, `@…`); none could run → `skipped: <reason>`.", " ".join(gate.split()))
         self.assertNotIn("Exit 3 → `skipped: <fallback reason>`", gate)
         self.assertIn("Fix review (not a test-patches-only one) gets its Second opinion item", " ".join(gate.split()))
 

@@ -144,7 +144,7 @@ none), run in the background:
 `--prompt`: the Claude item's prompt; `--input`: its diff file plus
 untracked files the prompt names. Exit 0 → its findings count like any analyzer's, but a critical one
 only Codex raised is critical only if it breaks a criterion's or a hard project rule's wording, crashes
-or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host, or on exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; evidence `substitute: <reason>`, `@…`); none could run → `skipped: <reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
+or loses data; else a note: no question, no round. Evidence: its `Result:` line, `codex`, `@…`. On a Codex host or exit 3, a fresh Claude subagent gives it (same prompt, input, Codex's rule; evidence `substitute: <reason | fallback line>`, `@…`); none could run → `skipped: <reason>`. The Claude item runs regardless. Phase file `Builder: codex` → no `codex diff` item.
 
 **Spec checker** — gets the diff and the requirement (`@spec:`, else the phase file's acceptance
 criteria, else the ROADMAP.md phase description; none → item closed as "no spec"). It numbers

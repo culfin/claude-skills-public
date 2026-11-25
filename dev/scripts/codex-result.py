@@ -38,7 +38,8 @@ TITLES = {"diff": "Diff review", "security": "Security review", "fix": "Fix revi
 # Phrases in the model's own summary that mean it did not get to look at the code. Kept narrow:
 # "timeout handling" or "could not run the tests" are normal parts of a review.
 UNVERIFIED = re.compile(
-    r"\b(?:tools?|commands?|calls?|attempts?|reads?|shell)(?: \w+){0,2} (?:timed out|failed)"
+    # Heads name Codex's own tooling only: "commands/calls/attempts failed" also describes reviewed code.
+    r"\b(?:tools?|shell|sandbox|file reads?|my reads?)(?: \w+){0,2} (?:timed out|failed)"
     r"|\btimed out (?:while |when )?(?:reading|running|opening|executing|calling)"
     r"|could(?: not|n't) (?:read|open|access)|unable to (?:read|open|access)|not able to (?:read|open|access)"
     r"|nothing (?:was )?(?:read|checked)|no files? (?:were |was )?read|sandbox (?:denied|blocked)", re.I)
@@ -156,8 +157,9 @@ def check(args):
     if isinstance(answer, dict):
         if str(answer.get("blocked_reason", "")).strip():
             return "codex could not check: " + cell(answer["blocked_reason"])[:120]
-        if isinstance(answer.get("checked"), str) and UNVERIFIED.search(answer["checked"]):
-            return "codex could not check: " + cell(answer["checked"])[:120]
+        hit = UNVERIFIED.search(answer["checked"]) if isinstance(answer.get("checked"), str) else None
+        if hit:
+            return f'codex could not check ("{hit.group(0)}"): ' + cell(answer["checked"])[:120]
         if answer.get("files_read") == 0:
             return "codex read no files"
     problems = errors(answer, schema)
