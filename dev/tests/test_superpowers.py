@@ -53,9 +53,12 @@ class SuperpowersTests(unittest.TestCase):
         self.assertIn('skills/systematic-debugging/SKILL.md', m.required_paths())
         (self.root/'skills/systematic-debugging/SKILL.md').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')
-    def test_missing_stop_blocks(self):
-        (self.root/'skills/brainstorming/scripts/stop-server.sh').unlink()
+    def test_missing_builder_check_blocks(self):
+        (self.root/'skills/brainstorming/builder-check-prompt.md').unlink()
         self.assertEqual(m.inspect(self.root)['status'], 'blocked')
+
+    def test_companion_server_no_longer_required(self):
+        self.assertFalse(any('server' in p or 'visual-companion' in p for p in m.required_paths()))
     def test_versions_match(self):
         for p in ['.claude-plugin/plugin.json','.codex-plugin/plugin.json']: self.manifest(p, {'version':'6.4.1'})
         self.assertEqual(m.inspect(self.root)['status'],'files-present')

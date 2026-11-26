@@ -304,8 +304,11 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn('As a child thread: `runtime.md`, "Child threads" instead.', hint)
         for f in ("ci.md", "gate.md", "execution.md"):
             self.assertIn("t3_background_wait", text(f), f)
-        self.assertIn("### In T3", text("companion.md"))
-        self.assertIn("`html_render`", text("companion.md"))
+        c = text("companion.md")
+        self.assertIn("`html_render`", c)
+        self.assertIn("`Screen: <page path>`", c)  # t3-team: the lead shows a task thread's screen to the owner
+        for gone in ("companion.sh", "?key=", "alive check", "DEV_COMPANION"):
+            self.assertNotIn(gone, c)
         for f in DEV.glob("*.md"):
             self.assertNotIn("orca", f.read_text().lower(), f.name)
 

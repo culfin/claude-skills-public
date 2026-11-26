@@ -246,7 +246,6 @@ python3 -m unittest discover -s dev/hooks  -p 'test_*.py'   # stop hook
 python3 -m unittest discover -s dev/tests  -p 'test_*.py'   # evidence check, superpowers check
 python3 -m unittest discover -s deps/tests -p 'test_*.py'   # PR collection, branch config
 dev/tests/check-setup.sh                                     # your Claude Code installation
-dev/tests/check-screens.sh                                   # companion screens (needs Chrome)
 ```
 
 With a model — each run starts sessions with the `claude` CLI and uses your plan or API credit:

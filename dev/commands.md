@@ -9,7 +9,7 @@ Execution) stays in `SKILL.md`; the gate is in `gate.md`, CI in `ci.md`.
 
 1. **Read STATE.md** — show Blockers & Risks (if any) at the top, then `## Position` and `## Handoff` of
    the phase file of a phase this branch claims (`state.md`).
-2. **Show full roadmap** — in the terminal only (the companion is for the user interface): blockers
+2. **Show full roadmap** — in the chat only (screens are for the user interface): blockers
    first, then per milestone `### Milestone 2: UI Shell (1/3)` and a table `# | Phase | Type | Status
    | Spec | Plan` (status done/next/pending/claimed by <branch>), then requirements.
 3. **T3 mode:** worktree overview and removal offer (`runtime.md`, "Overview and clean-up").
@@ -61,10 +61,7 @@ All phases `[x]` or `[—]`; it starts on its own after the last phase (`SKILL.m
    progress) and the next action, with today's date.
 2. **Commit and push:** commit the phase file as `roadmap: pause Phase N` and push the branch if it
    has a remote.
-3. **Clean up the Visual Companion** (if the server is active):
-   - Push a waiting screen: `<div style="display:flex;align-items:center;justify-content:center;min-height:60vh"><p class="subtitle">Session paused — continue with /dev</p></div>`
-   - Then stop the server: `$DEV_DIR/scripts/companion-stop.sh <session_dir>`
-4. Show confirmation: "Session saved. Next time, run `/dev` to resume." — plus every path
+3. Show confirmation: "Session saved. Next time, run `/dev` to resume." — plus every path
    `git status --porcelain` lists, as uncommitted (lost with the worktree).
 
 ---

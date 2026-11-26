@@ -1,9 +1,8 @@
 # Companion screens — style rules and building blocks for `/dev`
 
-The procedure (server, alive check, URL) is in `companion.md`. This file covers
-what a screen looks like. Every building block is a **content fragment** (no `<html>`/`<head>`; the server
-wraps it in the frame template). Write it into `screen_dir` with the `Write` tool, never via
-`cat`/heredoc. The companion shows the newest file — for a new screen, write a new file.
+The procedure ("Show screen") is in `companion.md`. This file covers what a screen looks like. Every
+building block is a **content fragment** (no `<html>`/`<head>`; `scripts/screen-page.py` wraps it in a page
+with the styles below). Write it with the `Write` tool, never via `cat`/heredoc; a new screen is a new file.
 
 **The example content comes from one project** (a practice-management software, PDF export): it only shows the form.
 Every real screen contains the actual names, values and texts of the current project.
@@ -16,11 +15,11 @@ Every real screen contains the actual names, values and texts of the current pro
 - **Visual first.** A screen that is mostly text is wrong — write that text in the chat instead.
   Text on a screen: headings, labels, captions of at most one or two sentences per block.
 - **One statement per screen**; the heading states it.
-- **Colors only via the frame template's variables:** `var(--success)` done/good,
+- **Colors only via these variables** (they follow the T3 theme): `var(--success)` done/good,
   `var(--warning)` notice/in progress, `var(--error)` critical/blocker, `var(--accent)`
   current/recommended; surfaces `var(--bg-secondary)`, lines `var(--border)`.
 - **The recommended option** visibly carries "Recommended" and **the same label** as the option in
-  `AskUserQuestion` — the answer is given in the terminal; the browser only displays.
+  `AskUserQuestion` — the answer is given in the question dialog; the screen only displays.
 - **Real content** instead of placeholders wherever it changes the decision: real field names, real
   values, real texts from the project.
 - **UI/UX questions** show the states of the view for each option (building block "State grid") and — if
@@ -83,7 +82,7 @@ colors — independent of the page's system theme.
 ### Building block: Before/After
 
 After a visual fix or UI change: the same view before and after, side by side — two mockups or two
-real screenshots (served from `screen_dir` under `/files/<name>`), never two box diagrams.
+real screenshots (next to the fragment, referenced by file name), never two box diagrams.
 
 ```html
 <h2>Export button now sits next to the result, not in the menu</h2>
@@ -102,7 +101,7 @@ real screenshots (served from `screen_dir` under `/files/<name>`), never two box
 ### Building block: Real screen
 
 Review or acceptance with real data: a screenshot of the running app (taken e.g. with Playwright
-into `screen_dir`, served under `/files/<name>`), with numbered markers on what is wrong or worth
+into the screen's `src/` folder, referenced by file name), with numbered markers on what is wrong or worth
 checking and a one-line caption per marker. No prose section below the image.
 
 ```html

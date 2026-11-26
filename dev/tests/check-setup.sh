@@ -30,9 +30,6 @@ if [ "$(readlink "$HOME/.claude/skills/dev" 2>/dev/null)" = "$REPO/dev" ]; then
   else
     info "stop hook not registered (optional reminder for /dev check)"
   fi
-  if (source "$REPO/dev/scripts/companion-resolve.sh" && resolve_companion start-server.sh >/dev/null 2>&1); then
-    ok "superpowers companion found (active install)"
-  else fail "/dev needs the superpowers plugin (Visual Companion not found)"; fi
 fi
 
 DEV_DESIGN_DIR="${DEV_DESIGN_DIR:-$HOME/.claude/dev-design}"

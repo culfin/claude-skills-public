@@ -803,7 +803,8 @@ class RealContractTests(unittest.TestCase):
 
     def test_superpowers_reads_come_from_capability_check(self):
         reads = m.read_paths('superpowers', DEV / 'sources.md')
-        self.assertIn('skills/brainstorming/scripts/start-server.sh', reads)
+        self.assertIn('skills/brainstorming/builder-check-prompt.md', reads)
+        self.assertNotIn('skills/brainstorming/scripts/start-server.sh', reads)
         self.assertIn('skills/subagent-driven-development/SKILL.md', reads)
 
     def test_budget_and_no_local_paths(self):

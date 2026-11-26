@@ -26,17 +26,10 @@ Remove it: delete the entry whose command contains `dev/hooks/gate-check.py` fro
 `dev/tests/check-setup.sh` reports the hook as "not registered (optional)" when it is absent and
 checks it only when it is there.
 
-## Visual Companion from another device
+## Screens
 
-By default the companion server listens on `localhost` only. To open it from, say, a tablet over
-Tailscale:
-
-```bash
-export DEV_COMPANION_URL_HOST=my-machine.tailnet.ts.net
-```
-
-The server then listens on all interfaces and advertises that host in its URL. To make it permanent
-for Claude Code, add it under `"env"` in `~/.claude/settings.json`.
+`/dev` shows UI screens as self-contained HTML pages: in T3 with `html_preview`/`html_render` in the
+thread, on other hosts as a file path to open. No server, no port, nothing to configure.
 
 ## superpowers on hosts other than Claude Code
 

@@ -25,9 +25,8 @@ what the host actually offers.
   missing, the steps that need it are blocked, not skipped. Unchecked freshness is "version X,
   freshness unknown", never "up to date". A newer install counts from the next phase boundary (O3);
   updates only when the user asks (`/dev updates`).
-- **Visual Companion:** needs the superpowers brainstorm companion. `scripts/companion.sh` finds it
-  via `DEV_COMPANION_SCRIPTS_DIR` or `DEV_SUPERPOWERS_ROOT` (set one of them on hosts other than
-  Claude Code), else the active install recorded in Claude Code's `installed_plugins.json`. Not found → the screen step is blocked; say so.
+- **Screens:** no server. A host with T3's `html_preview`/`html_render` shows the page in the thread; any
+  other host names the page's path to open (`companion.md`).
 - **Stop hook** (`hooks/gate-check.py`): Claude Code only, a reminder, not enforcement. On Codex the
   gate runs the same without it.
 - **Slash commands:** `/dev check` names a workflow. Where the host has no slash commands, the user
@@ -61,7 +60,7 @@ its first 30 characters). `Phase 7: Export für Prüfberichte und Lieferscheine`
 - **Dev servers and heavy runs:** with `t3-team`, a port from the orchestrator's registry script (`port take`) and `heavy lock`
   around full suites and release builds (one lock covers Step D's parallel suite and build pair); a dev server only through the project's server action with
   `stopOnSettle`, never a bare background command.
-- **Screens:** the Visual Companion uses the T3 preview (`companion.md`, "In T3").
+- **Screens:** `html_preview` + `html_render` with the page path; real app screens with the `preview_*` tools (`companion.md`).
 
 **Parallel phase** — `/dev parallel [<N> …]`, or the user asks for a phase in parallel (that is the
 yes). Not in T3 mode → say so, start nothing. Without numbers: one AskUserQuestion (multiSelect)

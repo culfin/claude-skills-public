@@ -9,9 +9,8 @@ from pathlib import Path
 REQUIRED = ('brainstorming', 'writing-plans', 'subagent-driven-development',
             'receiving-code-review', 'systematic-debugging')
 
-# Builder check (sources.md O14), companion protocol (companion.md) and the companion scripts.
-BRAINSTORMING_FILES = ('builder-check-prompt.md', 'visual-companion.md',
-                       'scripts/start-server.sh', 'scripts/stop-server.sh')
+# Builder check (sources.md O14); screens no longer use the plugin's companion server (companion.md).
+BRAINSTORMING_FILES = ('builder-check-prompt.md',)
 
 # Prompts and scripts execution.md hands to implementers and task reviewers.
 SDD_FILES = ('implementer-prompt.md', 'task-reviewer-prompt.md', 're-review-prompt.md',
