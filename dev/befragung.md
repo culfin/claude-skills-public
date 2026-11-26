@@ -15,7 +15,8 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    next round. **Never as free text** with (a)/(b)/(c) — not even in the first round.
    If the round contains a question with a UI/UX side (definition in `companion.md`), the matching
    screen is shown **before the `AskUserQuestion` call** ("Show screen", building blocks in
-   `companion-screens.md`); the options have the same names on the screen and in the dialog.
+   `companion-screens.md`); the options have the same names on the screen and in the dialog. Under
+   `t3-team` the question text names `Screen: <page path>` (the lead shows it to the owner).
    **Core-rule phase** (`SKILL.md` 4a): the first question shows the `Domain model:` — Current and
    Intended side by side — and asks whether Intended is what the user means: "matches" or "differs"
    with the difference in their words, neither marked "(Recommended)": Intended is your draft, a
