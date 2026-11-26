@@ -5,11 +5,9 @@ The main session dispatches every implementer and reviewer itself
 
 ## Setup
 
-- **`$SDD`** = `<active superpowers root>/skills/subagent-driven-development`; the active root is the
-  `installPath` in `~/.claude/plugins/installed_plugins.json`, elsewhere `DEV_SUPERPOWERS_ROOT`, checked
-  once per session with `python3 "$DEV_DIR/scripts/check-superpowers.py" --root <root>` (`blocked` → the
-  steps needing it are blocked; `runtime.md`). Its prompts and scripts are used directly, its skill is
-  not invoked (`sources.md` O1, O16).
+- **`$SDD`** = `$DEV_DIR/vendor/sdd` (a copy of superpowers' subagent-driven-development, `vendor/README.md`),
+  checked once per session with `python3 "$DEV_DIR/scripts/check-vendor.py"` (`blocked` → the steps needing
+  it are blocked). Its prompts and scripts are used directly, its guide is not invoked as a skill (`sources.md` O1, O16).
 - **Phase branch** = the branch the session is on when the phase starts. Task branches merge into it;
   nothing else is merged or pushed here.
 - **Workspace:** `bash "$SDD/scripts/sdd-workspace" <plan file>` prints the git-ignored directory for
@@ -50,7 +48,7 @@ Copy the phase's acceptance criteria from its phase file (`state.md`) into
 adopts an old workspace) and run `sdd-workspace` on it at once (it writes the `.gitignore` that keeps
 the file out of git); the file is both plan and brief. One implementer with `$SDD/implementer-prompt.md`,
 in the current tree, then the gate: no task review and no fix loop here — gate Step A is the review.
-Report statuses: `$SDD/SKILL.md`, "Handle the report".
+Report statuses: `$SDD/GUIDE.md`, "Handle the report".
 
 ## Planned phase — waves
 
@@ -90,11 +88,11 @@ Record the wave's BASE (`git rev-parse HEAD` on the phase branch).
 `bash "$SDD/scripts/review-package" <plan> <BASE> <task branch or HEAD>`, then a reviewer with
 `$SDD/task-reviewer-prompt.md`, given the brief, the report, the package and the binding constraints
 copied verbatim from the spec. Report statuses (`DONE_WITH_CONCERNS`, `NEEDS_CONTEXT`, `BLOCKED`):
-`$SDD/SKILL.md`, "Handle the report".
+`$SDD/GUIDE.md`, "Handle the report".
 
 **Fix loop — at most 5 rounds per task.** Spec ❌ or a Critical/Important finding starts it.
 Rounds 1–3 resume the same implementer with the open findings verbatim. Fixers follow
-`receiving-code-review`: verify each finding, push back with reasons. Rounds 4–5 dispatch a fresh
+`spec-plan.md`, "Review reception": verify each finding, push back with reasons. Rounds 4–5 dispatch a fresh
 implementer one tier up (`models.md`) with brief, report and findings — **without** isolation, told
 to work only inside the task's existing worktree (its absolute path), where the task branch and its
 commits are. After each round, a scoped re-review:

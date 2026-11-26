@@ -175,9 +175,9 @@ same analyzer file, or an equivalent tool the project uses), never the implement
 
 - **Only (d) findings with their proven patches:** apply them (`git apply`), run those tests, commit, tick `Fix review — test patches only` with that run; no fix dispatch or other review.
 - **Critical findings, all of them, go to one fix dispatch** (model per `models.md`) with the Spec
-  checker's test patches — one agent sees how fixes interact; it follows `receiving-code-review`.
+  checker's test patches — one agent sees how fixes interact; it follows `spec-plan.md`, "Review reception".
   Lowering the floor (skipping a test, loosening a check) is not a fix. When the cause of a finding
-  or red run is unclear, the fix agent follows `superpowers:systematic-debugging`.
+  or red run is unclear, the fix agent follows the method in `debugger.md`.
 - **Non-critical findings** go to the phase file's `## Minor (deferred)`; the phase continues.
 - **Fix review** — afterwards, rerun only the analyses that had a critical finding, with the
   requirement (a weakened criterion is critical), only on the fix diff against the wave's `@state`, untracked files included:

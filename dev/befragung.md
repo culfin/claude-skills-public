@@ -1,6 +1,6 @@
 # Clarification — bundled round at run start, interview in rounds for architectural phases
 
-The interview replaces only the conversation of `superpowers:brainstorming`; sizing, the written design and its builder check stay there.
+The interview is the conversation of step 4a (`SKILL.md`); the spec and its builder check follow it there.
 
 ## Procedure
 
@@ -26,15 +26,8 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    and have the user confirm it via `AskUserQuestion` ("Is this correct?"). If the user clicked
    through a round accepting only the recommendations and a later question depends on one of those
    answers, the summary explicitly names the most far-reaching of them.
-5. **Hand-off to `superpowers:brainstorming`** with this note, followed by the list:
-
-   > Clarification complete, result below. Classification: architectural — a project with a
-   > written design. Skip the opening message; ask nothing answered below. The understanding is
-   > confirmed — no playback. Do not offer the Visual Companion server: show screens with "Show screen"
-   > of the `/dev` skill (`companion.md`; building blocks in `companion-screens.md`) for every question
-   > with a UI/UX side — and only for those (no plans, approaches or architecture diagrams). Copy the list
-   > into the spec as the section "Decisions from the interview". After the builder check, add the calls
-   > you made yourself to the phase's `Decisions:` line in ROADMAP.md.
+5. **Hand-off to the spec** (`SKILL.md` 4a, step 3): the confirmed list goes into the spec verbatim as
+   "Decisions from the interview"; nothing answered there is asked again.
 
 ## Bundled round at run start
 

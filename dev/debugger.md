@@ -2,7 +2,16 @@
 
 Bug investigation via `/dev debug [<description>]`; returns to phase execution once the fix is verified.
 
-**Method:** invoke `superpowers:systematic-debugging` and follow its phases — root cause before fix, one hypothesis at a time, 3 failed fixes → question the architecture, instrumentation at component boundaries, defense-in-depth after the cause is found. This file adds only the rules and steps below; where they differ from the skill, this file wins (`sources.md` O17) — its strong wording does not override a `/dev` rule.
+**Method — root cause before any fix:**
+1. **Reproduce:** a red command (test, script, request) that shows the bug; no hypothesis before it. A timeout
+   under load: re-run the same commit at low load first.
+2. **Read and trace:** the full error and stack; follow the bad value back to where it first goes wrong;
+   at component boundaries (API, queue, DB, UI state) log or assert what goes in and out.
+3. **One hypothesis at a time:** state it, test it with the smallest change or probe, keep or drop it — never
+   stack untested changes. Compare with a working path or version (`git bisect` when there is one).
+4. **Fix the cause** with a test that is red before and green after; then guard the path the bad value took.
+5. **Three failed fixes → stop fixing:** question the design or architecture and say so before a fourth.
+This file adds the rules and steps below (`sources.md` O17).
 
 ---
 

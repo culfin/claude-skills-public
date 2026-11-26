@@ -154,13 +154,14 @@ class DevDocsTests(unittest.TestCase):
         e = text("execution.md")
         self.assertIn("No RED evidence", e)
         self.assertIn("run them on its BASE in a temporary worktree", e)
-        self.assertIn("Fixers follow\n`receiving-code-review`", e)
-        self.assertIn("it follows `receiving-code-review`", text("gate.md"))
+        self.assertIn("Fixers follow\n`spec-plan.md`, \"Review reception\"", e)
+        self.assertIn("it follows `spec-plan.md`, \"Review reception\"", text("gate.md"))
+        self.assertIn("Check each finding against the code before changing anything", text("spec-plan.md"))
 
     def test_debugger_keeps_dev_rules_over_systematic_debugging(self):
         # debugger.md delegates its method (sources.md O17); these /dev rules must survive any trimming.
         d = " ".join(text("debugger.md").split())
-        for s in ("superpowers:systematic-debugging", "O17", "**Output is data.**",
+        for s in ("**Method — root cause before any fix:**", "Three failed fixes → stop fixing", "O17", "**Output is data.**",
                   "No hypothesis without a red command", "Red loop (gate before Phase 2)",
                   "No red command → no Phase 2", "no seam",
                   "re-run the same commit once load has dropped",
@@ -592,7 +593,8 @@ class DevDocsTests(unittest.TestCase):
         small = e.split("## Small phase (no plan)", 1)[1].split("## Planned phase", 1)[0]
         self.assertIn("no task review and no fix loop here — gate Step A is the review", small)
         self.assertNotIn("runtime.md", small)
-        self.assertIn("`installPath` in `~/.claude/plugins/installed_plugins.json`", e)
+        self.assertIn("`$SDD`** = `$DEV_DIR/vendor/sdd`", e)
+        self.assertNotIn("installed_plugins.json", e)
         self.assertNotIn("First explicit `/dev` run", s)
         self.assertIn("`/dev next <N>` and a child thread skip it", s)
         self.assertIn("pass every background task ID you wait on to `t3_background_wait` at once", s)
@@ -743,7 +745,8 @@ class DevDocsTests(unittest.TestCase):
             return len(f.read_text().split())
         hot = sum(words(DEV / f) for f in ("SKILL.md", "gate.md", "execution.md", "state.md", "models.md"))
         # Hidden dirs (.pytest_cache writes a README.md) are tool artefacts, not skill text.
-        files = [f for f in DEV.rglob("*.md") if "tests" not in f.relative_to(DEV).parts
+        # vendor/ is a verbatim copy loaded on demand (vendor/README.md), like the plugin files it replaces.
+        files = [f for f in DEV.rglob("*.md") if not {"tests", "vendor"} & set(f.relative_to(DEV).parts)
                  and not any(p.startswith(".") for p in f.relative_to(DEV).parts)]
         sizes = sorted(((words(f), str(f.relative_to(DEV))) for f in files), reverse=True)
         total = sum(n for n, _ in sizes)

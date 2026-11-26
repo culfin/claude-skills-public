@@ -32,6 +32,7 @@ step needs.
 | `/dev updates` | skill `dev-updates` (separate); not available → "`/dev updates` needs the `dev-updates` skill — N updates waiting in `pending/`, nothing applied" | On the command |
 | Frontmatter `defaults.flow: lean`; `defaults.gate: slim` (else never) | `lean.md`; `gate-slim.md` | `/dev init`, `add`, `reorder`, bundled round; 4a; 4c; step 7; 4d; gate |
 | A new use of a foreign skill | `sources.md` | On the change |
+| Spec, plan, review reception | `spec-plan.md` | Step 4a spec, 4b, before a fix round |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
 | Subagent models; state file formats; unmigrated project | `models.md`; `state.md`; `state-old-format.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md; old format (Session Start 2) |
@@ -170,18 +171,15 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
    (format in `state.md`), closed by the line `Criteria complete.` — no approval round. Ask only
    questions whose answer changes what gets built, via `AskUserQuestion`, recommendation first with
    "(Recommended)"; look up facts yourself instead of asking.
-3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then
-   `superpowers:brainstorming` with the handoff note from `befragung.md` **and this override**: no
-   approvals, write and commit the spec (`sources.md` O14). Its hand-off to `writing-plans` carries the
-   4b instruction. After the spec is committed: add `@spec:` to ROADMAP.md.
+3. **Architectural → interview in rounds per `befragung.md`** (incl. ADRs), then spec and builder check per
+   `spec-plan.md`, no approval round. After the spec is committed: add `@spec:` to ROADMAP.md.
 
 Both: matching tech skills first (`--triggers --step 4a`, router). The phase builds or changes UI
 (criteria or spec name a screen, page, view, dialog or component; any `@type:`; then `--ui` in every step) and `ux-ui-design` is
 available → invoke it in planning mode before the criteria or spec; its UX questions join the round. Questions with a
-UI/UX side: "Show screen", and pass on the hand-off note's screen sentence (`befragung.md`, step 5).
+UI/UX side: "Show screen" (`companion.md`).
 
-**4b. Planning:** `superpowers:writing-plans` with "no execution-method question; do not start
-execution — `/dev` does" (`sources.md` O15). Commit the plan, add `@plan:` to ROADMAP.md, go on to 4c — no approval.
+**4b. Planning:** the plan per `spec-plan.md`. Commit it, add `@plan:` to ROADMAP.md, go on to 4c — no approval.
 
 **4c. Execution → read `execution.md`.** No separate verification step: gate Step D proves it.
 

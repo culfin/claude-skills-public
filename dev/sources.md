@@ -71,14 +71,14 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
   the indexed folders may be read, never run, and the sibling triage script is not run. When the task itself
   calls for WP-CLI, nothing runs against a production site without the user's go-ahead. The skills'
   "WordPress 7.0+" assumption is checked against the project's version before a rule applies.
-- **O14** brainstorming: no playback or design approval; its HARD-GATE is not applied — `/dev` writes and
-  commits the spec and continues; the builder check runs, its questions follow O2 (`SKILL.md` 4a).
-- **O15** writing-plans: no execution-method question; `/dev` executes per `execution.md` (`SKILL.md` 4b).
-- **O16** subagent-driven-development: `execution.md` uses its prompts and scripts — parallel implementers
+- **O14** brainstorming: not invoked; `/dev` writes and commits the spec itself, no playback or design
+  approval, and runs the vendored builder check, its questions per O2 (`SKILL.md` 4a).
+- **O15** writing-plans: not invoked; `/dev` writes the plan itself, no execution-method question (`SKILL.md` 4b).
+- **O16** subagent-driven-development: `execution.md` uses its prompts and scripts from the copy in `vendor/sdd` — parallel implementers
   in worktrees (not "never parallel"), 5 fix rounds, then rulings instead of a halt, no final review or branch finishing
   (O1). Removing `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`,
   `scripts/task-brief` or `scripts/review-package` is a conflict.
-- **O17** systematic-debugging is `/dev debug`'s method; `debugger.md` wins, its strong wording does not. Kept:
+- **O17** systematic-debugging: not invoked; its core is written into `debugger.md` ("Method"). Kept:
   the obvious-fix fast path (`commands.md`), a red command before any hypothesis, questions per O2, no
   `verification-before-completion` (`test-driven-development` allowed). Replaced: "no root cause → retry or
   timeout" — timeouts under load mean re-running the same commit at low load first. Dropping its 3-failed-fixes
