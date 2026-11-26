@@ -35,7 +35,7 @@ step needs.
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
 | Subagent models; state file formats; unmigrated project | `models.md`; `state.md`; `state-old-format.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md; old format (Session Start 2) |
-| Visual Companion ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
+| Screens ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
 | Host other than Claude Code; T3 hand-off, PR, asking, child threads | `runtime.md` | When that step comes |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start over several phases, architectural 4a; gate Step D |
 | Tech, design, security triggers and sources | `python3 "$DEV_DIR/scripts/detect-stack.py" --triggers --step <step> --type <@type> [--ui]` (fails → read `tech-stack-triggers.md`, say so) → `stack/docs.md`, `design/INDEX.md` | Steps `4a`, `4c`, `gate` (Step A) |
@@ -49,7 +49,7 @@ step needs.
 the user has not typed `/dev` or asked to work on the roadmap: read ROADMAP.md, print
 `Roadmap: <milestone> — next: Phase N <name> [<state>]. Continue with /dev.`, then turn to what
 the user asked. `${DEV_UPDATES_DIR:-$HOME/.claude/dev-updates}/pending/*.json` exist (count, read
-none) → insert `, N skill updates waiting — /dev updates` before the final period. No companion,
+none) → insert `, N skill updates waiting — /dev updates` before the final period. No screen,
 no `AskUserQuestion`, no stack detection, no file writes. The steps below run only on an explicit
 `/dev`, `/dev next` or roadmap request.
 
@@ -70,7 +70,7 @@ no `AskUserQuestion`, no stack detection, no file writes. The steps below run on
    **Other sessions:** skip phases reported `claimed` unless the user picks one; `stale claim` → ask
    first; `done on <main>` → mark it, never redo it; `unclaimed` → claim it on resume. Next free phase builds on a skipped
    one → halt and say so.
-7. **Show summary** in the terminal (never the companion):
+7. **Show summary** in the chat (never a screen):
    ```
    Milestone 2: UI Shell (3/5 phases done)
    Next: Phase 4 — Connections View (@type:ui)   [resume: gate, first open item "Spec checker"]
@@ -178,8 +178,7 @@ First phase of a new milestone → `defaults.skills.milestone-start` as parallel
 Both: matching tech skills first (`--triggers --step 4a`, router). The phase builds or changes UI
 (criteria or spec name a screen, page, view, dialog or component; any `@type:`; then `--ui` in every step) and `ux-ui-design` is
 available → invoke it in planning mode before the criteria or spec; its UX questions join the round. Questions with a
-UI/UX side: ensure the companion via "Show screen" and pass on the hand-off note's companion
-sentences (`befragung.md`, step 5).
+UI/UX side: "Show screen", and pass on the hand-off note's screen sentence (`befragung.md`, step 5).
 
 **4b. Planning:** `superpowers:writing-plans` with "no execution-method question; do not start
 execution — `/dev` does" (`sources.md` O15). Commit the plan, add `@plan:` to ROADMAP.md, go on to 4c — no approval.

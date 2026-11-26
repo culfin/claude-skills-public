@@ -14,9 +14,8 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
    rationale in its description. Questions that depend on an open answer go into the
    next round. **Never as free text** with (a)/(b)/(c) — not even in the first round.
    If the round contains a question with a UI/UX side (definition in `companion.md`), the matching
-   screen is written **before the `AskUserQuestion` call** (building blocks in `companion-screens.md`)
-   and the text before the call ends with the companion URL (the dialog can cover earlier output); the
-   options have the same names in the browser and in the terminal.
+   screen is shown **before the `AskUserQuestion` call** ("Show screen", building blocks in
+   `companion-screens.md`); the options have the same names on the screen and in the dialog.
    **Core-rule phase** (`SKILL.md` 4a): the first question shows the `Domain model:` — Current and
    Intended side by side — and asks whether Intended is what the user means: "matches" or "differs"
    with the difference in their words, neither marked "(Recommended)": Intended is your draft, a
@@ -31,11 +30,9 @@ The interview replaces only the conversation of `superpowers:brainstorming`; siz
 
    > Clarification complete, result below. Classification: architectural — a project with a
    > written design. Skip the opening message; ask nothing answered below. The understanding is
-   > confirmed — no playback. The Visual Companion is already running (URL below).
-   > Do not offer it; use it directly for every question with a UI/UX side — and only for those
-   > (no plans, approaches or architecture diagrams on screens); building blocks are in
-   > `companion-screens.md` of the `/dev` skill. Every message that shows a new or updated screen, or
-   > asks about one, ends with this URL on its own line, verbatim; status messages carry none. Copy the list
+   > confirmed — no playback. Do not offer the Visual Companion server: show screens with "Show screen"
+   > of the `/dev` skill (`companion.md`; building blocks in `companion-screens.md`) for every question
+   > with a UI/UX side — and only for those (no plans, approaches or architecture diagrams). Copy the list
    > into the spec as the section "Decisions from the interview". After the builder check, add the calls
    > you made yourself to the phase's `Decisions:` line in ROADMAP.md.
 

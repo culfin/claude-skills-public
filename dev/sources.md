@@ -44,8 +44,8 @@ An update that strengthens the overridden behaviour is fine; one that makes the 
 
 - **O1** `subagent-driven-development` stops after tasks and per-task reviews: no
   `finishing-a-development-branch`, no nested worktree, no final whole-branch review (`execution.md`).
-- **O2** Brainstorming asks every question via `AskUserQuestion`, recommendation first; the Visual Companion
-  shows only user interface, never plans or findings (`SKILL.md` 4a, `companion.md`).
+- **O2** Brainstorming asks every question via `AskUserQuestion`, recommendation first; screens
+  show only user interface, never plans or findings (`SKILL.md` 4a, `companion.md`).
 - **O3** The active install is the one Claude Code records, never "the newest cache directory"; no plugin
   switch mid-phase (`runtime.md`).
 - **O4** Emil's skills open with "respond only with: I'm ready …" — `/dev` ignores that and applies the

@@ -1,7 +1,7 @@
 # `/dev ui [scope]` — Analyse a UI and rework it
 
 Standalone mode like `/dev check`: reviews one part of the running product, writes `UI-REVIEW.md`
-(project root), changes code only after approval. Screens per `companion.md` (URL only with a new screen).
+(project root), changes code only after approval. Screens per `companion.md`.
 
 ## Precondition
 
@@ -29,7 +29,7 @@ and dark via `prefers-color-scheme` if supported. **Native:** simulator shots. *
 forms or states row or the ux subagent in scope (step 3), trigger error, success, empty and loading with throwaway
 input (never against production) and capture them — else the finding's evidence says "judged from code, not captured".
 
-Save into `screen_dir` as `ui-<view>[-<state>]-<viewport>-<theme>.png` — the "before" set. Capture
+Save into the screen's `src/` folder (`companion.md`) as `ui-<view>[-<state>]-<viewport>-<theme>.png` — the "before" set. Capture
 all views first, then **Show screen** once: "Real screen" (markers come in step 4). App not
 startable → say why; screenshot-based analyses report `skipped: app not running`, the rest still run.
 

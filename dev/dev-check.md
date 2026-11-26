@@ -61,7 +61,7 @@ Heading uses `entire codebase` instead of `N files` when full-codebase mode was 
 
 **4. Post-check summary** — after the check commit, show a summary of what ran:
 
-- **≥ 3 findings across all checks:** a findings table in the terminal — grouped by category (critical / notice), tools that ran, what was fixed. No companion screen: findings are not user interface (`companion.md`, ground rule). Runs regardless of whether ROADMAP.md exists.
+- **≥ 3 findings across all checks:** a findings table in the terminal — grouped by category (critical / notice), tools that ran, what was fixed. No screen: findings are not user interface (`companion.md`, ground rule). Runs regardless of whether ROADMAP.md exists.
 - **< 3 findings:** Terminal-only — do not echo the check summary again. Show two-line confirmation:
 
 ```
