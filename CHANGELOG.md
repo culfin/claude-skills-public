@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.20.0 — 2026-11-26
+
+**dev** — Screens no longer need the Visual Companion server. It cost a port, a tokened URL in every message, an alive check before each write and restarts after its idle timeout, and on T3 it never ran anyway. A screen is now a self-contained HTML page: `scripts/screen-page.py` wraps a `companion-screens.md` fragment with styles that follow the host's theme variables (T3's `html_render` sheet, with fallbacks for a plain browser) and makes image paths absolute. T3 shows it with `html_preview` + `html_render`; other hosts name the file to open; real app screens come from T3's `preview_*` tools. A `t3-team` task thread's question names `Screen: <page path>`, because the lead it asks cannot see the task's thread. Removed: `companion.sh`, `companion-resolve.sh`, `companion-stop.sh`, `tests/check-screens.sh`, the companion part of `check-setup.sh` and of the superpowers check. Evidence (`claude plugin eval`, 2 cases × 3 runs, graded by rubric and read by hand): old 0/6 (every run started the server), new 6/6.
+
 ## v4.19.2 — 2026-11-25
 
 **dev** — The Codex second opinion still fell back three times in a row on one phase, now with the reason `codex could not check ("sandbox blocked")` that v4.19.1 made visible. Codex had compared the base and head logic against the new fixtures; the sandbox had only kept it from running something. "sandbox denied/blocked" was one of the "could not check" phrases since the check was added, so this is the same false positive class as v4.19.1, not a regression of it. The phrase now counts only when the sandbox blocked reads, files, access or opening. A blocked test run or network stays a normal part of a review; `blocked_reason` and `files_read: 0` still catch a run that read nothing.
