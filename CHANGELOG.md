@@ -2,6 +2,10 @@
 
 Why things changed, not just what. Rules in the skills stay free of history; it lives here.
 
+## v4.20.1 — 2026-11-27
+
+**dev** — Every subagent dispatch now ends with `dispatch-footer.md` verbatim: never stop or signal a process the subagent did not start, and clean up only PIDs it recorded at start. Implementer subagents had twice stopped test workers that may have belonged to another session on a shared machine; the rule existed for the main session but never reached the subagents it dispatches. The line lives in its own file so the hot path stays at its budget (`models.md` only points to it). Evidence (`claude plugin eval`, 1 case × 3 runs, the implementer dispatch of a small phase, read by hand): old 0/3 (no process rule in any dispatch), new 3/3 (the line verbatim at the end of the dispatch block).
+
 ## v4.20.0 — 2026-11-26
 
 **dev** — Screens no longer need the Visual Companion server. It cost a port, a tokened URL in every message, an alive check before each write and restarts after its idle timeout, and on T3 it never ran anyway. A screen is now a self-contained HTML page: `scripts/screen-page.py` wraps a `companion-screens.md` fragment with styles that follow the host's theme variables (T3's `html_render` sheet, with fallbacks for a plain browser) and makes image paths absolute. T3 shows it with `html_preview` + `html_render`; other hosts name the file to open; real app screens come from T3's `preview_*` tools. A `t3-team` task thread's question names `Screen: <page path>`, because the lead it asks cannot see the task's thread. Removed: `companion.sh`, `companion-resolve.sh`, `companion-stop.sh`, `tests/check-screens.sh`, the companion part of `check-setup.sh` and of the superpowers check. Evidence (`claude plugin eval`, 2 cases × 3 runs, graded by rubric and read by hand): old 0/6 (every run started the server), new 6/6.
