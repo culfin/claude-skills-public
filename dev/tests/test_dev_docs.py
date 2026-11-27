@@ -53,6 +53,13 @@ class DevDocsTests(unittest.TestCase):
                      "fix review", "implementer", "task review", "milestone"):
             self.assertIn(role, m, role)
 
+    def test_every_dispatch_ends_with_the_process_footer(self):
+        # A subagent stopped foreign vitest workers by PID on a shared machine (2026-11-23, 2026-11-27).
+        self.assertIn("end its prompt with `dispatch-footer.md`, verbatim", text("models.md"))
+        self.assertEqual(text("dispatch-footer.md").strip(),
+                         "Never stop or signal a process you did not start in this session; "
+                         "to clean up, stop only PIDs you recorded at start.")
+
     def test_security_review_ignores_the_tier(self):
         g = text("gate.md")
         t = text("tech-stack-triggers.md")

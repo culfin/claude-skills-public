@@ -34,7 +34,7 @@ step needs.
 | A new use of a foreign skill | `sources.md` | On the change |
 | Implementation; quality gate | `execution.md`; `gate.md` | Step 4c and its resume; gate entry, resuming `[!]` |
 | CI in background, CI repair | `ci.md` | Gate commit; Pre-Phase step 1; Milestone End, Pre-Release Review, `/dev check` |
-| Subagent models; state file formats; unmigrated project | `models.md`; `state.md`; `state-old-format.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md; old format (Session Start 2) |
+| Subagent models, footer; state formats; unmigrated project | `models.md`, `dispatch-footer.md`; `state.md`; `state-old-format.md` | Before dispatching subagents; before writing a phase file, gate record or STATE.md; old format (Session Start 2) |
 | Screens ("Show screen", without asking; user interface only) | `companion.md`; `companion-screens.md` | Before the first screen; when writing one |
 | Host other than Claude Code; T3 hand-off, PR, asking, child threads | `runtime.md` | When that step comes |
 | Bundled round, interview, ADRs; E2E | `befragung.md`; `e2e-testing.md` | Run start over several phases, architectural 4a; gate Step D |

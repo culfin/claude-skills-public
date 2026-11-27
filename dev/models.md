@@ -1,6 +1,6 @@
 # Subagent model choice
 
-**Name a model in every dispatch**; an omitted one inherits the session model. Tiers: on a Claude host cheap = haiku, standard = sonnet, capable = opus:
+**Name a model in every dispatch** (omitted: inherits the session model) **and end its prompt with `dispatch-footer.md`, verbatim.** Tiers: on a Claude host cheap = haiku, standard = sonnet, capable = opus:
 
 | Role | Tier |
 |---|---|
