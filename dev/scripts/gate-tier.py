@@ -46,6 +46,10 @@ DEPS = re.compile(
 # Slim gate (gate-slim.md): extra security paths (secrets, tokens, access policy, expensive endpoints) ...
 SECRETS = re.compile(r"(^|/)\.env|secret|credential|password|token|oauth|jwt|crypt|(^|/)[^/]*(signup|register|reset"
                      r"|otp|upload|polic)[^/]*$|(^|/)(auth|login|session|middleware)[^/]*$|(^|/)route\.[cm]?[jt]sx?$", re.I)
+# ... and money, plans, trials and tenancy (step 3, 27.11.2026: a trial restart via a second organization slipped through).
+MONEY = re.compile(r"(^|/|[-_.])(billing|payments?|pricing|prices?|plans?|trials?|test-period|subscriptions?|checkout"
+                   r"|invoices?|stripe|paddle|credits?|quotas?|tenants?|tenancy|organi[sz]ations?|orgs?|members?|invitations?)"
+                   r"([-_./]|$)", re.I)
 STYLE = (".css", ".scss", ".less")
 # Test names of the native stacks, beyond TEST_PATH (which also decides the tier).
 SLIM_TESTS = re.compile(r"[^/]*Tests?\.(swift|kt|java)$|(^|/)[^/]*Tests/")
@@ -62,7 +66,7 @@ def slim_triggers(rows, typ):
     code = [p for p, _ in kept]
     lines = sum(n for p, n in kept if not p.lower().endswith(".md"))
     sec = sorted({p for p in code if SENSITIVE.search(p) or DB_CHANGE.search(p)
-                  or (SECRETS.search(p) and not p.lower().endswith(STYLE))
+                  or ((SECRETS.search(p) or MONEY.search(p)) and not p.lower().endswith(STYLE))
                   or (not p.lower().endswith(".md") and (OPS.search(p) or DEPS.search(p)))})
     ui = sorted({p for p in code if UI.search(p)})
     web = any(p.lower().endswith(WEB_UI) for p in ui)

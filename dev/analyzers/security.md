@@ -34,7 +34,12 @@ webhooks, file uploads, queue consumers, IPC commands) and follow each input to 
 9. **Row-level authorization.** Queries on user- or tenant-owned data are scoped by the session's
    tenant/user, never by input, or guarded by a database policy (Postgres RLS — mandatory where
    clients query the database directly). A new table for such data without either is critical.
-10. **Dependencies used in scope.** A called library function with a known unsafe mode (e.g. YAML
+10. **Plans, trials, money and tenancy.** Can a caller get a paid plan, a fresh or longer trial, credit,
+   a lower price or another tenant's data through a second account or organization, a client-supplied
+   field the server trusts (metadata, body or query ids, hidden inputs for plan, trial dates, price,
+   tenant or role), replay or request order? Server-side state decides. A way to a free paid plan or a
+   restarted trial is critical.
+11. **Dependencies used in scope.** A called library function with a known unsafe mode (e.g. YAML
    `load`, `pickle`, `eval`-like template features).
 
 ## Sweep

@@ -60,6 +60,15 @@ class DevDocsTests(unittest.TestCase):
                          "Never stop or signal a process you did not start in this session; "
                          "to clean up, stop only PIDs you recorded at start.")
 
+    def test_slim_gate_dispatches_its_items_and_keeps_guards_green(self):
+        # Owner 27.11.2026 ("Schlank plus Sicherheitsprüfer"): replays showed slim items ticked from the main
+        # session's own reading (0/3 security dispatches) and a phase done with `test:parity` red.
+        s = " ".join(text("gate-slim.md").split())
+        self.assertIn("**each its own Agent dispatch** with its `gate.md` Step A analyzer", s)
+        self.assertIn("an item ticked without one is not done", s)
+        self.assertIn("a phase with a red test or guard is not done", s)
+        self.assertIn("**Plans, trials, money and tenancy.**", text("analyzers/security.md"))
+
     def test_security_review_ignores_the_tier(self):
         g = text("gate.md")
         t = text("tech-stack-triggers.md")

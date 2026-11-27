@@ -223,6 +223,19 @@ class GateTierTests(unittest.TestCase):
         self.write("config/secrets.py", 5)
         self.assertTrue(self.slim()[0].startswith("+ security: "), self.slim())
 
+    def test_slim_security_covers_money_plans_trials_tenancy(self):
+        # Step 3 replay 27.11.2026: tp 409 (trial restart via a second organization) needs the security reviewer.
+        for f in ("src/lib/test-period-settings.ts", "src/features/billing/upgrade.ts", "src/lib/plans.ts",
+                  "src/features/organization/create.ts", "src/server/tenant-scope.ts"):
+            with self.subTest(f):
+                self.write(f, 5)
+                self.assertIn(f, self.slim()[0])
+
+    def test_slim_money_words_need_a_whole_path_part(self):
+        for f in ("src/lib/explanation.ts", "src/lib/planet.ts", "src/lib/organize.ts", "src/lib/membership-card.py"):
+            self.write(f, 5)
+        self.assertEqual(self.slim(), ["+ none"])
+
     def test_slim_security_by_risk_type(self):
         self.write("app.py", 5)
         self.assertTrue(self.slim("--type", "data")[0].startswith("+ security: "))
