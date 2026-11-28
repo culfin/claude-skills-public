@@ -588,7 +588,7 @@ class EvidenceTests(unittest.TestCase):
         # A current Fix review still covers the review items in the slim gate.
         i = self.sid()
         self.state(["<!-- gate: slim -->", f"- [x] Code review — 1 finding @{old}",
-                    f"- [x] Fix review — round 1: 0 critical @{i}",
+                    f"- [x] Fix review — round 1: 0 critical; criticals: none @{i}",
                     f"- [x] Typecheck + lint + tests — 0 errors, 12 passed @{i}"])
         self.assertEqual(self.run_check(), [])
 
@@ -606,7 +606,23 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             ce.mark(self.root, f, "Fix review", "round 3: 0 critical")
         self.assertIn("at most 2 fix rounds", str(e.exception))
-        self.assertIn("round 2: 0 critical", ce.mark(self.root, f, "Fix review", "round 2: 0 critical"))
+        self.assertIn("round 2: 0 critical", ce.mark(self.root, f, "Fix review", "round 2: 0 critical; criticals: none"))
+
+    def test_slim_round_names_every_critical_with_its_state(self):
+        # Owner 28.11.2026: a replay fixed one of two criticals in round 1 and never said why the other stayed out.
+        i = self.sid()
+        self.state(["<!-- gate: slim -->", f"- [x] Fix review — round 1: C1 fixed @{i}"])
+        self.assertTrue(any("must name every critical" in p for p in self.run_check()))
+        self.state(["<!-- gate: slim -->", f"- [x] Fix review — round 1: 0 new; criticals: C1 fixed, C2 open @{i}"])
+        self.assertTrue(any("needs its reason" in p for p in self.run_check()))
+        self.state(["<!-- gate: slim -->", "- [ ] Fix review"])
+        f = self.root / "STATE.md"
+        for bad in ("round 1: 0 new", "round 1: 0 new; criticals:", "round 1: 0 new; criticals: C2 open"):
+            with self.assertRaises(ValueError):
+                ce.mark(self.root, f, "Fix review", bad)
+        ok = "round 1: 0 new; criticals: C1 fixed, C2 open: needs the create hook, in round 2"
+        self.assertIn("C2 open: needs", ce.mark(self.root, f, "Fix review", ok))
+        self.assertEqual(self.run_check(), [])
 
     def test_default_gate_has_no_round_limit_in_the_script(self):
         # Without the slim marker nothing changes: rounds are counted per finding by gate.md, not here.
