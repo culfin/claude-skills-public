@@ -56,7 +56,8 @@ A slim gate (gate-slim.md, `defaults.gate: slim`) marks its section with `<!-- g
 untriggered specialists are absent, as any untriggered item. Each Fix review evidence starts with
 `round <k>:`; k > 2 is refused (`mark`) and reported (`check`): at most 2 fix rounds, then the lead decides.
 It also names every critical with its state, `criticals: <C1 fixed, C2 open: <reason> | none>`; a missing
-`criticals:` or an `open` without its reason is refused and reported the same way.
+`criticals:`, an `open` without its reason, or `none` while other items report a critical is refused and reported
+the same way. A slim gate summary without a `Criticals:` line is reported.
 
 `mark` ticks one item of that section in place (no hand edit of the line): ITEM is the start of its
 name (case-insensitive, must match one item), EVIDENCE the decisive output; it appends the current
@@ -199,8 +200,9 @@ def is_slim(text, repair=False):
     return slim
 
 
-def round_problem(name, evidence):
-    """Slim gate: a Fix review names its round, at most SLIM_MAX_ROUNDS; None if fine."""
+def round_problem(name, evidence, earlier=0):
+    """Slim gate: a Fix review names its round, at most SLIM_MAX_ROUNDS, and every critical the gate found so far
+    (EARLIER = criticals the other items report); None if fine."""
     if not name.lower().startswith("fix review") or SKIP.match(evidence):
         return None
     m = ROUND.match(evidence)
@@ -213,9 +215,25 @@ def round_problem(name, evidence):
     if not c or not c.group(1).strip():
         return (f"slim gate: {name} must name every critical with its state "
                 "(write '; criticals: <C1 fixed, C2 open: <reason> | none>')")
+    if earlier and re.match(r"none\b", c.group(1).strip(), re.I):
+        return (f"slim gate: {name}: 'criticals: none', but the gate found {earlier} critical so far — name each "
+                "(write '; criticals: <C1 fixed, C2 open: <reason>>')")
     if OPEN_BARE.search(c.group(1)):
         return f"slim gate: {name}: every open critical needs its reason (write 'C2 open: <reason>')"
     return None
+
+
+CRIT_COUNT = re.compile(r"\b([1-9]\d*)\s+critical\b", re.I)
+
+
+def earlier_criticals(bodies):
+    """Criticals the non-Fix-review items of a checklist report (`3 critical`), summed."""
+    n = 0
+    for body in bodies:
+        name, evidence = _split(body)
+        if not name.lower().startswith("fix review"):
+            n += sum(int(x) for x in CRIT_COUNT.findall(evidence))
+    return n
 
 
 def _split(body):
@@ -245,8 +263,10 @@ def summary_problems(state_file):
     if gate is None or not gate.is_file():
         return []
     lines = {k: v for k, v in re.findall(r"^- (Found|Criticals|Criteria): (.*)$", gate.read_text(encoding="utf-8"), re.M)}
-    if "Criticals" not in lines:  # a summary from before v4.18.0
-        return []
+    if "Criticals" not in lines:  # a summary from before v4.18.0; the slim gate always has one (v4.21.1)
+        slim = re.search(r"^- Gate: slim\b", gate.read_text(encoding="utf-8"), re.M)
+        return [f"gate summary {gate.name}: slim gate summary has no 'Criticals:' line — name each critical "
+                "'<finder — file:line — fixed (round <k>) | open: <reason>>' or write 'none'"] if slim else []
     crit = lines["Criticals"].strip()
     entries = [] if re.match(r"none\b", crit, re.I) else [e for e in re.split(r";\s+(?=[^;]*—)", crit) if e.strip()]
     found = re.match(r"\s*(\d+)\s+critical", lines.get("Found", ""))
@@ -272,6 +292,7 @@ def check(root, state_file, before_commit=False, repair=False):
     problems = []
     fix_current = False
     fix_listed = any(_split(b)[0].lower().startswith("fix review") for _, b in items)
+    earlier = earlier_criticals(b for _, b in items)
     covered = []
     for done, body in items:
         name, evidence = _split(body)
@@ -298,8 +319,8 @@ def check(root, state_file, before_commit=False, repair=False):
             elif not skip.group(1).strip():
                 problems.append(f"no reason: {name} (write '— skipped: <reason>')")
             continue
-        if slim and evidence and round_problem(name, evidence):
-            problems.append(round_problem(name, evidence))
+        if slim and evidence and round_problem(name, evidence, earlier):
+            problems.append(round_problem(name, evidence, earlier))
         if not evidence:
             problems.append(f"no evidence: {name} (write '— <decisive output>' after the item)")
         elif name.lower().startswith(COUNTED) and not NO_TESTS.search(evidence):
@@ -342,8 +363,10 @@ def mark(root, state_file, item, evidence, repair=False):
     evidence = evidence.strip()
     if not evidence:
         raise ValueError("no evidence: give the decisive output")
-    if is_slim("\n".join(lines), repair) and round_problem(name, evidence):
-        raise ValueError(round_problem(name, evidence))
+    if is_slim("\n".join(lines), repair):
+        earlier = earlier_criticals(b for _, b in (gate_items("\n".join(lines), repair) or []))
+        if round_problem(name, evidence, earlier):
+            raise ValueError(round_problem(name, evidence, earlier))
     tag = "" if SKIP.match(evidence) else f" @{state_id(root)}"
     indent = lines[n][:len(lines[n]) - len(lines[n].lstrip())]
     lines[n] = f"{indent}- [x] {name} — {evidence}{tag}"
