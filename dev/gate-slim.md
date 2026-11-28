@@ -24,8 +24,10 @@ Only with ROADMAP.md frontmatter `defaults.gate: slim` (under `t3-team` also `do
    forced by red Step D (CI repair after the gate: `ci.md`). Every round counts: tick `round <k>: <result>` with `check-evidence.py mark`,
    which refuses round 3. Still a gap after round 2 → **no third round**: push, open or keep the PR
    (`ci.md`), list each gap under `Open:`, leave `[!]`, halt for the user (child thread: the lead).
-5. A finding outside the spec, a pre-existing one or an unfixed note is **never a ROADMAP.md milestone
-   or phase**: `python3 "$DEV_DIR/scripts/followup-issue.py" --severity <low|medium|high> --title
+5. **A critical in a file the phase diff changes, or one that bypasses an acceptance criterion, is an
+   in-spec gap** — also when pre-existing or on unchanged lines: it goes into the next fix round, never
+   a follow-up (a migration it needs is written; running it beyond dev stays a halt). Any other finding
+   outside the spec, pre-existing one or unfixed note is **never a ROADMAP.md milestone or phase**: `python3 "$DEV_DIR/scripts/followup-issue.py" --severity <low|medium|high> --title
    "<file>: <defect>" --body-file <file>` (high: critical; medium: wrong result) dedupes against open
    `followup` issues; its output line goes under `Follow-ups:`.
 
