@@ -606,7 +606,7 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             ce.mark(self.root, f, "Fix review", "round 3: 0 critical")
         self.assertIn("at most 2 fix rounds", str(e.exception))
-        self.assertIn("round 2: 0 critical", ce.mark(self.root, f, "Fix review", "round 2: 0 critical; criticals: none"))
+        self.assertIn("round 2: 0 critical", ce.mark(self.root, f, "Fix review", "round 2: 0 critical; criticals: C1 fixed"))
 
     def test_slim_round_names_every_critical_with_its_state(self):
         # Owner 28.11.2026: a replay fixed one of two criticals in round 1 and never said why the other stayed out.
@@ -623,6 +623,37 @@ class EvidenceTests(unittest.TestCase):
         ok = "round 1: 0 new; criticals: C1 fixed, C2 open: needs the create hook, in round 2"
         self.assertIn("C2 open: needs", ce.mark(self.root, f, "Fix review", ok))
         self.assertEqual(self.run_check(), [])
+
+    def test_slim_round_never_says_none_after_criticals(self):
+        # Replay 28.11.2026: round 2 ticked `criticals: none` after the Security review had found 3 criticals.
+        i = self.sid()
+        self.state(["<!-- gate: slim -->", f"- [x] Security review — Result: 3 critical, 1 note @{i}",
+                    f"- [x] Fix review — round 2: 0 critical; criticals: none @{i}"])
+        self.assertTrue(any("but the gate found 3 critical" in p for p in self.run_check()))
+        self.state(["<!-- gate: slim -->", f"- [x] Security review — Result: 3 critical @{i}", "- [ ] Fix review"])
+        f = self.root / "STATE.md"
+        with self.assertRaises(ValueError):
+            ce.mark(self.root, f, "Fix review", "round 2: 0 critical; criticals: none")
+        ce.mark(self.root, f, "Fix review", "round 2: 0 critical; criticals: S1 fixed, S2 fixed, S3 fixed")
+        self.assertEqual(self.run_check(), [])
+        # No item found a critical: `none` stays valid.
+        self.state(["<!-- gate: slim -->", f"- [x] Code review — 0 critical, 2 notes @{i}",
+                    f"- [x] Fix review — round 1: 0 critical; criticals: none @{i}"])
+        self.assertEqual(self.run_check(), [])
+
+    def test_slim_gate_summary_needs_a_criticals_line(self):
+        dev = self.root / ".dev"; dev.mkdir(exist_ok=True)
+        gates = self.root / "docs" / "gates"; gates.mkdir(parents=True, exist_ok=True)
+        i = self.sid()
+        (dev / "phase-7.md").write_text("## Quality Gate\n<!-- gate: slim -->\n"
+                                        f"- [x] Code review — 0 critical @{i}\n", encoding="utf-8")
+        (gates / "phase-7.md").write_text("## Gate summary\n- Gate: slim — triggers: none; rounds: 0\n- Open: none\n",
+                                          encoding="utf-8")
+        problems = ce.check(self.root, dev / "phase-7.md")
+        self.assertTrue(any("has no 'Criticals:' line" in p for p in problems), problems)
+        (gates / "phase-7.md").write_text("## Gate summary\n- Gate: slim — triggers: none; rounds: 0\n- Criticals: none\n",
+                                          encoding="utf-8")
+        self.assertFalse(any("Criticals" in p for p in ce.check(self.root, dev / "phase-7.md")))
 
     def test_default_gate_has_no_round_limit_in_the_script(self):
         # Without the slim marker nothing changes: rounds are counted per finding by gate.md, not here.
