@@ -76,6 +76,10 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("**A critical in a file the phase diff changes, or one that bypasses an acceptance "
                       "criterion, is an in-spec gap** — also when pre-existing or on unchanged lines", s)
         self.assertIn("it goes into the next fix round, never a follow-up", s)
+        # Owner 28.11.2026: the replay did round 1 itself and left the second critical out without a reason.
+        self.assertIn("an Agent, never the main session's own edits", s)
+        self.assertIn("**every open in-spec critical**", s)
+        self.assertIn("- Criticals: <finder — file:line — fixed (round <k>) | open: <reason>", s)
 
     def test_security_review_ignores_the_tier(self):
         g = text("gate.md")

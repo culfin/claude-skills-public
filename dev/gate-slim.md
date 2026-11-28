@@ -19,10 +19,12 @@ Only with ROADMAP.md frontmatter `defaults.gate: slim` (under `t3-team` also `do
    an item ticked without one is not done). No `code-review` → `gate.md`'s Spec checker without (b)
    and effect probe, evidence `substitute: <reason>`. Fill `Criteria:` from Step D's tests; an uncovered
    criterion is a gap. Similar-bugs scan only after a fixed critical.
-4. **At most 2 fix rounds.** A round is one fix dispatch with every in-spec gap plus `Fix review`
-   (`/code-review high <reviewed sha>...HEAD`, and the items that found something), or a code change
-   forced by red Step D (CI repair after the gate: `ci.md`). Every round counts: tick `round <k>: <result>` with `check-evidence.py mark`,
-   which refuses round 3. Still a gap after round 2 → **no third round**: push, open or keep the PR
+4. **At most 2 fix rounds.** A round is one fix dispatch — an Agent, never the main session's own
+   edits — whose prompt lists **every open in-spec critical** (finder — file:line — what) and the other
+   in-spec gaps, plus `Fix review` (`/code-review high <reviewed sha>...HEAD`, and the items that found
+   something), or a code change forced by red Step D (CI repair after the gate: `ci.md`). Every round
+   counts: tick `round <k>: <result>; criticals: <C1 fixed, C2 open: <reason> | none>` with
+   `check-evidence.py mark`, which refuses round 3, a round without `criticals:` and an `open` without its reason. Still a gap after round 2 → **no third round**: push, open or keep the PR
    (`ci.md`), list each gap under `Open:`, leave `[!]`, halt for the user (child thread: the lead).
 5. **A critical in a file the phase diff changes, or one that bypasses an acceptance criterion, is an
    in-spec gap** — also when pre-existing or on unchanged lines: it goes into the next fix round, never
@@ -35,6 +37,7 @@ The gate summary adds:
 
 ```markdown
 - Gate: slim — triggers: <… | none>; rounds: <0|1|2>
+- Criticals: <finder — file:line — fixed (round <k>) | open: <reason>; … | none>
 - Follow-ups: <#12 severity:medium — <title>; not filed: <reason>; … | none>
 - Open: <gap — file:line; … | none>
 ```
