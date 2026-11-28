@@ -55,6 +55,8 @@ review on the new fix diff, not the analyses.
 A slim gate (gate-slim.md, `defaults.gate: slim`) marks its section with `<!-- gate: slim … -->`. Its
 untriggered specialists are absent, as any untriggered item. Each Fix review evidence starts with
 `round <k>:`; k > 2 is refused (`mark`) and reported (`check`): at most 2 fix rounds, then the lead decides.
+It also names every critical with its state, `criticals: <C1 fixed, C2 open: <reason> | none>`; a missing
+`criticals:` or an `open` without its reason is refused and reported the same way.
 
 `mark` ticks one item of that section in place (no hand edit of the line): ITEM is the start of its
 name (case-insensitive, must match one item), EVIDENCE the decisive output; it appends the current
@@ -110,6 +112,9 @@ REVIEW_ITEMS = LEGACY + SLIM_REVIEW + ("diff review", "spec checker", "security 
 SLIM = re.compile(r"<!--\s*gate:\s*slim\b", re.I)
 SLIM_MAX_ROUNDS = 2
 ROUND = re.compile(r"^round\s+(\d+)\b", re.I)
+CRITICALS = re.compile(r"\bcriticals:\s*(.*)$", re.I)
+# "open" with no ": <reason>" after it (a reason needs at least one word).
+OPEN_BARE = re.compile(r"\bopen\b(?!\s*:\s*\w)", re.I)
 
 
 def state_id(root):
@@ -204,6 +209,12 @@ def round_problem(name, evidence):
     if int(m.group(1)) > SLIM_MAX_ROUNDS:
         return (f"slim gate: {name} round {m.group(1)} refused — at most {SLIM_MAX_ROUNDS} fix rounds; halt, keep the PR "
                 "open, list the remaining findings under 'Open:' in the gate summary for the lead (gate-slim.md)")
+    c = CRITICALS.search(evidence)
+    if not c or not c.group(1).strip():
+        return (f"slim gate: {name} must name every critical with its state "
+                "(write '; criticals: <C1 fixed, C2 open: <reason> | none>')")
+    if OPEN_BARE.search(c.group(1)):
+        return f"slim gate: {name}: every open critical needs its reason (write 'C2 open: <reason>')"
     return None
 
 
@@ -346,7 +357,7 @@ def main():
                                 "  check-evidence.py id\n"
                                 "  check-evidence.py mark 'Typecheck + lint + tests' '0 errors, 412 passed'\n"
                                 "  check-evidence.py mark 'Polish review' 'skipped: vibepolish not installed'\n"
-                                "  check-evidence.py mark 'Fix review' 'round 1: 0 critical'   # slim gate\n"
+                                "  check-evidence.py mark 'Fix review' 'round 1: 0 new; criticals: C1 fixed'   # slim gate\n"
                                 "  check-evidence.py mark 'Gate commit' \"$(git rev-parse --short HEAD)\"\n"
                                 "  check-evidence.py check --before-commit")
     sub = p.add_subparsers(dest="cmd", required=True)

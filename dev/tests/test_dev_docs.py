@@ -60,6 +60,27 @@ class DevDocsTests(unittest.TestCase):
                          "Never stop or signal a process you did not start in this session; "
                          "to clean up, stop only PIDs you recorded at start.")
 
+    def test_slim_gate_dispatches_its_items_and_keeps_guards_green(self):
+        # Owner 27.11.2026 ("Schlank plus Sicherheitsprüfer"): replays showed slim items ticked from the main
+        # session's own reading (0/3 security dispatches) and a phase done with `test:parity` red.
+        s = " ".join(text("gate-slim.md").split())
+        self.assertIn("**each its own Agent dispatch** with its `gate.md` Step A analyzer", s)
+        self.assertIn("an item ticked without one is not done", s)
+        self.assertIn("a phase with a red test or guard is not done", s)
+        self.assertIn("**Plans, trials, money and tenancy.**", text("analyzers/security.md"))
+
+    def test_slim_gate_fixes_pre_existing_criticals_in_changed_files(self):
+        # Owner 28.11.2026: a replay filed a pre-existing critical in a changed file (direct create stays
+        # unlocked) as a follow-up instead of fixing it; eval old 1/3, new 3/3.
+        s = " ".join(text("gate-slim.md").split())
+        self.assertIn("**A critical in a file the phase diff changes, or one that bypasses an acceptance "
+                      "criterion, is an in-spec gap** — also when pre-existing or on unchanged lines", s)
+        self.assertIn("it goes into the next fix round, never a follow-up", s)
+        # Owner 28.11.2026: the replay did round 1 itself and left the second critical out without a reason.
+        self.assertIn("an Agent, never the main session's own edits", s)
+        self.assertIn("**every open in-spec critical**", s)
+        self.assertIn("- Criticals: <finder — file:line — fixed (round <k>) | open: <reason>", s)
+
     def test_security_review_ignores_the_tier(self):
         g = text("gate.md")
         t = text("tech-stack-triggers.md")
