@@ -23,7 +23,8 @@ Only with ROADMAP.md frontmatter `defaults.gate: slim` (under `t3-team` also `do
    edits — whose prompt lists **every open in-spec critical** (finder — file:line — what) and the other
    in-spec gaps, plus `Fix review` (`/code-review high <reviewed sha>...HEAD`, and the items that found
    something), or a code change forced by red Step D (CI repair after the gate: `ci.md`). Every round
-   counts: tick `round <k>: <result>; criticals: <C1 fixed, C2 open: <reason> | none>` with
+   counts: tick `round <k>: <result>; criticals: <C1 fixed, C2 open: <reason> | none>` — every critical the gate
+   found so far, also the ones fixed in an earlier round; `none` only if no item found one — with
    `check-evidence.py mark`, which refuses round 3, a round without `criticals:` and an `open` without its reason. Still a gap after round 2 → **no third round**: push, open or keep the PR
    (`ci.md`), list each gap under `Open:`, leave `[!]`, halt for the user (child thread: the lead).
 5. **A critical in a file the phase diff changes, or one that bypasses an acceptance criterion, is an

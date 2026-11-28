@@ -80,6 +80,7 @@ class DevDocsTests(unittest.TestCase):
         self.assertIn("an Agent, never the main session's own edits", s)
         self.assertIn("**every open in-spec critical**", s)
         self.assertIn("- Criticals: <finder — file:line — fixed (round <k>) | open: <reason>", s)
+        self.assertIn("also the ones fixed in an earlier round; `none` only if no item found one", s)
 
     def test_security_review_ignores_the_tier(self):
         g = text("gate.md")
